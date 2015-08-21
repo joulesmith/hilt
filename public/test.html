@@ -88,32 +88,30 @@
                     var remainder = value;
                     var begin_theta = 0;
 
+                    if (remainder >= 1.0) {
+                        drawArcFill(r0, r1, 0.0, 2.0*Math.PI, "#ff0000");
+
+                        return;
+                    }
 
                     if (remainder >= 0.5) {
                         // draw the 0.5 level arc
-                        drawArcFill(r0, r1, 0.0 + delta, 1.0*Math.PI - delta, "#ff7100");
+                        drawArcFill(r0, r1, 0.0, 1.0*Math.PI, "#ff7100");
                         remainder = remainder - 0.5;
-                        begin_theta += 1.0*Math.PI;
+                        begin_theta += 1.0*Math.PI + delta;
                     }
 
                     while (remainder >= 0.1) {
                         // draw the 0.1 levels arc
-                        drawArcFill(r0, r1, begin_theta + delta, begin_theta + 0.2*Math.PI - delta, "#ff9800");
+                        drawArcFill(r0, r1, begin_theta, begin_theta + 0.2*Math.PI, "#ff9800");
                         remainder = remainder - 0.1;
-                        begin_theta += 0.2*Math.PI;
+                        begin_theta += 0.2*Math.PI + delta;
                     }
 
-                    if (remainder >= 0.05) {
-                        drawArcFill(r0, r1, begin_theta + delta, begin_theta + 0.1*Math.PI - delta, "#fff500");
-                        remainder = remainder - 0.05;
-                        begin_theta += 0.1*Math.PI;
+                    if (remainder > 0.0){
+                        drawArcFill(r0, r1, begin_theta, begin_theta + 2*Math.PI*remainder, "#fff500");
                     }
 
-                    while(remainder >= 0.01) {
-                        drawArcFill(r0, r1, begin_theta + delta, begin_theta + 0.02*Math.PI - delta, "#ffffff");
-                        remainder = remainder - 0.01;
-                        begin_theta += 0.02*Math.PI;
-                    }
                 }
 
                 drawSegments(value, 0.23*w, 0.45*w);
