@@ -1,0 +1,7 @@
+<div ng-repeat="channel in sword.channels" class="channel">
+    <div class="ch_top"><span class="ch_name">{{channel.name}}</span></div>
+    <div class="ch_mid"><span class="ch_value">{{channel.value}} {{channel.units}} </span></div>
+    <a href="/#/channel/{{channel._id}}">
+        <canvas id="radial_{{channel._id}}" width="100" height="100" class="radial"></canvas>
+    </a>
+</div>

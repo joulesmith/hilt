@@ -9,10 +9,10 @@ a {
 
 .channel {
     position: relative;
-    width: 16em;
+    width: 12em;
     height: 4em;
     background: url(../images/channel_bar.png);
-    background-size: 16em 4em;
+    background-size: 12em 4em;
     background-repeat: no-repeat;
     /*-webkit-box-shadow: inset 0 0 0.3em 0 rgba(0,0,0,0.75);
     -moz-box-shadow: inset 0 0 0.3em 0 rgba(0,0,0,0.75);
@@ -21,18 +21,18 @@ a {
 
 .ch_top {
     position: absolute;
-    left: 1em;
-    top: 0.2em;
+    left: 0.5em;
+    top: 0.25em;
 }
 
 .ch_mid {
     position: absolute;
-    left: 2em;
+    left: 1em;
     top: 1.2em;
 }
 
 .ch_name {
-    color: #ffffff;
+    color: #424242;
     font-size: 0.8em;
     font-weight: bold;
     font-family: Arial, "Lucida Console", Monaco, monospace;
@@ -40,7 +40,7 @@ a {
 }
 
 .ch_component {
-    color: #ededed;
+    color: #424242;
     font-size: 0.8em;
 
     font-family: Arial, "Lucida Console", Monaco, monospace;
@@ -58,7 +58,7 @@ a {
 
 .radial {
     position: absolute;
-    left: 12em;
+    left: 8em;
     width: 4em;
     height: 4em;
 }
