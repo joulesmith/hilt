@@ -1,8 +1,128 @@
 <html>
 <head>
-    <link href="/stylesheets/test.css" rel="stylesheet">
+    <link href="./stylesheets/test.css" rel="stylesheet">
 </head>
 <body>
+    <a href="#channel1">
+    <div class="channel">
+        <div class="ch_top"><span class="ch_name">active channel </span></div>
+        <div class="ch_mid"><span class="ch_value">7.7 V </span></div>
+        <canvas id="radial1" width="100" height="100" class="radial"></canvas>
+    </div>
+    </a>
+    <a href="#channel2">
+    <div class="channel">
+        <div class="ch_top"><span class="ch_name">inactive channel </span></div>
+        <div class="ch_mid"><span class="ch_value"> </span></div>
+        <canvas id="radial2" width="100" height="100" class="radial"></canvas>
+    </div>
+    </a>
+    <a href="#channel3">
+    <div class="channel">
+        <div class="ch_top"><span class="ch_name">another channel </span></div>
+        <div class="ch_mid"><span class="ch_value">33 kV </span></div>
+        <canvas id="radial3" width="100" height="100" class="radial"></canvas>
+    </div>
+    </a>
 
+    <script>
+        window.onload = function() {
+
+            var drawRadial = function(canvas_id, value, active, old) {
+
+                var canvas = document.getElementById(canvas_id);
+                var ctx = canvas.getContext("2d");
+
+                var w = canvas.width;
+                var h = canvas.height;
+                var delta = 2.0*Math.PI/400;
+
+                ctx.translate(w / 2, h / 2);
+                ctx.rotate(0.5 * Math.PI);
+
+                ctx.lineWidth = 4;
+
+                if (active) {
+                    if (old) {
+                        ctx.strokeStyle="#ffe100"; // active but old data
+                    }else{
+                        ctx.strokeStyle="#00ffa6"; // active
+                    }
+                }else{
+
+                    //ctx.strokeStyle="#ff5000"; // inactive
+                    ctx.strokeStyle="#000000";
+                }
+
+                ctx.arc(0, 0, 0.5*0.23*w, 0.8*Math.PI, 1.2*Math.PI, true);
+
+                ctx.stroke();
+
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-0.6*0.23*w, 0);
+                ctx.stroke();
+
+                var drawArcFill = function(r0, r1, theta0, theta1, color) {
+
+                    ctx.beginPath();
+                    ctx.arc(0, 0, r0, theta0, theta1);
+
+                    ctx.lineTo(r1 * Math.cos(theta1), r1 * Math.sin(theta1));
+
+                    ctx.arc(0, 0, r1, theta1, theta0, true);
+
+                    ctx.lineTo(r0 * Math.cos(theta0), r0 * Math.sin(theta0));
+
+                    ctx.fillStyle = color || "#27ff00";
+                    ctx.fill();
+                };
+
+
+
+                // 0.0 <= value <= 1.0
+                var drawSegments = function(value, r0, r1) {
+                    // units of 0.01, 0.05, 0.1, 0.5
+
+                    //drawArcFill(r0*0.9, r1*1.05, 0.0, 2.0*Math.PI, "#000000");
+
+                    var remainder = value;
+                    var begin_theta = 0;
+
+
+                    if (remainder >= 0.5) {
+                        // draw the 0.5 level arc
+                        drawArcFill(r0, r1, 0.0 + delta, 1.0*Math.PI - delta, "#ff7100");
+                        remainder = remainder - 0.5;
+                        begin_theta += 1.0*Math.PI;
+                    }
+
+                    while (remainder >= 0.1) {
+                        // draw the 0.1 levels arc
+                        drawArcFill(r0, r1, begin_theta + delta, begin_theta + 0.2*Math.PI - delta, "#ff9800");
+                        remainder = remainder - 0.1;
+                        begin_theta += 0.2*Math.PI;
+                    }
+
+                    if (remainder >= 0.05) {
+                        drawArcFill(r0, r1, begin_theta + delta, begin_theta + 0.1*Math.PI - delta, "#fff500");
+                        remainder = remainder - 0.05;
+                        begin_theta += 0.1*Math.PI;
+                    }
+
+                    while(remainder >= 0.01) {
+                        drawArcFill(r0, r1, begin_theta + delta, begin_theta + 0.02*Math.PI - delta, "#ffffff");
+                        remainder = remainder - 0.01;
+                        begin_theta += 0.02*Math.PI;
+                    }
+                }
+
+                drawSegments(value, 0.23*w, 0.45*w);
+            };
+
+            drawRadial("radial1", 0.77, true);
+            drawRadial("radial2", 0, false);
+            drawRadial("radial3", 0.33, true, true);
+        };
+    </script>
 </body>
 </html>
