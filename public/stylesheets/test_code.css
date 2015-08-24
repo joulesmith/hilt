@@ -103,6 +103,23 @@ a {
     background-color: #322c35;
 }
 
+.array_def {
+
+    padding: 4px 4px;
+    border: 2px solid #e182ff;
+    border-radius: 5px;
+    background-color: #504853;
+    vertical-align: top;
+    display: inline-block;
+}
+
+.array_def .choose {
+    padding: 2px 2px;
+    border: 2px solid #726777;
+    border-radius: 5px;
+    background-color: #322c35;
+}
+
 .blank {
     padding: 2px 2px;
     border: 2px solid #dddddd;
@@ -129,11 +146,18 @@ a {
 
 .evaluate {
     padding: 4px 4px;
-    border: 2px solid #f7f071;
+    border: 2px solid #c9ff8c;
     border-radius: 5px;
-    background-color: #979da3;
+    background-color: #3f4f44;
     display: inline-block;
     vertical-align: top;
+}
+
+.evaluate .choose {
+    padding: 2px 2px;
+    border: 2px solid #597060;
+    border-radius: 5px;
+    background-color: #27302a;
 }
 
 
