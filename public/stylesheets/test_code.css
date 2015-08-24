@@ -1,0 +1,178 @@
+
+body {
+    background-color: #000000;
+    font-size: 0.8em;
+    font-weight: bold;
+    font-family: Inconsolata, Monaco, Consolas, 'Courier New', Courier;
+
+}
+
+a {
+    text-decoration: none;
+    color: #000000;
+}
+
+.row {
+    margin: 4px 0px 4px 0px;
+    display: inline-block;
+}
+
+
+
+.choose {
+
+    padding: 2px 2px;
+    border: 2px solid #acb0b7;
+    border-radius: 5px;
+    background-color: #54595e;
+    display: inline-block;
+}
+
+.assign {
+    padding: 4px 4px;
+    border: 2px solid #4f5051;
+    border-radius: 5px;
+    background-color: #80878e;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.assign .symbol {
+    padding: 2px 2px;
+
+}
+
+.assign .lval {
+    padding: 2px 2px;
+    border: 2px solid #4f5051;
+    border-radius: 5px;
+    background-color: #54595e;
+
+}
+.rval {
+    padding: 2px 2px;
+    border: 2px solid #8AC007;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+.function_def {
+
+    padding: 4px 4px;
+    border: 2px solid #f7bb80;
+    border-radius: 5px;
+    background-color: #1e1c1a;
+    vertical-align: top;
+    display: inline-block;
+}
+
+.return {
+    padding: 4px 4px;
+    border: 2px solid #f7f071;
+    border-radius: 5px;
+    background-color: #515140;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.return .choose {
+
+    padding: 2px 2px;
+    border: 2px solid #686854;
+    border-radius: 5px;
+    background-color: #1e1e18;
+}
+
+.return .symbol {
+    padding: 2px 2px;
+}
+
+.object_def {
+    padding: 4px 4px;
+    border: 2px solid #ffa0b3;
+    border-radius: 5px;
+    background-color: #504853;
+    vertical-align: top;
+    display: inline-block;
+}
+
+.object_def .choose {
+    padding: 2px 2px;
+    border: 2px solid #726777;
+    border-radius: 5px;
+    background-color: #322c35;
+}
+
+.blank {
+    padding: 2px 2px;
+    border: 2px solid #dddddd;
+    border-radius: 5px;
+    background-color: #ffffff;
+    display: inline-block;
+}
+
+.if {
+    vertical-align: top;
+    padding: 4px 4px;
+    border: 2px solid #4ed0fc;
+    border-radius: 5px;
+    background-color: #353e44;
+    display: inline-block;
+}
+
+
+
+.parameter_def {
+
+    display: inline-block;
+}
+
+.evaluate {
+    padding: 4px 4px;
+    border: 2px solid #f7f071;
+    border-radius: 5px;
+    background-color: #979da3;
+    display: inline-block;
+    vertical-align: top;
+}
+
+
+.argument {
+    padding: 2px 2px;
+    border: 2px solid #f7bb80;
+    border-radius: 5px;
+    background-color: #54595e;
+}
+
+.symbol {
+    color: white;
+}
+
+.function {
+    color: #f7bb80;
+}
+
+.variable {
+    color: #ffffff;
+}
+
+.number {
+    color: #a0f7a6;
+}
+
+
+.boolean {
+    color: #34dc85;
+}
+
+.string {
+    color: #a8d9ff;
+}
+
+.object {
+    color: #ffa0b3;
+}
+
+.parameter {
+    color: #eeeeee;
+}

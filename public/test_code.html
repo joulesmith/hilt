@@ -1,0 +1,114 @@
+<html>
+<head>
+    <link href="./stylesheets/test_code.css" rel="stylesheet">
+</head>
+<body>
+
+    <div class="assign">
+        <a class="choose variable" href="#">variable</a>
+        <a class="symbol" href="#">&larr;</a>
+        <a class="choose string" href="#">value</a>
+        <br>
+    </div>
+    <br>
+    <div class="assign">
+        <a class="choose variable" href="#">method_name</a>
+        <a class="symbol" href="#">&larr;</a>
+        <div class="function_def">
+            <div class="row">
+                <a class="symbol" href="#">function</a>
+                <a class="choose variable" href="#">x</a>
+                <a class="choose variable" href="#">y</a>
+            </div>
+
+
+            <br>
+                <div class="row">
+                <div class="if">
+                    <a class="symbol" href="#">if</a>
+                    <div class="assign">
+                        <a class="choose variable" href="#">x</a>
+                        <a class="symbol" href="#">></a>
+                        <a class="choose variable" href="#">y</a>
+                    </div>
+                    <br>
+                    <div class="return">
+                        <a class="symbol" href="#">return &larr;</a>
+
+                        <div class="object_def">
+                            <a class="symbol" href="#">object</a>
+                            <br>
+                            <div class="parameter_def">
+                                <a class="choose string" href="#">age</a>
+                                <a class="symbol">:</a>
+                                <a class="choose number" href="#">24</a>
+                            </div>
+                            <br>
+                            <div class="parameter_def">
+                                <a class="choose string" href="#">name</a>
+                                <a class="symbol">:</a>
+                                <a class="choose string" href="#">Mike</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="if">
+                    <a class="symbol" href="#">else</a>
+                    <br>
+                    <div class="return">
+                        <a class="symbol" href="#">return &larr;</a>
+                        <div class="object_def">
+                            <a class="symbol" href="#">object</a>
+                            <br>
+                            <div class="parameter_def">
+                                <a class="choose string" href="#">age</a>
+                                <a class="symbol">:</a>
+                                <a class="choose number" href="#">31</a>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+
+    <div class="assign">
+        <a class="choose variable" href="#">result</a>
+        <a class="symbol" href="#">&larr;</a>
+        <div class="return">
+            <a class="choose variable" href="#">method_name</a>
+            <a class="symbol" href="#">&larr;</a>
+            <a class="choose number" href="#">2</a>
+            <a class="choose number" href="#">5</a>
+        </div>
+    </div>
+    <br>
+    <div class="return">
+        <a class="choose variable" href="#">console.log</a>
+        <a class="symbol" href="#">&larr;</a>
+        <a class="choose variable" href="#">result.age</a>
+    </div>
+    <br>
+    <div class="return">
+        <a class="choose variable" href="#">console.log</a>
+        <a class="symbol" href="#">&larr;</a>
+        <div class="object_def">
+            <div class="return">
+                <a class="choose variable" href="#">method_name</a>
+                <a class="symbol" href="#">&larr;</a>
+                <a class="choose number" href="#">5</a>
+                <a class="choose number" href="#">2</a>
+            </div>
+            <a class="symbol" href="#">.</a>
+            <a class="choose string" href="#">name</a>
+        </div>
+    </div>
+    <script>
+        window.onload = function() {
+
+        };
+    </script>
+</body>
+</html>

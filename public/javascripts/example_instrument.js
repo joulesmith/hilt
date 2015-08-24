@@ -9,7 +9,6 @@ onmessage = function(message) {
     if (index === 0) {
 
 
-
     }
 
     index++;
