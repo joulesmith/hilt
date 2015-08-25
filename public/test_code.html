@@ -1,158 +1,126 @@
 <html>
 <head>
+
+
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.10/angular.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.10/angular-ui-router.js"></script>
+    <script src="./javascripts/boxin.js"></script>
+
     <link href="./stylesheets/test_code.css" rel="stylesheet">
+
 </head>
-<body>
+<body ng-app="boxin">
 
-    <div class="assign">
-        <a class="choose variable" href="#">variable</a>
-        <a class="symbol" href="#">&larr;</a>
-        <a class="choose string" href="#">name</a>
-        <br>
-    </div>
-    <br>
-    <div class="assign">
-        <a class="choose variable" href="#">method_name</a>
-        <a class="symbol" href="#">&larr;</a>
-        <div class="function_def">
-            <div class="row">
-                <a class="symbol" href="#">function</a>
-                <a class="choose variable" href="#">x</a>
-                <a class="choose variable" href="#">y</a>
-            </div>
+    <ui-view></ui-view>
 
-
-            <br>
-                <div class="row">
-                <div class="if">
-                    <a class="symbol" href="#">if</a>
-                    <div class="assign">
-                        <a class="choose variable" href="#">x</a>
-                        <a class="symbol" href="#">></a>
-                        <a class="choose variable" href="#">y</a>
-                    </div>
-                    <br>
-                    <div class="return">
-                        <a class="symbol" href="#">return &larr;</a>
-
-                        <div class="object_def">
-                            <div class="parameter_def">
-                                <a class="choose string" href="#">age</a>
-                                <a class="symbol" href="#">:</a>
-                                <a class="choose number" href="#">24</a>
-                            </div>
-                            <br>
-                            <div class="parameter_def">
-                                <a class="choose string" href="#">name</a>
-                                <a class="symbol" href="#">:</a>
-                                <a class="choose string" href="#">Mike</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="if">
-                    <a class="symbol" href="#">else</a>
-                    <br>
-                    <div class="return">
-                        <a class="symbol" href="#">return &larr;</a>
-                        <div class="object_def">
-                            <div class="parameter_def">
-                                <a class="choose string" href="#">age</a>
-                                <a class="symbol" href="#">:</a>
-                                <a class="choose number" href="#">31</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <br>
-
-    <div class="assign">
-        <a class="choose variable" href="#">result</a>
-        <a class="symbol" href="#">&larr;</a>
-        <div class="evaluate">
-            <a class="choose variable" href="#">method_name</a>
-            <a class="symbol" href="#">() &larr;</a>
-                <a class="choose number" href="#">2</a>
-                <a class="choose number" href="#">5</a>
-        </div>
-    </div>
-    <br>
-    <div class="evaluate">
-        <a class="choose variable" href="#">console.log</a>
-        <a class="symbol" href="#">() &larr;</a>
-        <a class="choose variable" href="#">result.age</a>
-    </div>
-    <br>
-    <div class="evaluate">
-        <a class="choose variable" href="#">console.log</a>
-        <a class="symbol" href="#">() &larr;</a>
-        <div class="object_def">
-            <div class="evaluate">
-                <a class="choose variable" href="#">method_name</a>
-                <a class="symbol" href="#">() &larr;</a>
-                    <a class="choose number" href="#">5</a>
-                    <a class="choose number" href="#">2</a>
-            </div>
-            <a class="symbol" href="#">.</a>
-            <a class="choose variable" href="#">variable</a>
-        </div>
-    </div>
-    <br>
-    <div class="assign">
-        <a class="choose variable" href="#">array_var</a>
-        <a class="symbol" href="#">&larr;</a>
-        <div class="array_def">
-            <a class="choose string" href="#">array</a>
-            <a class="choose string" href="#">of</a>
-            <a class="choose string" href="#">strings</a>
-        </div>
-    </div>
-
-
-    <script type="text/ng-template" id="value.html">
-
-        <a ng-if="value.type === 'variable'" class="choose variable" href="/#/{{value.link}}">{{value.value}}</a>
-        <a ng-if="value.type === 'string'" class="choose string" href="/#/{{value.link}}">{{value.value}}</a>
-        <a ng-if="value.type === 'number'" class="choose number" href="/#/{{value.link}}">{{value.value}}</a>
-        <a ng-if="value.type === 'boolean'" class="choose boolean" href="/#/{{value.link}}">{{value.value}}</a>
-        <div ng-if="value.type === 'object'" class="object_def">
-            <div ng-repeat="(param, value) in value.value" class="parameter_def">
-                <a class="choose string" href="#">{{param}}</a>
-                <a class="symbol" href="#">:</a>
-                <div ng-include="'value.html'"></div>
-            </div>
-        </div>
-        <div ng-if="value.type === 'function'" class="function_def">
-            <div class="row">
-                <a class="symbol" href="#">function</a>
-                <a ng-repeat="argument in value.arguments" class="choose variable" href="#">{{argument.name}}</a>
-            </div>
-            <div ng-repeat="value in value.value" value></div>
-        </div>
-        <div ng-if="value.type === 'array'" class="array_def">
-            <div ng-repeat="value in value.value" value></div>
-        </div>
-        <div ng-if="value.type === 'reference'" class="object_def">
-            <div ng-repeat="value in value.value" value></div>
-            <a class="symbol" href="#">.</a>
-            <div ng-repeat="value in value.value" value></div>
-        </div>
-        <div ng-if="value.type === 'evaluate'" class="evaluate">
-            <div ng-repeat="value in value.value" value></div>
-            <a class="symbol" href="#">()&larr;</a>
-            <div ng-repeat="value in value.value" value></div>
-        </div>
-        <div ng-if="value.type === 'assign'" class="assign">
-            <div ng-repeat="value in op.variable" value></div>
-            <a class="symbol" href="#">&larr;</a>
-            <div ng-repeat="value in op.value" value></div>
-        </div>
-
+    <script type="text/ng-template" id="/home.html">
+        <div ng-repeat="value in value" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+        <a ng-click="change()">chchchchchcch</a>
     </script>
 
+    <script type="text/ng-template" id="/variable.html">
+        <a class="variable" href="/#/{{value.link}}">{{value.name}}</a>
+    </script>
+
+    <script type="text/ng-template" id="/boolean.html">
+        <a class="boolean" href="/#/{{value.link}}">{{value.value}}</a>
+    </script>
+
+    <script type="text/ng-template" id="/number.html">
+        <a class='number' href="/#/{{value.link}}">{{value.value}}</a>
+    </script>
+
+    <script type="text/ng-template" id="/string.html">
+        <a class="string" href="/#/{{value.link}}">{{value.value}}</a>
+    </script>
+
+    <script type="text/ng-template" id="/object.html">
+        <div ng-repeat="(prop, value) in value.props" class="parameter_def">
+            <div class="string"><a class="string" href="#">{{prop}}</a></div>
+            <a class="symbol" href="#">:</a>
+            <div ng-repeat="value in value" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+        </div>
+    </script>
+
+    <script type="text/ng-template" id="/array.html">
+        <div ng-repeat="value in value.arr" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+    </script>
+
+    <script type="text/ng-template" id="/function.html">
+        <div class="row">
+            <a class="symbol" href="#">arguments</a>
+            <div ng-repeat="value in value.args" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+        </div>
+        <div class="row">
+            <a class="symbol" href="#">variables</a>
+            <div ng-repeat="value in value.vars" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+        </div>
+            
+        <div ng-repeat="value in value.sequence" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+    </script>
+
+    <script type="text/ng-template" id="/assign.html">
+        <div class="variable"><a class="variable" href="#">{{value.variable.name}}</a></div>
+        <a class="symbol" href="#">&larr;</a>
+        <div ng-repeat="value in value.value" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+    </script>
+
+    <script type="text/ng-template" id="/evaluate.html">
+        <div ng-repeat="value in value.variable" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+        <a class="symbol" href="#">(&larr;)</a>
+        <div ng-repeat="value in value.args" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+    </script>
+
+    <script type="text/ng-template" id="/return.html">
+        <a class="symbol" href="#">return &larr;</a>
+        <div ng-repeat="value in value.variable" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+    </script>
+
+    <script type="text/ng-template" id="/reference.html">
+        <div ng-repeat="value in value.object" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+        <a class="symbol" href="#">.</a>
+        <div ng-repeat="value in value.prop" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+    </script>
+
+    <script type="text/ng-template" id="/value.html">
+<!--
+
+        <a ng-if="value.is_string" class="choose string" href="/#/{{value.link}}">{{value.value}}</a>
+        <a ng-if="value.is_number" class="choose number" href="/#/{{value.link}}">{{value.value}}</a>
+        <a ng-if="value.is_boolean" class="choose boolean" href="/#/{{value.link}}">{{value.value}}</a>
+
+        <div ng-if="value.is_assign" class="assign">
+            <boxin boxin-value="value.variable"></boxin>
+            <a class="symbol" href="#">&larr;</a>
+            <div ng-repeat="value in value.value" value></div>
+        </div>
+
+        <div ng-if="value.is_object" class="object_def">
+            <div ng-repeat="(prop, value) in value.props" class="parameter_def">
+                <a class="choose string" href="#">{{prop}}</a>
+                <a class="symbol" href="#">:</a>
+                <div value></div>
+            </div>
+        </div>
+        <div ng-if="value.is_function" class="function_def">
+            <div class="row">
+                <a class="symbol" href="#">function</a>
+                <div ng-repeat="value in value.args" value></div>
+            </div>
+            <div ng-repeat="value in value.sequence" value></div>
+        </div>
+        <div ng-if="value.is_array" class="array_def">
+            <div ng-repeat="value in value.list" value></div>
+        </div>
+        <div ng-if="value.is_reference" class="object_def">
+            <div ng-repeat="value in value.object" value></div>
+            <a class="symbol" href="#">.</a>
+            <div ng-repeat="value in value.parameter" value></div>
+        </div>
+
+
+
+    </script>
 
 </body>
 </html>

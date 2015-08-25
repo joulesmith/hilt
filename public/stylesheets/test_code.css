@@ -12,111 +12,122 @@ a {
     color: #000000;
 }
 
-.row {
-    margin: 4px 0px 4px 0px;
-    display: inline-block;
-}
-
-
-
-.choose {
-
-    padding: 2px 2px;
-    border: 2px solid #acb0b7;
-    border-radius: 5px;
-    background-color: #54595e;
-    display: inline-block;
-}
-
-.assign {
+div {
     padding: 4px 4px;
-    border: 2px solid #4f5051;
     border-radius: 5px;
+    border-width: 2px;
+    border-style: solid;
+    vertical-align: top;
+    display: inline-block;
+}
+
+div.row {
+    margin: 0px 0px 0px 0px;
+    padding: 0px 0px;
+    border-width: 0px;
+    display: block;
+}
+
+.symbol {
+    padding: 2px 2px;
+}
+
+div.assign {
+    border-color: #4f5051;
     background-color: #80878e;
-    display: inline-block;
-    vertical-align: top;
 }
 
-.assign .symbol {
-    padding: 2px 2px;
-
-}
-
-.assign .lval {
-    padding: 2px 2px;
-    border: 2px solid #4f5051;
-    border-radius: 5px;
+.assign div.string {
+    border-color: #4f5051;
     background-color: #54595e;
-
-}
-.rval {
-    padding: 2px 2px;
-    border: 2px solid #8AC007;
-    border-radius: 5px;
-    background-color: #ffffff;
 }
 
-.function_def {
+.assign div.number {
+    border-color: #4f5051;
+    background-color: #54595e;
+}
 
-    padding: 4px 4px;
-    border: 2px solid #f7bb80;
-    border-radius: 5px;
+.assign div.boolean {
+    border-color: #4f5051;
+    background-color: #54595e;
+}
+
+.assign div.variable {
+    border-color: #4f5051;
+    background-color: #54595e;
+}
+
+.function {
+    color: #f7bb80;
+}
+
+div.function {
+    border-color: #f7bb80;
     background-color: #1e1c1a;
-    vertical-align: top;
-    display: inline-block;
 }
 
-.return {
-    padding: 4px 4px;
-    border: 2px solid #f7f071;
-    border-radius: 5px;
+.function div.variable {
+    border-color: #6b635c;
+    background-color: #161513;
+}
+
+.function div.return {
+    display: block;
+}
+
+.function div.assign {
+    display: block;
+}
+
+.function div.evaluate {
+    display: block;
+}
+
+div.return {
+    border-color: #f7f071;
     background-color: #515140;
-    display: inline-block;
-    vertical-align: top;
 }
 
-.return .choose {
-
-    padding: 2px 2px;
-    border: 2px solid #686854;
-    border-radius: 5px;
+.return div.number {
+    border-color: #686854;
     background-color: #1e1e18;
 }
 
-.return .symbol {
-    padding: 2px 2px;
+.return div.string {
+    border-color: #686854;
+    background-color: #1e1e18;
+}
+.return div.boolean {
+    border-color: #686854;
+    background-color: #1e1e18;
+}
+.return div.variable {
+    border-color: #686854;
+    background-color: #1e1e18;
 }
 
-.object_def {
-    padding: 4px 4px;
-    border: 2px solid #ffa0b3;
-    border-radius: 5px;
+.array {
+    border-color: #e182ff;
     background-color: #504853;
-    vertical-align: top;
-    display: inline-block;
 }
 
-.object_def .choose {
-    padding: 2px 2px;
-    border: 2px solid #726777;
-    border-radius: 5px;
+.array div.number {
+    border-color: #726777;
     background-color: #322c35;
 }
 
-.array_def {
-
-    padding: 4px 4px;
-    border: 2px solid #e182ff;
-    border-radius: 5px;
-    background-color: #504853;
-    vertical-align: top;
-    display: inline-block;
+.array div.string {
+    border-color: #726777;
+    background-color: #322c35;
 }
 
-.array_def .choose {
-    padding: 2px 2px;
-    border: 2px solid #726777;
-    border-radius: 5px;
+.array div.boolean {
+    border-color: #726777;
+    background-color: #322c35;
+}
+
+.array div.variable {
+    border-color: #726777;
     background-color: #322c35;
 }
 
@@ -137,29 +148,35 @@ a {
     display: inline-block;
 }
 
-
-
 .parameter_def {
-
-    display: inline-block;
+    border-width: 0px;
+    display: block;
 }
 
 .evaluate {
-    padding: 4px 4px;
-    border: 2px solid #c9ff8c;
-    border-radius: 5px;
+    border-color: #c9ff8c;
     background-color: #3f4f44;
-    display: inline-block;
-    vertical-align: top;
 }
 
-.evaluate .choose {
-    padding: 2px 2px;
-    border: 2px solid #597060;
-    border-radius: 5px;
+.evaluate div.number {
+    border-color: #597060;
     background-color: #27302a;
 }
 
+.evaluate div.string {
+    border-color: #597060;
+    background-color: #27302a;
+}
+
+.evaluate div.boolean {
+    border-color: #597060;
+    background-color: #27302a;
+}
+
+.evaluate div.variable {
+    border-color: #597060;
+    background-color: #27302a;
+}
 
 .argument {
     padding: 2px 2px;
@@ -172,16 +189,21 @@ a {
     color: white;
 }
 
-.function {
-    color: #f7bb80;
-}
 
 .variable {
     color: #ffffff;
 }
 
+div.variable {
+    padding: 2px 2px;
+}
+
 .number {
     color: #a0f7a6;
+}
+
+div.number {
+    padding: 2px 2px;
 }
 
 
@@ -189,14 +211,43 @@ a {
     color: #34dc85;
 }
 
+div.boolean {
+    padding: 2px 2px;
+}
+
 .string {
     color: #a8d9ff;
+}
+
+div.string {
+    padding: 2px 2px;
 }
 
 .object {
     color: #ffa0b3;
 }
 
-.parameter {
-    color: #eeeeee;
+div.object {
+    border-color:#ffa0b3;
+    background-color: #504853;
+}
+
+.object div.number {
+    border-color:#726777;
+    background-color: #322c35;
+}
+
+.object div.string {
+    border-color:#726777;
+    background-color: #322c35;
+}
+
+.object div.boolean {
+    border-color:#726777;
+    background-color: #322c35;
+}
+
+.object div.variable {
+    border-color:#726777;
+    background-color: #322c35;
 }
