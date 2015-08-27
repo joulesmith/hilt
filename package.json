@@ -1,49 +1,58 @@
 {
-    "name": "broadsword",
-    "version": "0.0.0",
-    "description": "Data acquisition and control management system.",
-    "author": {
-        "name": "Joulesmith Energy Technologies, LLC",
-        "email": "general@joulesmith.com"
-    },
-    "contributors": [
-        {
-            "name": "Carter Dodd"
-        }
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/joulesmith/broadsword.git"
-    },
-    "scripts": {
-        "start": "node ./bin/www"
-    },
-    "dependencies": {
-        "body-parser": "~1.12.0",
-        "cookie-parser": "~1.3.4",
-        "debug": "~2.1.1",
-        "ejs": "~2.3.1",
-        "express": "~4.12.2",
-        "express-jwt": "^3.0.1",
-        "jsonwebtoken": "^5.0.4",
-        "mongoose": "^4.1.1",
-        "morgan": "~1.5.1",
-        "passport": "^0.2.2",
-        "passport-google": "^0.3.0",
-        "passport-local": "^1.0.0",
-        "serve-favicon": "~2.2.0",
-        "socket.io": "^1.3.6",
-        "webworker-threads": "^0.5.6"
-    },
-    "licenses": [
-        {
-            "type": "GNU General Public License, Version 3.0 or later",
-            "url": "http://www.gnu.org/licenses/"
-        }
-    ],
-    "readme": "See README file",
-    "readmeFilename": "README.md",
-    "bugs": {
-        "url": "https://github.com/joulesmith/broadsword/issues"
-    },
+  "name": "broadsword",
+  "version": "0.0.0",
+  "description": "Data acquisition and control management system.",
+  "author": {
+    "name": "Joulesmith Energy Technologies, LLC",
+    "email": "general@joulesmith.com"
+  },
+  "contributors": [
+    {
+      "name": "Carter Dodd"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joulesmith/broadsword.git"
+  },
+  "scripts": {
+    "start": "node ./bin/www",
+    "build-js": "browserify apps/boxin.js > public/javascripts/boxin.js"
+  },
+  "dependencies": {
+    "angular": "^1.4.4",
+    "angular-drag-and-drop-lists": "^1.2.3",
+    "angular-ui-bootstrap": "^0.13.3",
+    "angular-ui-router": "^0.2.15",
+    "body-parser": "~1.12.0",
+    "bootstrap": "^3.3.5",
+    "cookie-parser": "~1.3.4",
+    "debug": "~2.1.1",
+    "ejs": "~2.3.1",
+    "express": "~4.12.2",
+    "express-jwt": "^3.0.1",
+    "jsonwebtoken": "^5.0.4",
+    "mongoose": "^4.1.1",
+    "morgan": "~1.5.1",
+    "passport": "^0.2.2",
+    "passport-google": "^0.3.0",
+    "passport-local": "^1.0.0",
+    "serve-favicon": "~2.2.0",
+    "socket.io": "^1.3.6",
+    "webworker-threads": "^0.5.6"
+  },
+  "devDependencies": {
+    "browserify": "latest"
+  },
+  "licenses": [
+    {
+      "type": "GNU General Public License, Version 3.0 or later",
+      "url": "http://www.gnu.org/licenses/"
+    }
+  ],
+  "readme": "See README file",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/joulesmith/broadsword/issues"
+  }
 }

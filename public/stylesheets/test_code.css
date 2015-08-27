@@ -1,15 +1,16 @@
 
 body {
     background-color: #000000;
-    font-size: 0.8em;
+
     font-weight: bold;
     font-family: Inconsolata, Monaco, Consolas, 'Courier New', Courier;
-
+    color: #ffffff;
 }
 
 a {
     text-decoration: none;
     color: #000000;
+
 }
 
 div {
@@ -19,6 +20,22 @@ div {
     border-style: solid;
     vertical-align: top;
     display: inline-block;
+    position: relative;
+}
+
+.slot {
+
+}
+
+[draggable] {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Required to make elements draggable in old WebKit */
+  -khtml-user-drag: element;
+  -webkit-user-drag: element;
+  cursor: move;
 }
 
 div.row {
@@ -148,7 +165,7 @@ div.return {
     display: inline-block;
 }
 
-.parameter_def {
+.property {
     border-width: 0px;
     display: block;
 }
@@ -189,21 +206,40 @@ div.return {
     color: white;
 }
 
+.null {
+    color: #cccccc;
+}
+
+span.null {
+    cursor : pointer;
+}
+
+div.null {
+    padding: 0px 2px;
+}
 
 .variable {
     color: #ffffff;
 }
 
+span.variable {
+    cursor : pointer;
+}
+
 div.variable {
-    padding: 2px 2px;
+    padding: 0px 2px;
 }
 
 .number {
     color: #a0f7a6;
 }
 
+span.number {
+    cursor : pointer;
+}
+
 div.number {
-    padding: 2px 2px;
+    padding: 0px 2px;
 }
 
 
@@ -211,16 +247,24 @@ div.number {
     color: #34dc85;
 }
 
+span.boolean {
+    cursor : pointer;
+}
+
 div.boolean {
-    padding: 2px 2px;
+    padding: 0px 2px;
 }
 
 .string {
     color: #a8d9ff;
 }
 
+span.string {
+    cursor : pointer;
+}
+
 div.string {
-    padding: 2px 2px;
+    padding: 0px 2px;
 }
 
 .object {
@@ -250,4 +294,134 @@ div.object {
 .object div.variable {
     border-color:#726777;
     background-color: #322c35;
+}
+
+div.dialog_box {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    z-index: 2;
+    background-color: #000000;
+    curser: default;
+}
+
+div.add {
+    padding: 0px 2px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+}
+
+div.top_trash {
+    text-align: center;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    z-index: 2;
+
+    border-radius: 0  0 5px 5px;
+    border-width: 0;
+    background-color: #c44444;
+    curser: default;
+}
+
+.dndDragging {
+    opacity: 0.7;
+}
+
+/**
+ * The dndDraggingSource class will be applied to the source element of a drag
+ * operation. It makes sense to hide it to give the user the feeling that he's
+ * actually moving it. Note that the source element has also .dndDragging class.
+ */
+.dndDraggingSource {
+    display: none;
+}
+
+/**
+ * An element with .dndPlaceholder class will be added as child of the dnd-list
+ * while the user is dragging over it.
+ */
+.dndPlaceholder {
+    background-color: #ffffff;
+    height: 1.5em;
+    width: 1.5em;
+    position: relative;
+}
+
+.array > ul > .dndPlaceholder {
+    background-color: #e182ff;
+    display: block;
+    width: 100%;
+}
+
+.object > ul > .dndPlaceholder {
+    background-color: #ffa0b3;
+    display: block;
+    width: 100%;
+    min-width: 1.5em;
+}
+
+.property > ul > .dndPlaceholder {
+    background-color: #ffa0b3;
+    display: inline-block;
+    width: 1.5em;
+}
+
+.function > ul > .dndPlaceholder {
+    background-color: #f7bb80;
+    display: block;
+    width: 100%;
+}
+
+.function > .row > ul > .dndPlaceholder {
+    background-color: #f7bb80;
+    display: inline-block;
+    width: 1.5em;
+}
+
+.evaluate > ul > .dndPlaceholder {
+    background-color: #c9ff8c;
+    display: inline-block;
+    width: 1.5em;
+}
+
+.return > ul > .dndPlaceholder {
+    background-color: #f7f071;
+    display: inline-block;
+    width: 1.5em;
+}
+
+.assign > ul > .dndPlaceholder {
+    background-color: #ffffff;
+    display: inline-block;
+    width: 1.5em;
+}
+
+.reference > ul > .dndPlaceholder {
+    background-color: #ffffff;
+    display: inline-block;
+    width: 1.5em;
+}
+
+ul.list_array {
+    padding-left: 0;
+    list-style: none;
+    margin: 0;
+}
+
+div.categories {
+    border-color: #ffffff;
+    background-color: none;
+    color : #ffffff;
+    cursor: pointer;
+}
+
+div.types {
+    border-color: #ffffff;
+    background-color: none;
+    color : #ffffff;
+    cursor: pointer;
 }

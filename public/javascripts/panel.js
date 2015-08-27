@@ -15,9 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-"use strict";
+
 
 define(function (){
+
+    "use strict";
 
     return function(Restangular, io, auth){
         var model = {};
