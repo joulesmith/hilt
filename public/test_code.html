@@ -12,11 +12,37 @@
 <body ng-controller="MainCtrl">
 
 
-    <div class="top_trash" collapse="true">
-        <span class="glyphicon glyphicon-trash" style="font-size: 30px;"></span>
+    <div class="top_trash" style=""
+
+    >
+        <ul
+            ng-init="recycle_bin = []"
+            dnd-list="recycle_bin"
+            dnd-horizontal-list="true"
+            dnd-inserted="recycle_bin.splice(index, 0, item)"
+            class="list_array inline_list" style="display:inline;">
+            <li style="display:inline;">
+                <div
+                    ng-click="recycle_bin = []"
+                ><span class="glyphicon glyphicon-trash" style="font-size: 30px; cursor: pointer;"></span></div>
+            </li>
+            <li
+                ng-repeat="value in recycle_bin"
+                dnd-type="value.type"
+                dnd-draggable="value"
+                dnd-effect-allowed="move"
+                dnd-dragstart ="status.dragging = true;"
+                dnd-canceled="status.dragging = false"
+                dnd-moved="recycle_bin.splice($index, 1); status.dragging = false"
+                style="display:inline;"
+            >
+
+                <div class="{{value.type}}" style="width:40px; height:40px;"></div>
+            </li>
+        </ul>
     </div>
 
-    <div class="row">
+    <div class="row" style="postiion:relative; top: 100px;">
         <div ng-repeat="value in value" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
     </div>
 

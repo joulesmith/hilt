@@ -314,7 +314,6 @@ div.add {
 }
 
 div.top_trash {
-    text-align: center;
     position: fixed;
     top: 0px;
     left: 0px;
@@ -404,6 +403,18 @@ div.top_trash {
     background-color: #ffffff;
     display: inline-block;
     width: 1.5em;
+}
+
+.top_trash > ul > .dndPlaceholder {
+    padding: 4px 4px;
+    border-radius: 5px;
+    border-width: 2px;
+    border-color: #ffffff;
+    border-style: solid;
+    background-color: rgba(0, 0, 0, 0);
+    display: inline-block;
+    width: 40px;
+    height: 40px;
 }
 
 ul.list_array {
