@@ -19,14 +19,12 @@
             ng-init="recycle_bin = []"
             dnd-list="recycle_bin"
             dnd-horizontal-list="true"
-            dnd-inserted="recycle_bin.splice(index, 0, item)"
             class="list_array inline_list" style="display:inline;">
-            <li style="display:inline;">
-                <div
-                    ng-click="recycle_bin = []"
-                ><span class="glyphicon glyphicon-trash" style="font-size: 30px; cursor: pointer;"></span></div>
+            <li style="display:inline;" ng-click="view_bin=!view_bin">
+                <span class="glyphicon glyphicon-trash" style="width:100%; text-align:center; font-size: 30px; cursor: pointer;"></span>
             </li>
             <li
+                ng-show="view_bin"
                 ng-repeat="value in recycle_bin"
                 dnd-type="value.type"
                 dnd-draggable="value"
@@ -34,7 +32,8 @@
                 dnd-dragstart ="status.dragging = true;"
                 dnd-canceled="status.dragging = false"
                 dnd-moved="recycle_bin.splice($index, 1); status.dragging = false"
-                style="display:inline;"
+                ng-click="recycle_bin.splice($index,1)"
+                style="display:inline; cursor: pointer;"
             >
 
                 <div class="{{value.type}}" style="width:40px; height:40px;"></div>
@@ -84,19 +83,79 @@
     </script>
 
     <script type="text/ng-template" id="/variable.html">
-        <span class="variable">{{value.name}}</span>
+        <span
+            ng-show="!value.edit || test.invalid || test.reserved || test.override_conflict || test.scopelost_conflict"
+            class="variable"
+            ng-click="value.edit=!value.edit"
+        >{{value.name}}</span>
+        <form ng-show="value.edit || value.name===''">
+            <input ng-init="value.name_tmp=value.name" ng-model="value.name_tmp"</input>
+            <span
+                ng-show="value.edit || !test || test.invalid || test.reserved"
+                ng-click="test = test_variable_name(value, current_function); value.edit=test.invalid || test.reserved || test.override_conflict || test.scopelost_conflict;"
+                class="glyphicon glyphicon-ok"
+
+                style="cursor: pointer; color: #ffffff;"></span>
+            <span ng-show="test.invalid" style="cursor: pointer; color: #ff0000;">invalid</span>
+            <span ng-show="test.reserved" style="cursor: pointer; color: #ff0000;">reserved</span>
+            <span
+                ng-show="test.scopelost_conflict || test.override_conflict"
+                ng-click="test={}; value.edit=false; value.name=value.name_tmp;"
+                style="cursor: pointer; color: #ff0000;"
+            >ignore conflicts</span>
+        </form>
     </script>
 
+
     <script type="text/ng-template" id="/boolean.html">
-        <span class="boolean">{{value.value}}</span>
+
+        <span
+            ng-show="!value.edit"
+            class="boolean"
+            ng-click="value.edit=true"
+        >{{value.value}}</span>
+        <form ng-show="value.edit">
+            <select ng-model="value.value">
+                <option value="true">true</option>
+                <option value="false">false</option>
+            </select>
+            <span
+                ng-click="value.edit=false"
+                class="glyphicon glyphicon-ok"
+                style="cursor: pointer; color: #ffffff;"></span>
+        </form>
     </script>
 
     <script type="text/ng-template" id="/number.html">
-        <span class="number">{{value.value}}</span>
+
+        <span
+            ng-show="!value.edit"
+            class="number"
+            ng-click="value.edit=true"
+        >{{value.value}}</span>
+        <form ng-show="value.edit" ng-init="value.value_tmp=value.value">
+            <input ng-model="value.value_tmp"></input>
+            <span
+                ng-click="test_number(value)"
+                class="glyphicon glyphicon-ok"
+                style="cursor: pointer; color: #ffffff;"></span>
+        </form>
     </script>
 
     <script type="text/ng-template" id="/string.html">
-        <span class="string">{{value.value}}</span>
+        <span
+            ng-show="!value.edit"
+            class="string"
+            ng-click="value.edit=true"
+            style="white-space: pre;"
+        >{{"\'" + value.value + "\'"}}</span>
+        <form ng-show="value.edit">
+            &#39;<input ng-model="value.value" ng-trim="false"></input>&#39;
+            <span
+                ng-click="value.edit=false"
+                class="glyphicon glyphicon-ok"
+                style="cursor: pointer; color: #ffffff;"></span>
+        </form>
     </script>
 
     <script type="text/ng-template" id="/property.html">
@@ -226,7 +285,7 @@
     </script>
 
     <script type="text/ng-template" id="/function.html">
-        <div class="row">
+        <div ng-init="current_function = value;" class="row">
             <span class="symbol">arguments</span>
 
             <ul
@@ -245,7 +304,7 @@
                     dnd-effect-allowed="move"
                     dnd-dragstart ="status.dragging = true;"
                     dnd-canceled="status.dragging = false"
-                    dnd-moved="status.dragging = false"
+                    dnd-moved="status.dragging = false; current_args.splice($index, 1);"
                     style="display:inline;"
                 >
 
@@ -278,7 +337,7 @@
                     dnd-effect-allowed="move"
                     dnd-dragstart ="status.dragging = true;"
                     dnd-canceled="status.dragging = false"
-                    dnd-moved="status.dragging = false"
+                    dnd-moved="status.dragging = false; current_vars.splice($index, 1);"
                     style="display:inline;"
                 >
 
@@ -298,7 +357,6 @@
             ng-init="current_list = value.sequence"
             dnd-list="value.sequence"
             dnd-allowed-types="['assign', 'evaluate', 'return']"
-            dnd-inserted="value.properties.splice(index, 0, item)"
             class="list_array">
             <li
                 ng-repeat="value in value.sequence"
@@ -567,6 +625,50 @@
             </li>
         </ul>
     </script>
+
+
+    <script type="text/ng-template" id="/if.html">
+        <div>
+            if
+        </div>
+        <div>
+            <div class="row">
+
+            </div>
+            <ul>
+                <li ng-repeat="cond in value.conditions">
+                    <ul
+                        ng-init="current_list = value.conditions"
+                        dnd-list="value.conditions"
+                        dnd-allowed-types="['assign', 'evaluate', 'return']"
+                        class="list_array">
+                        <li
+                            ng-repeat="value in value.then"
+                            dnd-type="value.type"
+                            dnd-draggable="value"
+                            dnd-effect-allowed="move"
+                            dnd-dragstart ="status.dragging = true;"
+                            dnd-canceled="status.dragging = false"
+                            dnd-moved="current_list.splice($index, 1); status.dragging = false"
+                        >
+                            <div ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+                        </li>
+                        <li>
+                            <div
+                                ng-show="!status.choose"
+                                class="add"
+                                style="width: 100%; text-align: center;"
+                                ng-init="allowed = {control : true}; status={list: value.sequence}"
+                                ng-click="status.choose='control'"
+                            >+</div>
+                            <div ng-show="!!status.choose" ng-include="'/types.html'" class="types" ></div>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </script>
+
 
 </body>
 </html>
