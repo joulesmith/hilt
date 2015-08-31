@@ -48,30 +48,112 @@
 
 
     <script type="text/ng-template" id="/types.html">
-        <ul class="list_array ">
+    <!--
+        <ul class="list_array" ng-if="status.allowed_types.length > 1">
             <li ng-click="status.choose=false">nevermind</li>
             <li
-                ng-repeat="type in categories[status.choose]"
-                ng-click="types[type](status.list); status.choose = false; status.choose_category=false;"
+                ng-repeat="type in Object.keys(types)"
+                ng-click="status.allowed_types.indexOf(type) != -1 ? types[type](status.list); status.choose = false;"
             >
-                + {{type}}
+                {{type}}
+            </li>
+        </ul>
+        <div ng-if="status.allowed_types.length === 1" ng-init="types[status.allowed_types[0]](status.list); status.choose = false;"></div>
+        -->
+    </script>
+
+
+    <script type="text/ng-template" id="/one_list.html">
+        <ul
+            ng-init="status={list: list, allowed_types: allowed_types}"
+            dnd-list="status.list"
+            dnd-horizontal-list="true"
+            dnd-disable-if="status.list.length === 1"
+            dnd-allowed-types="status.allowed_types"
+            dnd-inserted="status.list.splice(index, 0, item)"
+            class="list_array inline_list" style="display:inline;">
+            <li style="display:inline;">
+                <div
+                    ng-show="status.list.length === 0 && !status.choose"
+                    class="add"
+                    style="width: 5em; text-align: center;"
+                    ng-click="status.choose=true"
+                >+</div>
+                <div ng-if="status.choose" ng-include="'/types.html'" class="types" ></div>
+            </li>
+            <li
+                ng-repeat="value in status.list"
+                dnd-type="value.type"
+                dnd-draggable="value"
+                dnd-effect-allowed="move"
+                dnd-moved="status.list.splice($index, 1);"
+                style="display:inline;"
+            >
+
+                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
             </li>
         </ul>
     </script>
 
-    <script type="text/ng-template" id="/categories.html">
-        <ul ng-show="!status.choose" class="list_array">
-            <li ng-click="status.choose_category=false">nevermind</li>
+    <script type="text/ng-template" id="/horizontal_list.html">
+        <ul
+            ng-init="status={list: list, allowed_types: allowed_types}"
+            dnd-list="status.list"
+            dnd-horizontal-list="true"
+            dnd-allowed-types="status.allowed_types"
+            dnd-inserted="status.list.splice(index, 0, item)"
+            class="list_array inline_list" style="display:inline;"
+        >
+
             <li
-                ng-repeat="cat in cat_array"
-                ng-if="allowed[cat]"
-                ng-click="status.choose=cat;"
+                ng-repeat="value in status.list"
+                dnd-type="value.type"
+                dnd-draggable="value"
+                dnd-effect-allowed="move"
+                dnd-moved="status.list.splice($index, 1);"
+                style="display:inline;"
             >
-                + {{cat}}
+
+                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
+            </li>
+
+            <li style="display:inline;">
+                <div
+                    ng-show="!status.choose"
+                    class="add"
+                    style="width: 5em; text-align: center;"
+                    ng-click="status.choose=true;"
+                >+</div>
+                <div ng-if="status.choose" ng-include="'/types.html'" class="types" ></div>
             </li>
         </ul>
+    </script>
 
-        <div ng-show="!!status.choose" ng-include="'/types.html'"  ></div>
+    <script type="text/ng-template" id="/vertical_list.html">
+        <ul
+            ng-init="status={list: list, allowed_types: allowed_types}"
+            dnd-list="status.list"
+            dnd-allowed-types="status.allowed_types"
+            class="list_array">
+            <li
+                ng-repeat="value in status.list"
+                dnd-type="value.type"
+                dnd-draggable="value"
+                dnd-effect-allowed="move"
+                dnd-moved="status.list.splice($index, 1);"
+            >
+                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+            </li>
+            <li>
+                <div
+                    ng-show="!status.choose"
+                    class="add"
+                    style="width: 100%; text-align: center;"
+                    ng-click="status.choose=true;"
+                >+</div>
+                <div ng-show="status.choose" ng-include="'/types.html'" class="types" ></div>
+            </li>
+        </ul>
     </script>
 
     <script type="text/ng-template" id="/javascript.html">
@@ -159,516 +241,119 @@
     </script>
 
     <script type="text/ng-template" id="/property.html">
-    <ul
-        ng-init="current_name = value.name"
-        dnd-list="value.name"
-        dnd-horizontal-list="true"
-        dnd-disable-if="value.name.length === 1"
-        dnd-allowed-types="['string']"
-        dnd-inserted="value.name.splice(index, 0, item)"
-        class="list_array inline_list" style="display:inline;">
-        <li style="display:inline;">
-            <div
-                ng-show="value.name.length === 0"
-                class="add"
-                style="width: 5em; text-align: center;"
-                ng-init="allowed = {element : true, structure : true}; status={list: value.value}"
-                ng-click="types.string(value.name)"
-            >+</div>
-        </li>
-        <li
-            ng-repeat="value in value.name"
-            dnd-type="value.type"
-            dnd-draggable="value"
-            dnd-effect-allowed="move"
-            dnd-dragstart ="status.dragging = true;"
-            dnd-canceled="status.dragging = false"
-            dnd-moved="current_list.splice($index, 1); status.dragging = false"
-            style="display:inline;"
-        >
 
-            <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-        </li>
-    </ul>
+        <div
+            onload="list = value.name; allowed_types = ['string'];"
+            ng-include="'/one_list.html'"
+        ></div>
         <span class="symbol" >:</span>
-        <ul
-            ng-init="current_list = value.value"
-            dnd-list="value.value"
-            dnd-horizontal-list="true"
-            dnd-disable-if="value.value.length === 1"
-            dnd-allowed-types="['boolean','number','string','object','array','function','evaluate','variable','reference']"
-            dnd-inserted="value.value.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;">
-            <li style="display:inline;">
-                <div
-                    ng-show="value.value.length === 0 && !status.choose_category"
-                    class="add"
-                    style="width: 5em; text-align: center;"
-                    ng-init="allowed = {element : true, structure : true}; status={list: value.value}"
-                    ng-click="status.choose_category=true"
-                >+</div>
-                <div ng-show="status.choose_category" ng-include="'/categories.html'" class="categories" ></div>
-            </li>
-            <li
-                ng-repeat="value in value.value"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_list.splice($index, 1); status.dragging = false"
-                style="display:inline;"
-            >
-
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-            </li>
-        </ul>
+        <div
+            onload="list = value.value; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable','reference'];"
+            ng-include="'/one_list.html'"
+        ></div>
     </script>
 
     <script type="text/ng-template" id="/object.html">
-        <ul
-            ng-init="current_list = value.properties"
-            dnd-list="value.properties"
-            dnd-allowed-types="['property']"
-            dnd-inserted="value.properties.splice(index, 0, item)"
-            class="list_array">
-            <li
-                ng-repeat="value in value.properties"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_list.splice($index, 1); status.dragging = false"
-            >
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
-            </li>
-            <li>
-            <div
-                class="add"
-                style="width: 100%; text-align: center;"
-                ng-click="types.property(value.properties)"
-            >+</div>
+        <div
+            onload="list = value.properties; allowed_types = ['property'];"
+            ng-include="'/vertical_list.html'"
+        ></div>
 
-        </ul>
     </script>
 
     <script type="text/ng-template" id="/array.html">
-        <ul
-            ng-init="current_list = value.arr"
-            dnd-list="value.arr"
-            dnd-allowed-types="['boolean','number','string','object','array','function','evaluate','variable', 'reference']"
-            dnd-inserted="value.arr.splice(index, 0, item)"
-            class="list_array">
-            <li
-                ng-repeat="value in value.arr"
-                dnd-draggable="value"
-                dnd-type="value.type"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_list.splice($index, 1); status.dragging = false"
-            >
-                <span class="symbol">{{$index}}</span> <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-            </li>
-            <li>
-                <div
-                    ng-show="!status.choose_category"
-                    class="add"
-                    style="width: 100%; text-align: center;"
-                    ng-init="allowed = {element : true, structure : true}; status={list: value.arr}"
-                    ng-click="status.choose_category=true"
-                >+</div>
-                <div ng-show="status.choose_category" ng-include="'/categories.html'" class="categories" ></div>
-            </li>
-        </ul>
+        <div
+            onload="list = value.arr; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable', 'reference'];"
+            ng-include="'/vertical_list.html'"
+        ></div>
     </script>
 
     <script type="text/ng-template" id="/function.html">
         <div ng-init="current_function = value;" class="row">
             <span class="symbol">arguments</span>
-
-            <ul
-                ng-init="current_args = value.args"
-                dnd-list="value.args"
-                dnd-horizontal-list="true"
-                dnd-allowed-types="['variable']"
-                dnd-inserted="value.args.splice(index, 0, item)"
-                class="list_array inline_list" style="display:inline;"
-            >
-
-                <li
-                    ng-repeat="value in value.args"
-                    dnd-type="value.type"
-                    dnd-draggable="value"
-                    dnd-effect-allowed="move"
-                    dnd-dragstart ="status.dragging = true;"
-                    dnd-canceled="status.dragging = false"
-                    dnd-moved="status.dragging = false; current_args.splice($index, 1);"
-                    style="display:inline;"
-                >
-
-                    <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-                </li>
-                <li style="display:inline;">
-                    <div
-                        class="add"
-                        style="width: 5em; text-align: center;"
-                        ng-click="types['variable'](value.args)"
-                    >+</div>
-                </li>
-            </ul>
+            <div
+                ng-init="list = value.args; allowed_types = ['variable'];"
+                ng-include="'/horizontal_list.html'"
+            ></div>
         </div>
         <div class="row">
             <span class="symbol" >variables</span>
-            <ul
-                ng-init="current_vars = value.vars"
-                dnd-list="value.vars"
-                dnd-horizontal-list="true"
-                dnd-allowed-types="['variable']"
-                dnd-inserted="value.vars.splice(index, 0, item)"
-                class="list_array inline_list" style="display:inline;"
-            >
-
-                <li
-                    ng-repeat="value in value.vars"
-                    dnd-type="value.type"
-                    dnd-draggable="value"
-                    dnd-effect-allowed="move"
-                    dnd-dragstart ="status.dragging = true;"
-                    dnd-canceled="status.dragging = false"
-                    dnd-moved="status.dragging = false; current_vars.splice($index, 1);"
-                    style="display:inline;"
-                >
-
-                    <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-                </li>
-                <li style="display:inline;">
-                    <div
-                        class="add"
-                        style="width: 5em; text-align: center;"
-                        ng-click="types['variable'](value.vars)"
-                    >+</div>
-                </li>
-            </ul>
+            <div
+                ng-init="list = value.vars; allowed_types = ['variable'];"
+                ng-include="'/horizontal_list.html'"
+            ></div>
         </div>
 
-        <ul
-            ng-init="current_list = value.sequence"
-            dnd-list="value.sequence"
-            dnd-allowed-types="['assign', 'evaluate', 'return']"
-            class="list_array">
-            <li
-                ng-repeat="value in value.sequence"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_list.splice($index, 1); status.dragging = false"
-            >
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
-            </li>
-            <li>
-                <div
-                    ng-show="!status.choose"
-                    class="add"
-                    style="width: 100%; text-align: center;"
-                    ng-init="allowed = {control : true}; status={list: value.sequence}"
-                    ng-click="status.choose='control'"
-                >+</div>
-                <div ng-show="!!status.choose" ng-include="'/types.html'" class="types" ></div>
-            </li>
-        </ul>
+        <div
+            ng-init="list = value.sequence; allowed_types = ['assign', 'evaluate', 'return'];"
+            ng-include="'/vertical_list.html'"
+        ></div>
     </script>
 
     <script type="text/ng-template" id="/assign.html">
-        <ul
-            ng-init="current_variable = value.variable"
-            dnd-list="value.variable"
-            dnd-horizontal-list="true"
-            dnd-disable-if="value.variable.length === 1"
-            dnd-allowed-types="['variable','reference']"
-            dnd-inserted="value.variable.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;">
-
-            <li style="display:inline;">
-                <div
-                    ng-show="value.variable.length === 0 && (!status.choose || status.menu!=0)"
-                    class="add"
-                    style="width: 5em; text-align: center;"
-                    ng-click="status.choose='assignable'; status.menu=0; status.list = value.variable"
-                >+</div>
-                <div ng-show="!!status.choose && status.menu==0" ng-include="'/types.html'" class="types" ></div>
-            </li>
-            <li
-                ng-repeat="value in value.variable"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_variable.splice($index, 1); status.dragging = false"
-                style="display:inline;"
-            >
-
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-            </li>
-        </ul>
+        <div
+            ng-init="list = value.variable; allowed_types = ['variable','reference'];"
+            ng-include="'/one_list.html'"
+        ></div>
         <span class="symbol">&larr;</span>
-        <ul
-            ng-init="current_list = value.value"
-            dnd-list="value.value"
-            dnd-horizontal-list="true"
-            dnd-disable-if="value.value.length === 1"
-            dnd-allowed-types="['boolean','number','string','object','array','function','evaluate','variable','reference']"
-            dnd-inserted="value.value.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;"
-        >
-            <li style="display:inline;">
-                <div
-                    ng-show="value.value.length === 0 && (!status.choose_category || status.menu!=1)"
-                    class="add"
-                    style="width: 5em; text-align: center;"
-                    ng-init="allowed = {element : true, structure : true}; status={}"
-                    ng-click="status.choose_category=true; status.menu=1; status.list = value.value"
-                >+</div>
-                <div ng-show="status.choose_category && status.menu==1" ng-include="'/categories.html'" class="categories" ></div>
-            </li>
-            <li
-                ng-repeat="value in value.value"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_list.splice($index, 1); status.dragging = false"
-                style="display:inline;"
-            >
-
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-            </li>
-        </ul>
+        <div
+            ng-init="list = value.value; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable','reference'];"
+            ng-include="'/one_list.html'"
+        ></div>
     </script>
 
     <script type="text/ng-template" id="/evaluate.html">
-        <ul
-            ng-init="current_list = value.variable"
-            dnd-list="value.variable"
-            dnd-horizontal-list="true"
-            dnd-disable-if="value.variable.length === 1"
-            dnd-allowed-types="['boolean','number','string','object','array','function','evaluate','variable','reference']"
-            dnd-inserted="value.variable.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;">
-            <li style="display:inline;">
-                <div
-                    ng-show="value.variable.length === 0 && (!status.choose || status.menu!=0)"
-                    class="add"
-                    style="width: 5em; text-align: center;"
-                    ng-click="status.choose='functionable'; status.menu=0; status.list = value.variable"
-                >+</div>
-                <div ng-show="!!status.choose && status.menu==0" ng-include="'/types.html'" class="types" ></div>
-            </li>
-            <li
-                ng-repeat="value in value.variable"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_list.splice($index, 1); status.dragging = false"
-                style="display:inline;"
-            >
-
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-            </li>
-        </ul>
+        <div
+            ng-init="list = value.variable; allowed_types = ['function','variable','reference', 'assign', 'evaluate'];"
+            ng-include="'/one_list.html'"
+        ></div>
         <span class="symbol">(&larr;)</span>
-        <ul
-            ng-init="current_args = value.args"
-            dnd-list="value.args"
-            dnd-horizontal-list="true"
-            dnd-allowed-types="['boolean','number','string','object','array','function','evaluate','variable','reference']"
-            dnd-inserted="value.args.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;"
-        >
-
-            <li
-                ng-repeat="value in value.args"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_args.splice($index, 1); status.dragging = false"
-                style="display:inline;"
-            >
-
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-            </li>
-
-            <li style="display:inline;">
-                <div
-                    ng-show="!status.choose_category || status.menu!=1"
-                    class="add"
-                    style="width: 5em; text-align: center;"
-                    ng-init="allowed = {element : true, structure : true}; status={}"
-                    ng-click="status.choose_category=true; status.menu=1; status.list = value.args"
-                >+</div>
-                <div ng-show="status.choose_category && status.menu==1" ng-include="'/categories.html'" class="categories" ></div>
-            </li>
-        </ul>
+        <div
+            ng-init="list = value.args; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable','reference'];"
+            ng-include="'/horizontal_list.html'"
+        ></div>
     </script>
 
     <script type="text/ng-template" id="/return.html">
         <span class="symbol">return &larr;</span>
-        <ul
-            ng-init="current_list = value.variable"
-            dnd-list="value.variable"
-            dnd-horizontal-list="true"
-            dnd-disable-if="value.variable.length === 1"
-            dnd-allowed-types="['boolean','number','string','object','array','function','evaluate','variable','reference']"
-            dnd-inserted="value.variable.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;">
-            <li style="display:inline;"><div ng-show="" class="add" style="width: 5em; text-align: center;">+</div></li>
-            <li style="display:inline;">
-                <div
-                    ng-show="value.variable.length === 0 && !status.choose_category"
-                    class="add"
-                    style="width: 5em; text-align: center;"
-                    ng-init="allowed = {element : true, structure : true}; status={}"
-                    ng-click="status.choose_category=true; status.list = value.variable"
-                >+</div>
-                <div ng-show="status.choose_category" ng-include="'/categories.html'" class="categories" ></div>
-            </li>
-            <li
-                ng-repeat="value in value.variable"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_list.splice($index, 1); status.dragging = false"
-                style="display:inline;"
-            >
-
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-            </li>
-        </ul>
+        <div
+            ng-init="list = value.variable; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable','reference'];"
+            ng-include="'/one_list.html'"
+        ></div>
     </script>
 
     <script type="text/ng-template" id="/reference.html">
-        <ul
-            ng-init="current_list = value.object"
-            dnd-list="value.object"
-            dnd-horizontal-list="true"
-            dnd-disable-if="value.object.length === 1"
-            dnd-allowed-types="['object','array','function','evaluate','variable','reference']"
-            dnd-inserted="value.object.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;">
-
-            <li style="display:inline;">
-                <div
-                    ng-show="value.object.length === 0 && (!status.choose || status.menu!=0)"
-                    class="add"
-                    style="width: 5em; text-align: center;"
-                    ng-click="status.choose='structure'; status.menu=0; status.list = value.object"
-                >+</div>
-                <div ng-show="!!status.choose && status.menu==0" ng-include="'/types.html'" class="types" ></div>
-            </li>
-            <li
-                ng-repeat="value in value.object"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_list.splice($index, 1); status.dragging = false"
-                style="display:inline;"
-            >
-
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-            </li>
-        </ul>
-
+        <div
+            ng-init="list = value.object; allowed_types = ['variable','reference','assign','evaluate'];"
+            ng-include="'/one_list.html'"
+        ></div>
         <span class="symbol">[&larr;]</span>
-        <ul
-            ng-init="current_list = value.prop"
-            dnd-list="value.prop"
-            dnd-horizontal-list="true"
-            dnd-disable-if="value.prop.length === 1"
-            dnd-allowed-types="['evaluate','variable','number','string','reference']"
-            dnd-inserted="value.prop.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;">
-
-            <li style="display:inline;">
-                <div
-                    ng-show="value.prop.length === 0 && (!status.choose || status.menu!=1)"
-                    class="add"
-                    style="width: 5em; text-align: center;"
-                    ng-click="status.choose='keyable'; status.menu=1; status.list = value.prop"
-                >+</div>
-                <div ng-show="!!status.choose && status.menu==1" ng-include="'/types.html'" class="types" ></div>
-            </li>
-            <li
-                ng-repeat="value in value.prop"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-dragstart ="status.dragging = true;"
-                dnd-canceled="status.dragging = false"
-                dnd-moved="current_list.splice($index, 1); status.dragging = false"
-                style="display:inline;"
-            >
-
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
-            </li>
-        </ul>
+        <div
+            ng-init="list = value.prop; allowed_types = ['evaluate','variable','number','string','reference'];"
+            ng-include="'/one_list.html'"
+        ></div>
     </script>
 
+    <script type="text/ng-template" id="/condition.html">
+        <div
+            ng-init="list = value.condition; allowed_types = ['evaluate', 'assign', 'variable', 'reference'];"
+            ng-include="'/one_list.html'"
+        ></div>
+        <div
+            ng-init="list = value.sequence; allowed_types = ['assign', 'evaluate', 'return'];"
+            ng-include="'/vertical_list.html'"
+        ></div>
+    </script>
 
     <script type="text/ng-template" id="/if.html">
-        <div>
+        <span class="symbol" style="display:inline-block">
             if
-        </div>
-        <div>
-            <div class="row">
-
-            </div>
-            <ul>
-                <li ng-repeat="cond in value.conditions">
-                    <ul
-                        ng-init="current_list = value.conditions"
-                        dnd-list="value.conditions"
-                        dnd-allowed-types="['assign', 'evaluate', 'return']"
-                        class="list_array">
-                        <li
-                            ng-repeat="value in value.then"
-                            dnd-type="value.type"
-                            dnd-draggable="value"
-                            dnd-effect-allowed="move"
-                            dnd-dragstart ="status.dragging = true;"
-                            dnd-canceled="status.dragging = false"
-                            dnd-moved="current_list.splice($index, 1); status.dragging = false"
-                        >
-                            <div ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
-                        </li>
-                        <li>
-                            <div
-                                ng-show="!status.choose"
-                                class="add"
-                                style="width: 100%; text-align: center;"
-                                ng-init="allowed = {control : true}; status={list: value.sequence}"
-                                ng-click="status.choose='control'"
-                            >+</div>
-                            <div ng-show="!!status.choose" ng-include="'/types.html'" class="types" ></div>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
+        </span>
+        <div
+            ng-init="list = value.conditions; allowed_types = ['condition'];"
+            ng-include="'/horizontal_list.html'"
+        ></div>
     </script>
-
 
 </body>
 </html>
