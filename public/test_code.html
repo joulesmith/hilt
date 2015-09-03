@@ -65,16 +65,15 @@
 
     <script type="text/ng-template" id="/one_list.html">
         <ul
-            ng-init="status={list: list, allowed_types: allowed_types}"
-            dnd-list="status.list"
+            dnd-list="list"
             dnd-horizontal-list="true"
-            dnd-disable-if="status.list.length === 1"
-            dnd-allowed-types="status.allowed_types"
-            dnd-inserted="status.list.splice(index, 0, item)"
+            dnd-disable-if="list.length === 1"
+            dnd-allowed-types="allowed_types"
+            dnd-inserted="list.splice(index, 0, item)"
             class="list_array inline_list" style="display:inline;">
             <li style="display:inline;">
                 <div
-                    ng-show="status.list.length === 0 && !status.choose"
+                    ng-show="list.length === 0 && !status.choose"
                     class="add"
                     style="width: 5em; text-align: center;"
                     ng-click="status.choose=true"
@@ -82,11 +81,11 @@
                 <div ng-if="status.choose" ng-include="'/types.html'" class="types" ></div>
             </li>
             <li
-                ng-repeat="value in status.list"
+                ng-repeat="value in list"
                 dnd-type="value.type"
                 dnd-draggable="value"
                 dnd-effect-allowed="move"
-                dnd-moved="status.list.splice($index, 1);"
+                dnd-moved="list.splice($index, 1);"
                 style="display:inline;"
             >
 
@@ -97,20 +96,19 @@
 
     <script type="text/ng-template" id="/horizontal_list.html">
         <ul
-            ng-init="status={list: list, allowed_types: allowed_types}"
-            dnd-list="status.list"
+            dnd-list="list"
             dnd-horizontal-list="true"
-            dnd-allowed-types="status.allowed_types"
-            dnd-inserted="status.list.splice(index, 0, item)"
+            dnd-allowed-types="allowed_types"
+            dnd-inserted="list.splice(index, 0, item)"
             class="list_array inline_list" style="display:inline;"
         >
 
             <li
-                ng-repeat="value in status.list"
+                ng-repeat="value in list"
                 dnd-type="value.type"
                 dnd-draggable="value"
                 dnd-effect-allowed="move"
-                dnd-moved="status.list.splice($index, 1);"
+                dnd-moved="list.splice($index, 1);"
                 style="display:inline;"
             >
 
@@ -131,16 +129,15 @@
 
     <script type="text/ng-template" id="/vertical_list.html">
         <ul
-            ng-init="status={list: list, allowed_types: allowed_types}"
-            dnd-list="status.list"
-            dnd-allowed-types="status.allowed_types"
+            dnd-list="list"
+            dnd-allowed-types="allowed_types"
             class="list_array">
             <li
-                ng-repeat="value in status.list"
+                ng-repeat="value in list"
                 dnd-type="value.type"
                 dnd-draggable="value"
                 dnd-effect-allowed="move"
-                dnd-moved="status.list.splice($index, 1);"
+                dnd-moved="list.splice($index, 1);"
             >
                 <div ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
             </li>
@@ -243,28 +240,32 @@
     <script type="text/ng-template" id="/property.html">
 
         <div
-            onload="list = value.name; allowed_types = ['string'];"
             ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.name, ['string'])"
         ></div>
         <span class="symbol" >:</span>
         <div
-            onload="list = value.value; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable','reference'];"
             ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.value, ['boolean','number','string','object','array','function','evaluate','variable','reference'])"
         ></div>
     </script>
 
     <script type="text/ng-template" id="/object.html">
         <div
-            onload="list = value.properties; allowed_types = ['property'];"
             ng-include="'/vertical_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.properties, ['property'])"
         ></div>
 
     </script>
 
     <script type="text/ng-template" id="/array.html">
         <div
-            onload="list = value.arr; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable', 'reference'];"
             ng-include="'/vertical_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.arr, ['boolean','number','string','object','array','function','evaluate','variable', 'reference'])"
         ></div>
     </script>
 
@@ -272,87 +273,93 @@
         <div ng-init="current_function = value;" class="row">
             <span class="symbol">arguments</span>
             <div
-                ng-init="list = value.args; allowed_types = ['variable'];"
                 ng-include="'/horizontal_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.args, ['variable'])"
             ></div>
         </div>
         <div class="row">
             <span class="symbol" >variables</span>
             <div
-                ng-init="list = value.vars; allowed_types = ['variable'];"
                 ng-include="'/horizontal_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.vars, ['variable'])"
             ></div>
         </div>
 
         <div
-            ng-init="list = value.sequence; allowed_types = ['assign', 'evaluate', 'return'];"
             ng-include="'/vertical_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.sequence, ['assign', 'evaluate', 'return'])"
         ></div>
     </script>
 
     <script type="text/ng-template" id="/assign.html">
         <div
-            ng-init="list = value.variable; allowed_types = ['variable','reference'];"
             ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.variable, ['variable','reference'])"
         ></div>
         <span class="symbol">&larr;</span>
         <div
-            ng-init="list = value.value; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable','reference'];"
             ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.value, ['boolean','number','string','object','array','function','evaluate','variable','reference'])"
         ></div>
     </script>
 
     <script type="text/ng-template" id="/evaluate.html">
         <div
-            ng-init="list = value.variable; allowed_types = ['function','variable','reference', 'assign', 'evaluate'];"
             ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.variable, ['function','variable','reference', 'assign', 'evaluate'])"
         ></div>
         <span class="symbol">(&larr;)</span>
         <div
-            ng-init="list = value.args; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable','reference'];"
             ng-include="'/horizontal_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.args, ['boolean','number','string','object','array','function','evaluate','variable','reference'])"
         ></div>
     </script>
 
     <script type="text/ng-template" id="/return.html">
         <span class="symbol">return &larr;</span>
         <div
-            ng-init="list = value.variable; allowed_types = ['boolean','number','string','object','array','function','evaluate','variable','reference'];"
             ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.variable, ['boolean','number','string','object','array','function','evaluate','variable','reference'])"
         ></div>
     </script>
 
     <script type="text/ng-template" id="/reference.html">
         <div
-            ng-init="list = value.object; allowed_types = ['variable','reference','assign','evaluate'];"
             ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.object, ['variable','reference','assign','evaluate'])"
         ></div>
         <span class="symbol">[&larr;]</span>
         <div
-            ng-init="list = value.prop; allowed_types = ['evaluate','variable','number','string','reference'];"
             ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.prop, ['evaluate','variable','number','string','reference'])"
         ></div>
     </script>
 
     <script type="text/ng-template" id="/condition.html">
         <div
-            ng-init="list = value.condition; allowed_types = ['evaluate', 'assign', 'variable', 'reference'];"
             ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value.condtion, ['evaluate', 'assign', 'variable', 'reference'])"
         ></div>
         <div
-            ng-init="list = value.sequence; allowed_types = ['assign', 'evaluate', 'return'];"
             ng-include="'/vertical_list.html'"
+            ng-controller="listctrl"
+            onload="['assign', 'evaluate', 'return']"
         ></div>
     </script>
 
     <script type="text/ng-template" id="/if.html">
-        <span class="symbol" style="display:inline-block">
-            if
-        </span>
-        <div
-            ng-init="list = value.conditions; allowed_types = ['condition'];"
-            ng-include="'/horizontal_list.html'"
-        ></div>
+
     </script>
 
 </body>

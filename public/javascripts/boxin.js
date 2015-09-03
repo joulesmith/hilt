@@ -413,5 +413,16 @@ define([
 
     }]);
 
+    app.controller('listctrl', [
+        '$scope',
+        function($scope){
+
+			$scope.init = function(list, allowed_types){
+                $scope.list = list;
+                $scope.allowed_types = allowed_types;
+                $scope.status = {};
+            };
+	}]);
+
     return app;
 });

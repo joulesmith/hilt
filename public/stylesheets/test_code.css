@@ -173,6 +173,7 @@ div.return {
 .evaluate {
     border-color: #c9ff8c;
     background-color: #3f4f44;
+    display:inline;
 }
 
 .evaluate div.number {
