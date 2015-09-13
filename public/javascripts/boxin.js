@@ -82,13 +82,13 @@ define([
     change_var_types['array'] = ['arr'];
     change_var_types['object'] = ['properties'];
     change_var_types['property'] = ['value'];
-    change_var_types['array'] = ['arr'];
-    change_var_types['reference'] = ['object', 'prop'];
+    change_var_types['reference'] = ['object', 'ref'];
     change_var_types['evaluate'] = ['variable', 'args'];
     change_var_types['assign'] = ['variable', 'value'];
     change_var_types['return'] = ['variable'];
 
-    var test_variable_name = function(name_from, name_to, f) {
+    var test_variable_name = function(name_from, name_to, current_scope) {
+
 
         var test = {
             invalid : !validName.test(name_to),
@@ -100,16 +100,16 @@ define([
         if(!test.invalid && !test.reserved && name_from !== name_to){
 
 
-            for(var k = 0; k < f.vars.length; k++) {
-                if (f.vars[k].name === name_to) {
+            for(var k = 0; k < current_scope.f.vars.length; k++) {
+                if (current_scope.f.vars[k].name === name_to) {
                     // if the new name already exists, then it will
                     // not have scope below
                     test.override_conflict = true;
                 }
             }
 
-            for(var k = 0; k < f.args.length; k++) {
-                if (f.args[k].name === name_to) {
+            for(var k = 0; k < current_scope.f.args.length; k++) {
+                if (current_scope.f.args[k].name === name_to) {
                     // if the new name already exists, then it will
                     // not have scope below
                     test.override_conflict = true;
@@ -172,7 +172,7 @@ define([
                 }
             };
 
-            curse(f.sequence, true, true);
+            curse(current_scope.f.sequence, true, true);
 
 
         }
@@ -181,145 +181,675 @@ define([
     };
 
 
-    var app = angular.module('boxin', ['ui.bootstrap', 'dndLists']);
+    var change_variable_name = function(name_from, name_to, current_scope) {
+
+        if(name_from !== name_to){
+
+            var curse = function(cur) {
+
+                for(var i = 0; i < cur.length; i++) {
+                    var type = cur[i].type;
+                    var subs;
+
+                    if (type === 'variable') {
+
+                        if (cur[i].name === name_from) {
+
+                            cur[i].name = name_to;
+                        }
+
+                    }else if (type === 'function') {
+                        var old_scope = true, new_scope = true;
+
+                        var check_vars = function(vars) {
+
+                            for(var k = 0; k < vars.length; k++) {
+                                if (name_from === vars[k].name){
+                                    // if the old name was overriden already, then
+                                    // it has no scope below
+                                    old_scope = false;
+                                }else if (vars[k].name === name_to) {
+                                    // if the new name already exists, then it will
+                                    // not have scope below
+                                    new_scope = false;
+                                }
+                            }
+                        };
+
+                        check_vars(cur[i].args);
+                        check_vars(cur[i].vars);
+
+                        if(new_scope && old_scope) {
+                            curse(cur[i].sequence);
+                        }
+                    }else if (subs = change_var_types[type]) {
+                        for(var j = 0; j < subs.length; j++) {
+                            curse(cur[i][subs[j]]);
+                        }
+                    }
+                }
+            };
+
+            curse(current_scope.f.sequence);
+
+
+        }
+
+    };
+
+
+
+    var categories = {
+        element : ['boolean', 'number', 'string', 'null'],
+        structure : ['array', 'object', 'variable', 'reference','function', 'evaluate'],
+        control : ['assign', 'return', 'if', 'while', 'for', 'for-in', 'javascript'],
+        keyable : ['variable', 'number', 'string', 'reference', 'evaluate'],
+        functionable : ['function', 'variable', 'evaluate', 'reference'],
+        assignable : ['reference', 'variable']
+    }
+
+    var cat_array = ['element', 'structure', 'control'];
+
+    var types = {
+        boolean : function(list) {
+            list.push({
+                type: 'boolean',
+                value : 'false'
+            });
+        },
+        number : function(list) {
+            list.push({
+                type: 'number',
+                value : 0
+            });
+        },
+        string : function(list) {
+            list.push({
+                type: 'string',
+                value : "",
+                edit : true
+            });
+        },
+        null : function(list) {
+            list.push({
+                type: 'null'
+            });
+        },
+        array : function(list) {
+            list.push({
+                type: 'array',
+                arr : []
+            });
+        },
+        object : function(list) {
+            list.push({
+                type: 'object',
+                properties : []
+            });
+        },
+        property : function(list) {
+            list.push({
+                type: 'property',
+                name : [],
+                value : []
+            });
+        },
+        directory : function(list) {
+            list.push({
+                type: 'directory',
+                name : "",
+                nodes : []
+            });
+        },
+        file : function(list) {
+            list.push({
+                type: 'file',
+                name : "",
+                value : []
+            });
+        },
+        variable : function(list) {
+            list.push({
+                type: 'variable',
+                name : ""
+            });
+        },
+        variable_declare : function(list) {
+            list.push({
+                type: 'variable_declare',
+                name : ""
+            });
+        },
+        reference : function(list) {
+            list.push({
+                type: 'reference',
+                object : [],
+                ref : []
+            });
+        },
+        function : function(list) {
+            list.push({
+                type: 'function',
+                args : [],
+                vars : [],
+                sequence: []
+            });
+        },
+        module : function(list) {
+            list.push({
+                type: 'module',
+                dependencies: [],
+                args: [],
+                vars : [],
+                sequence: []
+            });
+        },
+        dependency : function(list) {
+            list.push({
+                type: 'dependency',
+                name : "",
+                path : ""
+            });
+        },
+        evaluate : function(list) {
+            list.push({
+                type: 'evaluate',
+                variable : [],
+                args : []
+            });
+        },
+        assign : function(list) {
+            list.push({
+                type: 'assign',
+                variable : [],
+                value : []
+            });
+        },
+        return : function(list) {
+            list.push({
+                type: 'return',
+                variable : []
+            });
+        },
+        'if' : function(list) {
+            list.push({
+                type: 'if',
+                'conditionals' : []
+            });
+        },
+        'conditional' : function(list) {
+            list.push({
+                type: 'conditional',
+                'condition' : [],
+                'sequence' : []
+            });
+        },
+        'while' : function(list) {
+            list.push({
+                type: 'while',
+                'condition' : [],
+                'sequence' : []
+            });
+        },
+        'for' : function(list) {
+            list.push({
+                type: 'for',
+                'initialize' : [],
+                'condition' : [],
+                'increment' : [],
+                'sequence' : []
+            });
+        },
+        'for-in' : function(list) {
+            list.push({
+                type: 'for-in',
+                'variable' : [],
+                'object' : [],
+                'sequence' : []
+            });
+        },
+        javascript : function(list) {
+            list.push({
+                type: 'javascript',
+                source : "source"
+            });
+        }
+    };
+
+
+    var app = angular.module('boxin', ['ui.bootstrap', 'dndLists'], function($rootScopeProvider){
+        // so apparently Angular doesn't really like recursion. this sets the limit, the default
+        // of 10 is too small for the app to initialize properly
+        $rootScopeProvider.digestTtl(100);
+    });
+
+    app.controller('listctrl', [
+        '$scope',
+        function($scope){
+
+			$scope.init = function(list, allowed_types){
+                $scope.list = list;
+                $scope.allowed_types = allowed_types;
+                $scope.status = {
+                    choose : false
+                };
+            };
+	}]);
+
+    app.controller('directory', [
+        '$scope',
+        function($scope){
+
+            $scope.status = {
+                view : false,
+                edit : $scope.value.name === '',
+                name_tmp : $scope.value.name
+            };
+
+            $scope.change_name = function() {
+                $scope.value.name = $scope.status.name_tmp;
+                $scope.status.edit = false;
+            };
+
+        }
+    ]);
+
+    app.controller('file', [
+        '$scope',
+        function($scope){
+
+            $scope.status = {
+                view : false,
+                edit : $scope.value.name === '',
+                name_tmp : $scope.value.name
+            };
+
+            $scope.change_name = function() {
+                $scope.value.name = $scope.status.name_tmp;
+                $scope.status.edit = false;
+            };
+
+            $scope.class = function() {
+                if ($scope.value.value.length === 1) {
+
+                    var type = $scope.value.value[0].type;
+
+                    if (type === "module") {
+                        return "glyphicon-stop"
+                    }else if (type === "json") {
+                        return "glyphicon-th-list"
+                    }
+
+                }else{
+                    return "glyphicon-pencil";
+                }
+            };
+
+        }
+    ]);
+
+    app.controller('dependency', [
+        '$scope',
+        function($scope){
+
+            $scope.status = {
+                test : {},
+                name_tmp : $scope.value.name,
+                edit : $scope.value.name === '',
+                path_tmp : $scope.value.path,
+                edit_path : $scope.value.path === ''
+            };
+
+            $scope.change_variable = function() {
+
+                var test = test_variable_name($scope.value.name, $scope.status.name_tmp, $scope.current_scope);
+
+
+                if (!test.invalid && !test.reserved && !test.override_conflict && ! test.lostscope_conflict){
+
+                    change_variable_name($scope.value.name, $scope.status.name_tmp, $scope.current_scope);
+
+
+
+                    var args = $scope.current_scope.f.args;
+
+                    for(var index = 0; index < args.length; index++) {
+                        if (args[index].name === $scope.value.name) {
+                            args[index].name = $scope.status.name_tmp;
+                            break;
+                        }
+                    }
+
+                    if (index === args.length) {
+                        types['variable'](args);
+                        args[index].name = $scope.status.name_tmp;
+                    }
+
+                    $scope.value.name = $scope.status.name_tmp;
+
+                    $scope.status.edit = false;
+                }
+
+                $scope.status.test = test;
+            };
+
+            $scope.change_path = function() {
+                $scope.value.path = $scope.status.path_tmp;
+                $scope.status.edit_path = false;
+            };
+	}]);
+
+    app.controller('variable_declare', [
+        '$scope',
+        function($scope){
+
+            $scope.status = {
+                test : {},
+                name_tmp : $scope.value.name,
+                edit : $scope.value.name === ''
+            };
+
+            $scope.change_variable = function() {
+
+                var test = test_variable_name($scope.value.name, $scope.status.name_tmp, $scope.current_scope);
+
+
+                if (!test.invalid && !test.reserved && !test.override_conflict && ! test.lostscope_conflict){
+
+                    change_variable_name($scope.value.name, $scope.status.name_tmp, $scope.current_scope);
+
+                    $scope.value.name = $scope.status.name_tmp;
+
+                    $scope.status.edit = false;
+                }
+
+                $scope.status.test = test;
+            };
+	}]);
+
+    app.controller('variable', [
+        '$scope',
+        function($scope){
+
+            $scope.status = {
+                test : {},
+                name_tmp : $scope.value.name,
+                edit : $scope.value.name === ''
+            };
+
+            $scope.add_variable = function() {
+
+                var test = test_variable_name($scope.value.name, $scope.status.name_tmp, $scope.current_scope);
+
+
+                if (!test.invalid && !test.reserved && !test.override_conflict && ! test.lostscope_conflict){
+
+                    $scope.value.name = $scope.status.name_tmp;
+
+                    // also add it to the variables of the function
+                    $scope.current_scope.f.vars.push({type: 'variable_declare', name: $scope.value.name});
+
+                    $scope.status.edit = false;
+                }
+
+                $scope.status.test = test;
+            };
+	}]);
+
+    app.controller('null', [
+        '$scope',
+        function($scope){
+
+			$scope.init = function(v){
+
+            };
+	}]);
+
+    app.controller('boolean', [
+        '$scope',
+        function($scope){
+
+            $scope.status = {
+                edit : false,
+                boolean_tmp : $scope.value.value
+            };
+
+
+            $scope.change = function(){
+
+                $scope.value.value = $scope.status.boolean_tmp;
+                $scope.status.edit=false;
+            }
+
+	}]);
+
+    app.controller('number', [
+        '$scope',
+        function($scope){
+
+
+            $scope.status = {
+                edit : false,
+                num_tmp : $scope.value.value
+            };
+
+
+            $scope.test_number = function(){
+                if (validNumber.test($scope.status.num_tmp)){
+                    $scope.value.value = new Number($scope.status.num_tmp);
+                    $scope.status.edit=false;
+                }else{
+                    $scope.status.error = "invalid"
+                }
+            }
+	}]);
+
+    app.controller('string', [
+        '$scope',
+        function($scope){
+
+            $scope.status = {
+                edit : $scope.value.value === '',
+                str_tmp : $scope.value.value,
+            };
+
+            $scope.change = function() {
+                $scope.value.value = $scope.status.str_tmp;
+                $scope.status.edit = false;
+            }
+
+	}]);
+
+    app.controller('property', [
+        '$scope',
+        function($scope){
+
+
+	}]);
+
+    app.controller('object', [
+        '$scope',
+        function($scope){
+
+	}]);
+
+    app.controller('array', [
+        '$scope',
+        function($scope){
+
+	}]);
+
+    app.controller('module', [
+        '$scope',
+        function($scope){
+
+            $scope.current_scope = {
+                f : $scope.value,
+                parent_scope : null
+            };
+
+        }
+    ]);
+
+    app.controller('function', [
+        '$scope',
+        function($scope){
+
+            $scope.current_scope = {
+                f : $scope.value,
+                parent_scope : $scope.current_scope
+            };
+
+        }
+    ]);
+
+    app.controller('variable_scope', [
+        '$scope',
+        function($scope){
+
+            $scope.vars_list = [];
+            $scope.total = 0;
+
+
+
+            var current_scope = $scope.current_scope;
+
+            var reserved = {};
+
+            while(current_scope) {
+                var names = current_scope.f.args.concat(current_scope.f.vars);
+                var vars = [];
+
+                for(var i = 0; i < names.length; i++) {
+                    if (reserved[names[i].name]) {
+                        vars.push({access: false, name: names[i].name});
+                    }else{
+                        reserved[names[i].name] = true;
+                        vars.push({access: true, name: names[i].name});
+                    }
+                }
+
+                $scope.total += vars.length;
+                $scope.vars_list.push(vars);
+                current_scope = current_scope.parent_scope;
+            }
+
+
+
+            $scope.is_reserved = function(name) {
+                var x = reserved[name] === true;
+
+                reserved[name] = true;
+
+                return x;
+            };
+
+        }
+    ]);
+
+    app.controller('assign', [
+        '$scope',
+        function($scope){
+
+
+	}]);
+
+    app.controller('evaluate', [
+        '$scope',
+        function($scope){
+
+	}]);
+
+    app.controller('reference', [
+        '$scope',
+        function($scope){
+
+
+	}]);
+
+    app.controller('return', [
+        '$scope',
+        function($scope){
+
+
+	}]);
+
+    app.controller('conditional', [
+        '$scope',
+        function($scope){
+
+
+	}]);
+
+    app.controller('if', [
+        '$scope',
+        function($scope){
+
+
+	}]);
+
+    app.controller('while', [
+        '$scope',
+        function($scope){
+
+
+	}]);
+
+    app.controller('for', [
+        '$scope',
+        function($scope){
+
+
+	}]);
+
+    app.controller('for-in', [
+        '$scope',
+        function($scope){
+
+
+	}]);
+
+    app.controller('types', [
+        '$scope',
+        function($scope){
+
+            if ($scope.allowed_types.length === 1)
+            {
+                types[$scope.allowed_types[0]]($scope.list);
+                $scope.status.choose = false;
+            }
+
+            $scope.add = function(type) {
+                types[type]($scope.list);
+                $scope.status.choose = false;
+            };
+	}]);
+
+
 
     app.controller('MainCtrl', [
         '$scope', '$timeout',
         function($scope, $timeout){
 
+
             $scope.status = {};
 
-            $scope.test_number = function(value) {
-                if (validNumber.test(value.value_tmp)){
-                    value.value = new Number(value.value_tmp);
-                    value.edit=false;
-                }
-            };
+            $scope.value = [];
 
-            $scope.test_variable_name = function(variable, f) {
-                var test = test_variable_name(variable.name, variable.name_tmp, f);
+            types['module']($scope.value);
 
-                if (!test.invalid && !test.reserved && !test.override_conflict && ! test.scopelost_conflict){
-                    variable.name = variable.name_tmp;
-                }
+            $scope.choose_file = {};
 
-                return test;
-            };
-
-            $scope.categories = {
-                element : ['boolean', 'number', 'string', 'null'],
-                structure : ['array', 'object', 'variable', 'reference','function', 'evaluate'],
-                control : ['assign', 'return', 'if', 'while', 'for', 'for-in', 'javascript'],
-                keyable : ['variable', 'number', 'string', 'reference', 'evaluate'],
-                functionable : ['function', 'variable', 'evaluate', 'reference'],
-                assignable : ['reference', 'variable']
-            }
-
-            $scope.cat_array = ['element', 'structure', 'control'];
-
-            $scope.types = {
-                boolean : function(list) {
-                    list.push({
-                        type: 'boolean',
-                        value : 'false'
-                    });
-                },
-                number : function(list) {
-                    list.push({
-                        type: 'number',
-                        value : 0
-                    });
-                },
-                string : function(list) {
-                    list.push({
-                        type: 'string',
-                        value : "",
-                        edit : true
-                    });
-                },
-                null : function(list) {
-                    list.push({
-                        type: 'null'
-                    });
-                },
-                array : function(list) {
-                    list.push({
-                        type: 'array',
-                        arr : []
-                    });
-                },
-                object : function(list) {
-                    list.push({
-                        type: 'object',
-                        properties : []
-                    });
-                },
-                property : function(list) {
-                    list.push({
-                        type: 'property',
-                        name : [],
-                        value : []
-                    });
-                },
-                variable : function(list) {
-                    list.push({
-                        type: 'variable',
-                        name : ""
-                    });
-                },
-                reference : function(list) {
-                    list.push({
-                        type: 'reference',
-                        object : [],
-                        prop : []
-                    });
-                },
-                function : function(list) {
-                    list.push({
-                        type: 'function',
-                        args : [],
-                        vars : [],
-                        sequence: []
-                    });
-                },
-                evaluate : function(list) {
-                    list.push({
-                        type: 'evaluate',
-                        variable : [],
-                        args : []
-                    });
-                },
-                assign : function(list) {
-                    list.push({
-                        type: 'assign',
-                        variable : [],
-                        value : []
-                    });
-                },
-                return : function(list) {
-                    list.push({
-                        type: 'return',
-                        variable : []
-                    });
-                },
-                'if' : function(list) {
-                    list.push({
-                        type: 'if',
-                        'conditions' : [{
-                            condition : [],
-                            sequence : []
-                        }]
-                    });
-                },
-                javascript : function(list) {
-                    list.push({
-                        type: 'javascript',
-                        source : "source"
-                    });
-                }
-            };
+            $scope.directory = [{
+                'type' : 'directory',
+                'name' : 'root',
+                'nodes' : []
+            }];
 
 
+            //$scope.value=[{"type":"module","dependencies":[],"args":[],"vars":[],"sequence":[{"type":"evaluate","variable":[{"type":"variable","name":"define"}],"args":[{"type":"array","arr":[{"type":"string","value":"angular","edit":true}]},{"type":"function","args":[{"type":"variable_declare","name":"angular"}],"vars":[{"type":"variable_declare","name":"app"}],"sequence":[{"type":"assign","variable":[{"type":"variable","name":"app"}],"value":[{"type":"evaluate","variable":[{"type":"reference","object":[{"type":"variable","name":"angular"}],"ref":[{"type":"string","value":"module","edit":true}]}],"args":[{"type":"string","value":"boxin","edit":true}]}]},{"type":"return","variable":[{"type":"variable","name":"app"}]}]}]}]}];
+
+/*
             $scope.value = [{
                 type: 'function',
                 args : [],
@@ -410,19 +940,10 @@ define([
                     }]
                 }]
             }];
-
+*/
     }]);
 
-    app.controller('listctrl', [
-        '$scope',
-        function($scope){
 
-			$scope.init = function(list, allowed_types){
-                $scope.list = list;
-                $scope.allowed_types = allowed_types;
-                $scope.status = {};
-            };
-	}]);
 
     return app;
 });

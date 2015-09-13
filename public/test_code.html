@@ -41,25 +41,69 @@
         </ul>
     </div>
 
-    <div class="row" style="postiion:relative; top: 100px;">
-        <div ng-repeat="value in value" ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+    <div class="block" style="postiion:relative; top: 100px;">
+        <div
+            ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(value, ['module'])"
+            class="inline"
+        ></div>
     </div>
+
+    <div class="block" style="postiion:relative; top: 100px;">
+        <div
+            ng-include="'/one_list.html'"
+            ng-controller="listctrl"
+            onload="init(directory, ['directory'])"
+            class="inline"
+        ></div>
+    </div>
+
+    <div>{{value}}</div>
 
 
 
     <script type="text/ng-template" id="/types.html">
-    <!--
-        <ul class="list_array" ng-if="status.allowed_types.length > 1">
-            <li ng-click="status.choose=false">nevermind</li>
-            <li
-                ng-repeat="type in Object.keys(types)"
-                ng-click="status.allowed_types.indexOf(type) != -1 ? types[type](status.list); status.choose = false;"
-            >
-                {{type}}
-            </li>
-        </ul>
-        <div ng-if="status.allowed_types.length === 1" ng-init="types[status.allowed_types[0]](status.list); status.choose = false;"></div>
-        -->
+
+
+        <div ng-controller="types" class="box types">
+            <div ng-click="status.choose=false" class="nevermind">nevermind</div>
+            <table>
+                <tr>
+                    <td><span ng-show="allowed_types.indexOf('null') >= 0" ng-click="add('null')" style="cursor: pointer;">null</span></td>
+                    <td><span ng-show="allowed_types.indexOf('variable') >= 0" ng-click="add('variable')" style="cursor: pointer;">variable</span></td>
+                    <td><span ng-show="allowed_types.indexOf('object') >= 0" ng-click="add('object')" style="cursor: pointer;">object</span></td>
+                    <td><span ng-show="allowed_types.indexOf('if') >= 0" ng-click="add('if')" style="cursor: pointer;">if</span></td>
+                </tr>
+                <tr>
+                    <td><span ng-show="allowed_types.indexOf('boolean') >= 0" ng-click="add('boolean')" style="cursor: pointer;">boolean</span></td>
+                    <td><span ng-show="allowed_types.indexOf('reference') >= 0" ng-click="add('reference')" style="cursor: pointer;">reference</span></td>
+                    <td><span ng-show="allowed_types.indexOf('array') >= 0" ng-click="add('array')" style="cursor: pointer;">array</span></td>
+                    <td><span ng-show="allowed_types.indexOf('while') >= 0" ng-click="add('while')" style="cursor: pointer;">while</span></td>
+                </tr>
+                <tr>
+                    <td><span ng-show="allowed_types.indexOf('number') >= 0" ng-click="add('number')" style="cursor: pointer;">number</span></td>
+                    <td><span ng-show="allowed_types.indexOf('evaluate') >= 0" ng-click="add('evaluate')" style="cursor: pointer;">evaluate</span></td>
+                    <td><span ng-show="allowed_types.indexOf('function') >= 0" ng-click="add('function')" style="cursor: pointer;">function</span></td>
+                    <td><span ng-show="allowed_types.indexOf('for') >= 0" ng-click="add('for')" style="cursor: pointer;">for</span></td>
+                </tr>
+                <tr>
+                    <td><span ng-show="allowed_types.indexOf('string') >= 0" ng-click="add('string')" style="cursor: pointer;">string</span></td>
+                    <td><span ng-show="allowed_types.indexOf('assign') >= 0" ng-click="add('assign')" style="cursor: pointer;">assign</span></td>
+                    <td><span ng-show="allowed_types.indexOf('return') >= 0" ng-click="add('return')" style="cursor: pointer;">return</span></td>
+                    <td><span ng-show="allowed_types.indexOf('for-in') >= 0" ng-click="add('for-in')" style="cursor: pointer;">for-in</span></td>
+                </tr>
+                <tr>
+
+
+                    <td><span ng-show="allowed_types.indexOf('directory') >= 0" ng-click="add('directory')" style="cursor: pointer;">directory</span></td>
+                    <td><span ng-show="allowed_types.indexOf('file') >= 0" ng-click="add('file')" style="cursor: pointer;">file</span></td>
+                    <td><span ng-show="allowed_types.indexOf('module') >= 0" ng-click="add('module')" style="cursor: pointer;">module</span></td>
+                    <td><span ng-show="allowed_types.indexOf('link') >= 0" ng-click="add('link')" style="cursor: pointer;">link</span></td>
+                </tr>
+            </table>
+        </div>
+
     </script>
 
 
@@ -70,26 +114,31 @@
             dnd-disable-if="list.length === 1"
             dnd-allowed-types="allowed_types"
             dnd-inserted="list.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;">
-            <li style="display:inline;">
+            class="list_array inline"
+        >
+            <li
+                style="display:inline;"
+                ng-if="list.length === 0"
+            >
                 <div
-                    ng-show="list.length === 0 && !status.choose"
-                    class="add"
-                    style="width: 5em; text-align: center;"
+                    ng-show="!status.choose"
+                    class="box add"
+                    style="width: 5em;"
                     ng-click="status.choose=true"
                 >+</div>
-                <div ng-if="status.choose" ng-include="'/types.html'" class="types" ></div>
+                <div ng-if="status.choose" ng-include="'/types.html'" ></div>
             </li>
             <li
+
+
                 ng-repeat="value in list"
                 dnd-type="value.type"
                 dnd-draggable="value"
                 dnd-effect-allowed="move"
                 dnd-moved="list.splice($index, 1);"
-                style="display:inline;"
             >
 
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
+                <div ng-include="'/' + value.type + '.html'" style="display:inline;"></div>
             </li>
         </ul>
     </script>
@@ -100,7 +149,7 @@
             dnd-horizontal-list="true"
             dnd-allowed-types="allowed_types"
             dnd-inserted="list.splice(index, 0, item)"
-            class="list_array inline_list" style="display:inline;"
+            class="list_array"
         >
 
             <li
@@ -109,20 +158,19 @@
                 dnd-draggable="value"
                 dnd-effect-allowed="move"
                 dnd-moved="list.splice($index, 1);"
-                style="display:inline;"
+                class="inline"
             >
-
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}" ></div>
+                <div ng-include="'/' + value.type + '.html'"></div>
             </li>
 
-            <li style="display:inline;">
+            <li style="display:inline-block;">
                 <div
                     ng-show="!status.choose"
-                    class="add"
-                    style="width: 5em; text-align: center;"
+                    class="box add"
+                    style="width: 5em;"
                     ng-click="status.choose=true;"
                 >+</div>
-                <div ng-if="status.choose" ng-include="'/types.html'" class="types" ></div>
+                <div ng-if="status.choose" ng-include="'/types.html'" ></div>
             </li>
         </ul>
     </script>
@@ -131,7 +179,9 @@
         <ul
             dnd-list="list"
             dnd-allowed-types="allowed_types"
-            class="list_array">
+            dnd-inserted="list.splice(index, 0, item)"
+            class="list_array"
+        >
             <li
                 ng-repeat="value in list"
                 dnd-type="value.type"
@@ -139,18 +189,237 @@
                 dnd-effect-allowed="move"
                 dnd-moved="list.splice($index, 1);"
             >
-                <div ng-include="'/' + value.type + '.html'" class="{{value.type}}"></div>
+                <div ng-include="'/' + value.type + '.html'"  ></div>
             </li>
             <li>
                 <div
                     ng-show="!status.choose"
-                    class="add"
-                    style="width: 100%; text-align: center;"
+                    class="box add"
+                    style="width: 100%;"
                     ng-click="status.choose=true;"
                 >+</div>
-                <div ng-show="status.choose" ng-include="'/types.html'" class="types" ></div>
+                <div ng-if="status.choose" ng-include="'/types.html'" ></div>
             </li>
         </ul>
+    </script>
+
+    <script type="text/ng-template" id="/vertical_list_indexes.html">
+        <ul
+            dnd-list="list"
+            dnd-allowed-types="allowed_types"
+            dnd-inserted="list.splice(index, 0, item)"
+            class="list_array"
+        >
+            <li
+                ng-repeat="value in list"
+                dnd-type="value.type"
+                dnd-draggable="value"
+                dnd-effect-allowed="move"
+                dnd-moved="list.splice($index, 1);"
+            >
+                <span class="inline">{{$index}}&nbsp;:&nbsp;</span><div class="inline" ng-include="'/' + value.type + '.html'"  ></div>
+            </li>
+            <li>
+                <div
+                    ng-show="!status.choose"
+                    class="box add"
+                    style="width: 100%;"
+                    ng-click="status.choose=true;"
+                >+</div>
+                <div ng-if="status.choose" ng-include="'/types.html'" ></div>
+            </li>
+        </ul>
+    </script>
+
+    <script type="text/ng-template" id="/directory.html">
+        <div ng-controller="directory" class="box directory">
+            <span ng-show="!status.view" class="glyphicon glyphicon-menu-right" aria-hidden="true"></span>
+            <span ng-show="status.view" class="glyphicon glyphicon-menu-down" aria-hidden="true"></span>
+            <div class="inline">
+                <span
+                    class="symbol"
+                    style="cursor:pointer;"
+                    ng-click="status.view=!status.view;"
+                >{{value.name}}</span>
+                <span class="symbol" style="cursor:pointer;" ng-click="status.edit=!status.edit">*</span>
+                <div ng-if="status.edit">
+                    <form ng-submit="change_name()">
+                        <hr>
+                        <input type="text" ng-model="status.name_tmp"></input>
+                        <button type="submit" class="box add" style="">+</button>
+                        <span ng-show="status.test.invalid" style="cursor: pointer; color: #ff0000;">invalid</span>
+                    </form>
+                </div>
+                <div
+                    ng-if="status.view"
+                    ng-include="'/vertical_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.nodes, ['directory', 'file'])"
+                    class="block"
+                ></div>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/ng-template" id="/file.html">
+        <div ng-controller="file" class="box slot file">
+            <span class="glyphicon" ng-class="class()" aria-hidden="true"></span>
+            <div class="inline" ng-if="choose_file.cb">
+                <span
+                    class="file"
+                    ng-click="choose_file.cb(value.name)"
+                    style="white-space: pre;"
+                >{{value.name}}</span>
+            </div>
+            <div class="inline" ng-if="!choose_file.cb">
+                <span
+                    class="file"
+                    ng-click="status.view=!status.view"
+                    style="white-space: pre;"
+                >{{value.name}}</span>
+                <span class="symbol" style="cursor:pointer;" ng-click="status.edit=!status.edit">*</span>
+                <form ng-if="status.edit" ng-submit="change_name()">
+                    <hr>
+                    <input ng-model="status.name_tmp" ng-trim="false"></input>
+                    <button type="submit" class="btn btn-warning btn-xs">
+                        <span class="glyphicon glyphicon-floppy-disk"></span>
+                    </button>
+                </form>
+                <div
+                    ng-if="status.view"
+                    ng-include="'/one_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.value, ['module'])"
+                    class="block"
+                ></div>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/ng-template" id="/module.html">
+        <div ng-controller="module" class="box module inline">
+            <div class="block">
+                <span class="symbol" >dependencies</span>
+                <div
+                    ng-include="'/vertical_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.dependencies, ['dependency'])"
+                    class="block"
+                ></div>
+            </div>
+            <div class="block">
+                <span class="symbol" >variables</span>
+                <div
+                    ng-include="'/horizontal_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.vars, ['variable_declare'])"
+                    class="inline"
+                ></div>
+            </div>
+
+            <hr>
+
+            <div
+                ng-include="'/vertical_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+                class="block"
+            ></div>
+        </div>
+    </script>
+
+
+
+    <script type="text/ng-template" id="/dependency.html">
+        <div ng-controller="dependency" class="box dependency">
+            <div class="inline">
+                <span
+                    class="dependency"
+                    ng-click="status.edit=!status.edit"
+                >{{value.name}}</span>
+                <div ng-if="status.edit">
+                    <form ng-submit="change_variable()">
+                        <hr>
+                        <input type="text" ng-model="status.name_tmp"></input>
+                        <button type="submit" class="box add" style="">+</button>
+                        <span ng-show="status.test.invalid" style="cursor: pointer; color: #ff0000;">invalid</span>
+                        <span ng-show="status.test.reserved" style="cursor: pointer; color: #ff0000;">reserved</span>
+                        <span
+                            ng-show="status.test.lostscope_conflict || status.test.override_conflict"
+                            ng-click="status.test={}; status.edit=false; value.name=status.name_tmp;"
+                            style="cursor: pointer; color: #ff0000;"
+                        >ignore conflicts</span>
+                    </form>
+                </div>
+            </div>
+            <span class="symbol">&larr;</span>
+
+            <div class="inline">
+                <span
+                    class="string"
+                    ng-click="status.edit_path=!status.edit_path"
+                >&#39;{{value.path}}&#39;</span>
+                <div ng-if="status.edit_path">
+                    <form ng-submit="change_path()">
+                        <hr>
+                        <input type="text" ng-model="status.path_tmp"></input>
+                        <button type="submit" class="box add" style="">+</button>
+                    </form>
+
+                    <div ng-inlcude="'./directory.html'"> </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+
+
+
+    <script type="text/ng-template" id="/variable_declare.html">
+        <div ng-controller="variable_declare" class="box slot variable">
+            <span
+                class="variable"
+                ng-click="status.edit=!status.edit"
+            >{{value.name}}</span>
+            <div ng-if="status.edit">
+                <form ng-submit="change_variable()">
+                    <hr>
+                    <input type="text" ng-model="status.name_tmp"></input>
+                    <button type="submit" class="box add" style="">+</button>
+                    <span ng-show="status.test.invalid" style="cursor: pointer; color: #ff0000;">invalid</span>
+                    <span ng-show="status.test.reserved" style="cursor: pointer; color: #ff0000;">reserved</span>
+                    <span
+                        ng-show="status.test.lostscope_conflict || status.test.override_conflict"
+                        ng-click="status.test={}; status.edit=false; value.name=status.name_tmp;"
+                        style="cursor: pointer; color: #ff0000;"
+                    >ignore conflicts</span>
+                </form>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/ng-template" id="/variable.html">
+        <div ng-controller="variable" class="box slot variable">
+            <span
+                class="variable"
+                ng-click="status.edit=!status.edit"
+            >{{value.name}}</span>
+            <div ng-if="status.edit">
+                <form ng-submit="add_variable()">
+                    <hr>
+                    <input type="text" ng-model="status.name_tmp"></input>
+                    <button type="submit" class="box add" style="">+</button>
+                    <span ng-show="status.test.invalid" style="cursor: pointer; color: #ff0000;">invalid</span>
+                    <span ng-show="status.test.reserved" style="cursor: pointer; color: #ff0000;">reserved</span>
+                    <span
+                        ng-show="status.test.scopelost_conflict || status.test.override_conflict"
+                        ng-click="status.test={}; status.edit=false; value.name=status.name_tmp;"
+                        style="cursor: pointer; color: #ff0000;"
+                    >ignore conflicts</span>
+                </form>
+                <div ng-include="'/variable_scope.html'"></div>
+            </div>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/javascript.html">
@@ -158,208 +427,328 @@
     </script>
 
     <script type="text/ng-template" id="/null.html">
-        <span class="null">null</span>
+        <div class="box slot null">null</div>
     </script>
-
-    <script type="text/ng-template" id="/variable.html">
-        <span
-            ng-show="!value.edit || test.invalid || test.reserved || test.override_conflict || test.scopelost_conflict"
-            class="variable"
-            ng-click="value.edit=!value.edit"
-        >{{value.name}}</span>
-        <form ng-show="value.edit || value.name===''">
-            <input ng-init="value.name_tmp=value.name" ng-model="value.name_tmp"</input>
-            <span
-                ng-show="value.edit || !test || test.invalid || test.reserved"
-                ng-click="test = test_variable_name(value, current_function); value.edit=test.invalid || test.reserved || test.override_conflict || test.scopelost_conflict;"
-                class="glyphicon glyphicon-ok"
-
-                style="cursor: pointer; color: #ffffff;"></span>
-            <span ng-show="test.invalid" style="cursor: pointer; color: #ff0000;">invalid</span>
-            <span ng-show="test.reserved" style="cursor: pointer; color: #ff0000;">reserved</span>
-            <span
-                ng-show="test.scopelost_conflict || test.override_conflict"
-                ng-click="test={}; value.edit=false; value.name=value.name_tmp;"
-                style="cursor: pointer; color: #ff0000;"
-            >ignore conflicts</span>
-        </form>
-    </script>
-
 
     <script type="text/ng-template" id="/boolean.html">
-
-        <span
-            ng-show="!value.edit"
-            class="boolean"
-            ng-click="value.edit=true"
-        >{{value.value}}</span>
-        <form ng-show="value.edit">
-            <select ng-model="value.value">
-                <option value="true">true</option>
-                <option value="false">false</option>
-            </select>
+        <div ng-controller="boolean" class="box slot boolean">
             <span
-                ng-click="value.edit=false"
-                class="glyphicon glyphicon-ok"
-                style="cursor: pointer; color: #ffffff;"></span>
-        </form>
+                class="boolean"
+                ng-click="status.edit=!status.edit"
+            >{{value.value}}</span>
+            <form ng-if="status.edit" ng-submit="change()">
+                <hr>
+                <select ng-model="status.boolean_tmp">
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                </select>
+                <button type="submit" class="btn btn-warning btn-xs">
+                    <span class="glyphicon glyphicon-floppy-disk"></span>
+                </button>
+            </form>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/number.html">
-
-        <span
-            ng-show="!value.edit"
-            class="number"
-            ng-click="value.edit=true"
-        >{{value.value}}</span>
-        <form ng-show="value.edit" ng-init="value.value_tmp=value.value">
-            <input ng-model="value.value_tmp"></input>
+        <div ng-controller="number" class="box slot number">
             <span
-                ng-click="test_number(value)"
-                class="glyphicon glyphicon-ok"
-                style="cursor: pointer; color: #ffffff;"></span>
-        </form>
+                class="number"
+                ng-click="status.edit=!status.edit"
+            >{{value.value}}</span>
+            <form ng-if="status.edit" ng-submit="test_number()">
+                <hr>
+                <input ng-model="status.num_tmp"></input>
+                <button type="submit" class="btn btn-warning btn-xs">
+                    <span class="glyphicon glyphicon-floppy-disk"></span>
+                </button>
+                <span ng-show="status.error" style="cursor: pointer; color: #ff0000;">{{status.error}}</span>
+            </form>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/string.html">
-        <span
-            ng-show="!value.edit"
-            class="string"
-            ng-click="value.edit=true"
-            style="white-space: pre;"
-        >{{"\'" + value.value + "\'"}}</span>
-        <form ng-show="value.edit">
-            &#39;<input ng-model="value.value" ng-trim="false"></input>&#39;
+        <div ng-controller="string" class="box slot string">
             <span
-                ng-click="value.edit=false"
-                class="glyphicon glyphicon-ok"
-                style="cursor: pointer; color: #ffffff;"></span>
-        </form>
+                class="string"
+                ng-click="status.edit=!status.edit"
+                style="white-space: pre;"
+            >&#39;{{value.value}}&#39;</span>
+            <form ng-if="status.edit" ng-submit="change()">
+                <hr>
+                <input ng-model="status.str_tmp" ng-trim="false"></input>
+                <button type="submit" class="btn btn-warning btn-xs">
+                    <span class="glyphicon glyphicon-floppy-disk"></span>
+                </button>
+            </form>
+        </div>
+    </script>
+
+
+    <script type="text/ng-template" id="/variable_scope.html">
+        <div ng-controller="variable_scope" class="">
+
+            <div ng-repeat="vars in vars_list" class="box function inline">
+                <div
+                    ng-repeat="v in vars"
+                    class="box block slot variable"
+                >
+                    <span
+                        ng-if="v.access"
+                        ng-click="status.edit=false; value.name=v.name;"
+                        class="variable"
+                    >{{v.name}}</span>
+                    <span
+                        ng-if="!v.access"
+                        style="opacity: 0.5;"
+                    >{{v.name}}</span>
+                </div>
+            </div>
+
+        </div>
     </script>
 
     <script type="text/ng-template" id="/property.html">
-
-        <div
-            ng-include="'/one_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.name, ['string'])"
-        ></div>
-        <span class="symbol" >:</span>
-        <div
-            ng-include="'/one_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.value, ['boolean','number','string','object','array','function','evaluate','variable','reference'])"
-        ></div>
+        <div ng-controller="property" class="property">
+            <div
+                ng-include="'/one_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.name, ['string'])"
+                class="inline"
+            ></div>
+            <span class="symbol" >:</span>
+            <div
+                ng-include="'/one_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.value, ['null','boolean','number','string','object','array','function','evaluate','variable','reference'])"
+                class="inline"
+            ></div>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/object.html">
-        <div
-            ng-include="'/vertical_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.properties, ['property'])"
-        ></div>
-
+        <div ng-controller="object" class="box object">
+            <div
+                ng-include="'/vertical_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.properties, ['property'])"
+            ></div>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/array.html">
-        <div
-            ng-include="'/vertical_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.arr, ['boolean','number','string','object','array','function','evaluate','variable', 'reference'])"
-        ></div>
+        <div ng-controller="array" class="box array">
+            <div
+                ng-include="'/vertical_list_indexes.html'"
+                ng-controller="listctrl"
+                onload="init(value.arr, ['null','boolean','number','string','object','array','function','evaluate','variable', 'reference'])"
+            ></div>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/function.html">
-        <div ng-init="current_function = value;" class="row">
-            <span class="symbol">arguments</span>
+        <div ng-controller="function" class="box function">
+            <div class="block">
+                <span class="symbol">arguments</span>
+                <div
+                    ng-include="'/horizontal_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.args, ['variable_declare'])"
+                    class="inline"
+                ></div>
+            </div>
+            <div class="block">
+                <span class="symbol" >variables</span>
+                <div
+                    ng-include="'/horizontal_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.vars, ['variable_declare'])"
+                    class="inline"
+                ></div>
+            </div>
+
+            <hr>
+
             <div
-                ng-include="'/horizontal_list.html'"
+                ng-include="'/vertical_list.html'"
                 ng-controller="listctrl"
-                onload="init(value.args, ['variable'])"
-            ></div>
-        </div>
-        <div class="row">
-            <span class="symbol" >variables</span>
-            <div
-                ng-include="'/horizontal_list.html'"
-                ng-controller="listctrl"
-                onload="init(value.vars, ['variable'])"
+                onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+                class="block"
             ></div>
         </div>
 
-        <div
-            ng-include="'/vertical_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.sequence, ['assign', 'evaluate', 'return'])"
-        ></div>
     </script>
 
     <script type="text/ng-template" id="/assign.html">
-        <div
-            ng-include="'/one_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.variable, ['variable','reference'])"
-        ></div>
-        <span class="symbol">&larr;</span>
-        <div
-            ng-include="'/one_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.value, ['boolean','number','string','object','array','function','evaluate','variable','reference'])"
-        ></div>
+        <div ng-controller="assign" class="box assign inline">
+            <div
+                ng-include="'/one_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.variable, ['variable','reference'])"
+                class="inline"
+            ></div>
+            <span class="symbol">&larr;</span>
+            <div
+                ng-include="'/one_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.value, ['null','boolean','number','string','object','array','function','evaluate','variable','reference'])"
+                class="inline"
+            ></div>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/evaluate.html">
-        <div
-            ng-include="'/one_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.variable, ['function','variable','reference', 'assign', 'evaluate'])"
-        ></div>
-        <span class="symbol">(&larr;)</span>
-        <div
-            ng-include="'/horizontal_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.args, ['boolean','number','string','object','array','function','evaluate','variable','reference'])"
-        ></div>
+        <div ng-controller="evaluate" class="box evaluate inline">
+            <div
+                ng-include="'/one_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.variable, ['function','variable','reference', 'assign', 'evaluate'])"
+                class="inline"
+            ></div>
+            <span class="symbol">(</span>
+            <div
+                ng-include="'/horizontal_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.args, ['null','boolean','number','string','object','array','function','evaluate','variable','reference','assign'])"
+                class="inline"
+            ></div>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/return.html">
-        <span class="symbol">return &larr;</span>
-        <div
-            ng-include="'/one_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.variable, ['boolean','number','string','object','array','function','evaluate','variable','reference'])"
-        ></div>
+        <div ng-controller="return" class="box return inline">
+            <span class="symbol">return &larr;</span>
+            <div
+                ng-include="'/one_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.variable, ['null','boolean','number','string','object','array','function','evaluate','variable','reference'])"
+                class="inline"
+            ></div>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/reference.html">
-        <div
-            ng-include="'/one_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.object, ['variable','reference','assign','evaluate'])"
-        ></div>
-        <span class="symbol">[&larr;]</span>
-        <div
-            ng-include="'/one_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.prop, ['evaluate','variable','number','string','reference'])"
-        ></div>
+        <div ng-controller="reference" class="box reference">
+            <div
+                ng-include="'/one_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.object, ['variable','reference','assign','evaluate'])"
+                class="inline"
+            ></div>
+            <span class="symbol">[</span>
+            <div
+                ng-include="'/one_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.ref, ['evaluate','variable','number','string','reference'])"
+                class="inline"
+            ></div>
+        </div>
     </script>
 
-    <script type="text/ng-template" id="/condition.html">
-        <div
-            ng-include="'/one_list.html'"
-            ng-controller="listctrl"
-            onload="init(value.condtion, ['evaluate', 'assign', 'variable', 'reference'])"
-        ></div>
-        <div
-            ng-include="'/vertical_list.html'"
-            ng-controller="listctrl"
-            onload="['assign', 'evaluate', 'return']"
-        ></div>
+    <script type="text/ng-template" id="/conditional.html">
+        <div ng-controller="conditional" class="box conditional">
+            <div
+                ng-include="'/one_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.condition, ['evaluate', 'assign', 'variable', 'reference'])"
+            ></div>
+            <span class="symbol">then</span>
+            <div
+                ng-include="'/vertical_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+            ></div>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/if.html">
+        <div ng-controller="if" class="box if">
+            <span class="symbol">if</span>
+            <div
+                ng-include="'/horizontal_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.conditionals, ['conditional'])"
+                class="inline"
+            ></div>
+        </div>
+    </script>
 
+    <script type="text/ng-template" id="/while.html">
+        <div ng-controller="while" class="box while">
+            <div>
+                <span class="symbol">while</span>
+                <div
+                    ng-include="'/one_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.condition, ['evaluate', 'assign', 'variable', 'reference'])"
+                    class="inline"
+                ></div>
+            </div>
+            <span class="symbol">do</span>
+            <div
+                ng-include="'/vertical_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+            ></div>
+        </div>
+    </script>
+
+    <script type="text/ng-template" id="/for.html">
+        <div ng-controller="for" class="box for">
+            <div>
+                <span class="symbol">for</span>
+                <div
+                    ng-include="'/one_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.initialize, ['assign'])"
+                    class="block"
+                ></div>
+                <div
+                    ng-include="'/one_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.condition, ['evaluate', 'assign', 'variable', 'reference'])"
+                    class="block"
+                ></div>
+                <div
+                    ng-include="'/one_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.increment, ['evaluate', 'assign'])"
+                    class="block"
+                ></div>
+            </div>
+            <span class="symbol">do</span>
+            <div
+                ng-include="'/vertical_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+            ></div>
+        </div>
+    </script>
+
+    <script type="text/ng-template" id="/for-in.html">
+        <div ng-controller="for-in" class="box for-in">
+            <div>
+                <span class="symbol">for</span>
+                <div
+                    ng-include="'/one_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.variable, ['variable'])"
+                    class="inline"
+                ></div>
+                <span class="symbol">in</span>
+                <div
+                    ng-include="'/one_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.object, ['evaluate', 'assign','variable', 'reference', 'object'])"
+                    class="inline"
+                ></div>
+            </div>
+            <span class="symbol">do</span>
+            <div
+                ng-include="'/vertical_list.html'"
+                ng-controller="listctrl"
+                onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+            ></div>
+        </div>
     </script>
 
 </body>
