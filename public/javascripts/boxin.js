@@ -301,12 +301,26 @@ define([
                 nodes : []
             });
         },
-        file : function(list) {
+        module_file : function(list) {
+            var value = [];
+            types['module'](value);
+
             list.push({
-                type: 'file',
+                type: 'module_file',
                 name : "",
-                value : []
+                value : value
             });
+        },
+        open_file : function(list) {
+
+            var ref = {
+                type: 'open_file',
+                file : null
+            };
+
+            list.push(ref);
+
+            return ref;
         },
         variable : function(list) {
             list.push({
@@ -441,7 +455,7 @@ define([
         function($scope){
 
             $scope.status = {
-                view : false,
+                view : $scope.value.name === '',
                 edit : $scope.value.name === '',
                 name_tmp : $scope.value.name
             };
@@ -454,12 +468,12 @@ define([
         }
     ]);
 
-    app.controller('file', [
+    app.controller('module_file', [
         '$scope',
         function($scope){
 
             $scope.status = {
-                view : false,
+                view : $scope.value.name === '',
                 edit : $scope.value.name === '',
                 name_tmp : $scope.value.name
             };
@@ -469,24 +483,15 @@ define([
                 $scope.status.edit = false;
             };
 
-            $scope.class = function() {
-                if ($scope.value.value.length === 1) {
-
-                    var type = $scope.value.value[0].type;
-
-                    if (type === "module") {
-                        return "glyphicon-stop"
-                    }else if (type === "json") {
-                        return "glyphicon-th-list"
-                    }
-
-                }else{
-                    return "glyphicon-pencil";
-                }
-            };
-
         }
     ]);
+
+    app.controller('open_file', [
+        '$scope',
+        function($scope){
+            $scope.status = {};
+
+	}]);
 
     app.controller('dependency', [
         '$scope',
@@ -663,26 +668,26 @@ define([
     app.controller('property', [
         '$scope',
         function($scope){
-
+            $scope.status = {};
 
 	}]);
 
     app.controller('object', [
         '$scope',
         function($scope){
-
+            $scope.status = {};
 	}]);
 
     app.controller('array', [
         '$scope',
         function($scope){
-
+            $scope.status = {};
 	}]);
 
     app.controller('module', [
         '$scope',
         function($scope){
-
+            $scope.status = {};
             $scope.current_scope = {
                 f : $scope.value,
                 parent_scope : null
@@ -694,7 +699,7 @@ define([
     app.controller('function', [
         '$scope',
         function($scope){
-
+            $scope.status = {};
             $scope.current_scope = {
                 f : $scope.value,
                 parent_scope : $scope.current_scope
@@ -750,20 +755,20 @@ define([
     app.controller('assign', [
         '$scope',
         function($scope){
-
+            $scope.status = {};
 
 	}]);
 
     app.controller('evaluate', [
         '$scope',
         function($scope){
-
+            $scope.status = {};
 	}]);
 
     app.controller('reference', [
         '$scope',
         function($scope){
-
+            $scope.status = {};
 
 	}]);
 
@@ -771,34 +776,34 @@ define([
         '$scope',
         function($scope){
 
-
+            $scope.status = {};
 	}]);
 
     app.controller('conditional', [
         '$scope',
         function($scope){
 
-
+            $scope.status = {};
 	}]);
 
     app.controller('if', [
         '$scope',
         function($scope){
 
-
+            $scope.status = {};
 	}]);
 
     app.controller('while', [
         '$scope',
         function($scope){
 
-
+            $scope.status = {};
 	}]);
 
     app.controller('for', [
         '$scope',
         function($scope){
-
+            $scope.status = {};
 
 	}]);
 
@@ -806,22 +811,36 @@ define([
         '$scope',
         function($scope){
 
-
+            $scope.status = {};
 	}]);
 
     app.controller('types', [
         '$scope',
         function($scope){
 
-            if ($scope.allowed_types.length === 1)
+            $scope.view_types = {
+            };
+
+            for(var i = 0 ; i < $scope.allowed_types.length; i++) {
+                $scope.view_types[$scope.allowed_types[i]] = true;
+            }
+
+            if ($scope.allowed_types.length > 1 || ($scope.clipboard.length > 0 && $scope.view_types[$scope.clipboard[$scope.clipboard.length-1].type])) {
+
+            }else if ($scope.allowed_types.length === 1)
             {
                 types[$scope.allowed_types[0]]($scope.list);
                 $scope.status.choose = false;
             }
 
             $scope.add = function(type) {
-                types[type]($scope.list);
-                $scope.status.choose = false;
+                if (typeof type === 'object') {
+                    $scope.list.push(type);
+                    $scope.status.choose = false;
+                }else{
+                    types[type]($scope.list);
+                    $scope.status.choose = false;
+                }
             };
 	}]);
 
@@ -840,11 +859,57 @@ define([
 
             $scope.choose_file = {};
 
-            $scope.directory = [{
+            $scope.clipboard = [];
+
+            $scope.copy = function(value) {
+                $scope.clipboard.push(angular.copy(value));
+            };
+
+            $scope.cut = function(list, index) {
+                $scope.clipboard.push(list[index]);
+                list.splice(index, 1);
+
+            };
+
+            $scope.opened = [];
+
+            $scope.open = function(value) {
+                $scope.opened.push({
+                    type: 'open_file',
+                    value : value
+                });
+            };
+
+            $scope.close = function(of) {
+
+                var index = $scope.opened.indexOf(of);
+                $scope.opened.splice(index, 1);
+            };
+
+            var click_handled = false;
+            var current_status = $scope.status;
+
+            $scope.box_clicked = function(status) {
+                current_status.view_actions = false;
+
+                current_status = status;
+                current_status.view_actions = !current_status.close_view;
+                current_status.close_view = false;
+
+            };
+
+            $scope.final = function () {
+                console.log(click_handled);
+                click_handled = false;
+            };
+
+            var root = {
                 'type' : 'directory',
                 'name' : 'root',
                 'nodes' : []
-            }];
+            };
+
+            $scope.directory = [root];
 
 
             //$scope.value=[{"type":"module","dependencies":[],"args":[],"vars":[],"sequence":[{"type":"evaluate","variable":[{"type":"variable","name":"define"}],"args":[{"type":"array","arr":[{"type":"string","value":"angular","edit":true}]},{"type":"function","args":[{"type":"variable_declare","name":"angular"}],"vars":[{"type":"variable_declare","name":"app"}],"sequence":[{"type":"assign","variable":[{"type":"variable","name":"app"}],"value":[{"type":"evaluate","variable":[{"type":"reference","object":[{"type":"variable","name":"angular"}],"ref":[{"type":"string","value":"module","edit":true}]}],"args":[{"type":"string","value":"boxin","edit":true}]}]},{"type":"return","variable":[{"type":"variable","name":"app"}]}]}]}]}];
