@@ -90,6 +90,7 @@ div.add {
     color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
     text-align: center;
+    min-width: 2em;
 }
 
 button.add {
@@ -163,6 +164,15 @@ div.variable {
     padding: 0px 2px;
 }
 
+span.source {
+    color: #fff1a8;
+    cursor : pointer;
+}
+
+div.source {
+    padding: 0px 2px;
+}
+
 span.null {
     color: #cccccc;
     cursor : pointer;
@@ -222,6 +232,10 @@ div.object {
     border-color:#ffa0b3;
     background-color: #504853;
     min-width: 10em;
+}
+
+span.object {
+    color:#ffa0b3;
 }
 
 .object .slot {
@@ -306,6 +320,10 @@ div.module {
     background-color: #494949;
 }
 
+span.module {
+    color: #f49c7f;
+}
+
 .module .slot {
     border-color: #6b635c;
     background-color: #161513;
@@ -324,6 +342,10 @@ div.dependency {
 div.directory {
     border-color: #fcec99;
     background-color: #59554c;
+}
+
+span.directory {
+    color: #fcec99;
 }
 
 div.file {

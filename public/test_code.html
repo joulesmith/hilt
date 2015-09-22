@@ -12,7 +12,7 @@
 <body ng-controller="MainCtrl">
 
 
-    <div class="block" style="postiion:relative; top: 100px;">
+    <div class="block" style="postiion:relative; top: 100px;" ng-click="click_handled = false;">
         <div
             ng-include="'/one_list.html'"
             ng-controller="listctrl"
@@ -35,39 +35,44 @@
         <div ng-controller="types" class="box types">
             <div ng-click="status.choose=false" class="nevermind">nevermind</div>
 
-            <ul ng-show="view_types['null'] || view_types['boolean'] || view_types['number'] || view_types['string']" class="inline list_array">
+            <ul ng-if="view_types['null'] || view_types['boolean'] || view_types['number'] || view_types['string']" class="inline list_array">
                 <li ng-show="view_types['null']" ng-click="add('null')" style="cursor: pointer;">null</li>
                 <li ng-show="view_types['boolean']" ng-click="add('boolean')" style="cursor: pointer;">boolean</li>
                 <li ng-show="view_types['number']" ng-click="add('number')" style="cursor: pointer;">number</li>
                 <li ng-show="view_types['string']" ng-click="add('string')" style="cursor: pointer;">string</li>
             </ul>
-            <ul ng-show="view_types['variable'] || view_types['reference'] || view_types['evaluate'] || view_types['assign']" class="inline list_array">
+            <ul ng-if="view_types['variable'] || view_types['reference'] || view_types['evaluate'] || view_types['assign']" class="inline list_array">
                 <li ng-show="view_types['variable']" ng-click="add('variable')" style="cursor: pointer;">variable</li>
                 <li ng-show="view_types['reference']" ng-click="add('reference')" style="cursor: pointer;">reference</li>
                 <li ng-show="view_types['evaluate']" ng-click="add('evaluate')" style="cursor: pointer;">evaluate</li>
                 <li ng-show="view_types['assign']" ng-click="add('assign')" style="cursor: pointer;">assign</li>
             </ul>
-            <ul ng-show="view_types['object'] || view_types['array'] || view_types['function'] || view_types['return']" class="inline list_array">
+            <ul ng-if="view_types['object'] || view_types['array'] || view_types['function'] || view_types['return']" class="inline list_array">
                 <li ng-show="view_types['object']" ng-click="add('object')" style="cursor: pointer;">object</li>
                 <li ng-show="view_types['array']" ng-click="add('array')" style="cursor: pointer;">array</li>
                 <li ng-show="view_types['function']" ng-click="add('function')" style="cursor: pointer;">function</li>
                 <li ng-show="view_types['return']" ng-click="add('return')" style="cursor: pointer;">return</li>
             </ul>
-            <ul ng-show="view_types['if'] || view_types['while'] || view_types['for'] || view_types['for-in']" class="inline list_array">
+            <ul ng-if="view_types['if'] || view_types['while'] || view_types['for'] || view_types['for-in']" class="inline list_array">
                 <li ng-show="view_types['if']" ng-click="add('if')" style="cursor: pointer;">if</li>
                 <li ng-show="view_types['while']" ng-click="add('while')" style="cursor: pointer;">while</li>
                 <li ng-show="view_types['for']" ng-click="add('for')" style="cursor: pointer;">for</li>
                 <li ng-show="view_types['for-in']" ng-click="add('for-in')" style="cursor: pointer;">for-in</li>
             </ul>
-            <ul ng-show="view_types['directory'] || view_types['module_file'] || view_types['object_file'] || view_types['display_file']" class="inline list_array">
-                <li ng-show="view_types['directory']" ng-click="add('directory')" style="cursor: pointer;">directory</li>
-                <li ng-show="view_types['object_file']" ng-click="add('object_file')" style="cursor: pointer;">object</li>
-                <li ng-show="view_types['module_file']" ng-click="add('module_file')" style="cursor: pointer;">module</li>
+            <ul ng-if="view_types['directory'] || view_types['module_file'] || view_types['object_file'] || view_types['display_file'] || view_types['dependency_file']" class="inline list_array">
+                <li ng-show="view_types['directory']" ng-click="add('directory')" style="cursor: pointer;"><span class="directory">directory</span></li>
+                <li ng-show="view_types['object_file']" ng-click="add('object_file')" style="cursor: pointer;"><span class="object">object</span></li>
+                <li ng-show="view_types['module_file']" ng-click="add('module_file')" style="cursor: pointer;"><span class="module">module</span></li>
                 <li ng-show="view_types['display_file']" ng-click="add('display_file')" style="cursor: pointer;">display</li>
+                <li ng-show="view_types['dependency_file']" ng-click="add('dependency_file')" style="cursor: pointer;"><span class="dependency">dependency</span></li>
             </ul>
 
-            <ul ng-show="view_types['dependency']" class="inline list_array">
+            <ul ng-if="view_types['dependency']" class="inline list_array">
                 <li ng-click="add('dependency')" style="cursor: pointer;">dependency</li>
+            </ul>
+
+            <ul ng-if="view_types['source']" class="inline list_array">
+                <li ng-click="add('source')" style="cursor: pointer;">source</li>
             </ul>
 
             <div ng-if="clipboard.length > 0 && view_types[clipboard[clipboard.length-1].type]" ng-click="add(clipboard.pop()); " class="inline" style="cursor: pointer;">paste</div>
@@ -77,18 +82,8 @@
 
 
     <script type="text/ng-template" id="/one_list.html">
-        <ul
-            dnd-list="list"
-            dnd-horizontal-list="true"
-            dnd-disable-if="list.length === 1"
-            dnd-allowed-types="allowed_types"
-            dnd-inserted="list.splice(index, 0, item)"
-            class="list_array inline"
-        >
-            <li
-                style="display:inline;"
-                ng-if="list.length === 0"
-            >
+        <ul class="list_array inline">
+            <li ng-if="list.length === 0" style="display:inline;">
                 <div
                     ng-show="!status.choose"
                     class="box add"
@@ -97,42 +92,18 @@
                 >+</div>
                 <div ng-if="status.choose" ng-include="'/types.html'" ></div>
             </li>
-            <li
-
-
-                ng-repeat="value in list"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-moved="list.splice($index, 1);"
-            >
-
+            <li ng-repeat="value in list">
                 <div ng-include="'/' + value.type + '.html'" style="display:inline;"></div>
             </li>
         </ul>
     </script>
 
     <script type="text/ng-template" id="/horizontal_list.html">
-        <ul
-            dnd-list="list"
-            dnd-horizontal-list="true"
-            dnd-allowed-types="allowed_types"
-            dnd-inserted="list.splice(index, 0, item)"
-            class="list_array"
-        >
-
-            <li
-                ng-repeat="value in list"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-moved="list.splice($index, 1);"
-                class="inline"
-            >
+        <ul class="list_array">
+            <li ng-repeat="value in list" class="inline">
                 <div ng-include="'/' + value.type + '.html'"></div>
             </li>
-
-            <li style="display:inline-block;">
+            <li ng-if="allowed_types.length > 0" style="display:inline-block;">
                 <div
                     ng-show="!status.choose"
                     class="box add"
@@ -145,22 +116,11 @@
     </script>
 
     <script type="text/ng-template" id="/vertical_list.html">
-        <ul
-            dnd-list="list"
-            dnd-allowed-types="allowed_types"
-            dnd-inserted="list.splice(index, 0, item)"
-            class="list_array"
-        >
-            <li
-                ng-repeat="value in list"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-moved="list.splice($index, 1);"
-            >
+        <ul class="list_array">
+            <li ng-repeat="value in list">
                 <div ng-include="'/' + value.type + '.html'"  ></div>
             </li>
-            <li>
+            <li ng-if="allowed_types.length > 0">
                 <div
                     ng-show="!status.choose"
                     class="box add"
@@ -173,19 +133,8 @@
     </script>
 
     <script type="text/ng-template" id="/vertical_list_indexes.html">
-        <ul
-            dnd-list="list"
-            dnd-allowed-types="allowed_types"
-            dnd-inserted="list.splice(index, 0, item)"
-            class="list_array"
-        >
-            <li
-                ng-repeat="value in list"
-                dnd-type="value.type"
-                dnd-draggable="value"
-                dnd-effect-allowed="move"
-                dnd-moved="list.splice($index, 1);"
-            >
+        <ul class="list_array">
+            <li ng-repeat="value in list">
                 <span class="inline">{{$index}}&nbsp;:&nbsp;</span><div class="inline" ng-include="'/' + value.type + '.html'"  ></div>
             </li>
             <li>
@@ -202,40 +151,56 @@
 
     <script type="text/ng-template" id="/directory.html">
         <div ng-controller="directory" class="box directory" ng-click="box_clicked(status)">
-
-            <div class="inline">
+            <div ng-if="choose_file">
                 <span
                     class="symbol"
                     style="cursor:pointer;"
                     ng-click="status.view=!status.view;"
                 >{{value.name}}</span>
-                <div ng-if="status.view && status.edit">
-                    <form ng-submit="change_name()">
-                        <hr>
-                        <input type="text" ng-model="status.name_tmp"></input>
-                        <button type="submit" class="box add" style="">+</button>
-                        <span ng-show="status.test.invalid" style="cursor: pointer; color: #ff0000;">invalid</span>
-                    </form>
-                </div>
-
                 <div
                     ng-if="status.view"
                     ng-include="'/vertical_list.html'"
                     ng-controller="listctrl"
-                    onload="init(value.nodes, ['directory', 'object_file', 'module_file', 'display_file'])"
+                    onload="init(value.nodes, [])"
                     class="block"
                 ></div>
             </div>
-            <div ng-if="status.view" class="box add">
-                <ul class="list_array">
-                    <li ng-if="status.view_actions">
-                        <ul class="list_array">
-                            <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
-                            <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
-                            <li><div ng-click="status.edit=!status.edit" class="box add" style="width: 100%;">rename</div></li>
-                        </ul>
-                    </li>
-                </ul>
+
+            <div ng-if="!choose_file">
+                <div class="inline">
+                    <span
+                        class="symbol"
+                        style="cursor:pointer;"
+                        ng-click="status.view=!status.view;"
+                    >{{value.name}}</span>
+                    <div ng-if="status.view && status.edit">
+                        <form ng-submit="change_name()">
+                            <hr>
+                            <input type="text" ng-model="status.name_tmp"></input>
+                            <button type="submit" class="box add" style="">+</button>
+                            <span ng-show="status.test.invalid" style="cursor: pointer; color: #ff0000;">invalid</span>
+                        </form>
+                    </div>
+                    <div ng-if="status.view" class="block">
+                        <div class="inline">&nbsp;</div>
+                        <div
+
+                            ng-include="'/vertical_list.html'"
+                            ng-controller="listctrl"
+                            onload="init(value.nodes, ['directory', 'object_file', 'module_file', 'display_file', 'dependency_file'])"
+                            class="inline"
+                        ></div>
+                    </div>
+                </div>
+                <div ng-if="status.view && status.view_actions">
+
+                    <ul class="list_array">
+                        <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
+                        <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
+                        <li><div ng-click="status.edit=!status.edit" class="box add" style="width: 100%;">rename</div></li>
+                    </ul>
+
+                </div>
             </div>
         </div>
     </script>
@@ -277,29 +242,81 @@
 
     <script type="text/ng-template" id="/module_file.html">
     <div ng-controller="module_file" class="box slot file" ng-click="box_clicked(status)">
-        <span class="glyphicon glyphicon-th" aria-hidden="true"></span>
-        <div class="inline" ng-if="choose_file.cb">
+
+        <div class="inline" ng-if="choose_file">
             <span
                 class="file"
-                ng-click="choose_file.cb(value.name)"
+                ng-click="choose_file(get_path(), value.name)"
                 style="white-space: pre;"
-            >{{value.name}}</span>
+            ><span class="module" style="cursor:pointer;">module: </span> {{value.name}}</span>
         </div>
-        <div class="inline" ng-if="!choose_file.cb">
+        <div class="inline" ng-if="!choose_file">
             <span
                 class="file"
                 ng-click="status.view=!status.view"
                 style="white-space: pre;"
-            >{{value.name}}</span>
+            ><span class="module" style="cursor:pointer;">module: </span> {{value.name}}</span>
             <form ng-if="status.view_actions && status.edit" ng-submit="change_name()">
                 <hr>
                 <input ng-model="status.name_tmp" ng-trim="false"></input>
                 <button type="submit" class="btn btn-warning btn-xs">
                     <span class="glyphicon glyphicon-floppy-disk"></span>
                 </button>
+
             </form>
             <ul ng-if="status.view_actions" class="list_array">
-                <li><div class="box add" style="width: 100%;" ng-click="open(value.value)">open</div></li>
+                <li><div class="box add" style="width: 100%;" ng-click="open(value.value, get_path())">open</div></li>
+                <li><div ng-click="status.edit=!status.edit" class="box add" style="width: 100%;">rename</div></li>
+                <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
+                <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
+            </ul>
+        </div>
+    </div>
+    </script>
+
+    <script type="text/ng-template" id="/dependency_file.html">
+    <div ng-controller="dependency_file" class="box slot file" ng-click="box_clicked(status)">
+
+        <div class="inline" ng-if="choose_file">
+            <span
+                class="file"
+                ng-click="choose_file(get_path(), value.name)"
+                style="white-space: pre;"
+                class="inline"
+            ><span class="dependency" style="cursor:pointer;">dependency: </span> {{value.name}}</span>
+        </div>
+        <div class="inline" ng-if="!choose_file">
+            <div class="block">
+                <span
+                    class="file"
+                    ng-click="status.view=!status.view"
+                    style="white-space: pre;"
+                ><span class="dependency" style="cursor:pointer;">dependency: </span>{{value.name}}</span>
+                <form ng-if="status.view_actions && status.edit" ng-submit="change_name()">
+                    <hr>
+                    <input ng-model="status.name_tmp" ng-trim="false"></input>
+                    <button type="submit" class="btn btn-warning btn-xs">
+                        <span class="glyphicon glyphicon-floppy-disk"></span>
+                    </button>
+
+                </form>
+            </div>
+            <div ng-if="status.view" class="block">
+                <span
+                    class="file"
+                    ng-click="status.edit_version=!status.edit_version"
+                    style="white-space: pre;"
+                >version : {{value.version}}</span>
+                <form ng-if="status.view_actions && status.edit_version" ng-submit="change_version()">
+                    <hr>
+                    <input ng-model="status.version_tmp" ng-trim="false"></input>
+                    <button type="submit" class="btn btn-warning btn-xs">
+                        <span class="glyphicon glyphicon-floppy-disk"></span>
+                    </button>
+
+                </form>
+            </div>
+            <ul ng-if="status.view_actions" class="list_array">
                 <li><div ng-click="status.edit=!status.edit" class="box add" style="width: 100%;">rename</div></li>
                 <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
                 <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
@@ -310,7 +327,7 @@
 
     <script type="text/ng-template" id="/open_file.html">
         <div ng-controller="open_file" class="box slot file">
-            <div ng-click="close(value)" style="cursor:pointer;">close</div>
+            <div ng-click="close(value)" style="cursor:pointer;">close {{value.path}}</div>
             <div
                 ng-include="'/one_list.html'"
                 ng-controller="listctrl"
@@ -358,7 +375,7 @@
         <div ng-controller="dependency" class="box dependency" ng-click="box_clicked(status)">
             <div class="inline">
                 <span
-                    class="dependency"
+                    class="variable"
                     ng-click="status.edit=!status.edit"
                 >{{value.name}}</span>
                 <div ng-if="status.edit">
@@ -380,17 +397,17 @@
 
             <div class="inline">
                 <span
-                    class="string"
+                    class="dependency"
                     ng-click="status.edit_path=!status.edit_path"
-                >&#39;{{value.path}}&#39;</span>
+                >{{value.path}}</span>
                 <div ng-if="status.edit_path">
-                    <form ng-submit="change_path()">
-                        <hr>
-                        <input type="text" ng-model="status.path_tmp"></input>
-                        <button type="submit" class="box add" style="">+</button>
-                    </form>
 
-                    <div ng-inlcude="'./directory.html'"> </div>
+                    <div
+                        ng-include="'/one_list.html'"
+                        ng-controller="listctrl"
+                        onload="init(directory, [])"
+                        class="block"
+                    ></div>
                 </div>
             </div>
 
@@ -425,7 +442,6 @@
                 </form>
             </div>
             <ul ng-if="status.view_actions" class="list_array">
-                <li><div class="box add" style="width: 100%;" ng-click="status.close_view=true">close</div></li>
                 <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
                 <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
             </ul>
@@ -454,19 +470,41 @@
                 <div ng-include="'/variable_scope.html'"></div>
             </div>
             <ul ng-if="status.view_actions" class="list_array">
-                <li><div class="box add" style="width: 100%;" ng-click="status.close_view=true">close</div></li>
                 <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
                 <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
             </ul>
         </div>
     </script>
 
-    <script type="text/ng-template" id="/javascript.html">
-        <span class="null">{{value.source}}</span>
+    <script type="text/ng-template" id="/source.html">
+        <div ng-controller="source" class="box slot source" ng-click="box_clicked(status)">
+            <span
+                class="source"
+                ng-click="status.edit=!status.edit"
+                style="white-space: pre;"
+            >{{value.value}}</span>
+            <form ng-if="status.edit" ng-submit="change()">
+                <hr>
+                <input ng-model="status.src_tmp" ng-trim="false"></input>
+                <button type="submit" class="btn btn-warning btn-xs">
+                    <span class="glyphicon glyphicon-floppy-disk"></span>
+                </button>
+            </form>
+            <ul ng-if="status.view_actions" class="list_array">
+                <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
+                <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
+            </ul>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/null.html">
-        <div class="box slot null">null</div>
+        <div ng-controller="null" class="box slot null" ng-click="box_clicked(status)">
+            <span class="symbol" style="cursor:pointer;">null</span>
+            <ul ng-if="status.view_actions" class="list_array">
+                <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
+                <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
+            </ul>
+        </div>
     </script>
 
     <script type="text/ng-template" id="/boolean.html">
@@ -613,10 +651,10 @@
             <div class="block">
                 <span class="symbol">arguments</span>
                 <div
-                    ng-include="'/horizontal_list.html'"
+                    ng-include="'/vertical_list_indexes.html'"
                     ng-controller="listctrl"
                     onload="init(value.args, ['variable_declare'])"
-                    class="inline"
+                    class="block"
                 ></div>
             </div>
             <div class="block">
@@ -669,19 +707,22 @@
 
     <script type="text/ng-template" id="/evaluate.html">
         <div ng-controller="evaluate" class="box evaluate inline" ng-click="box_clicked(status)">
+            <span class="symbol">evaluate </span>
             <div
                 ng-include="'/one_list.html'"
                 ng-controller="listctrl"
-                onload="init(value.variable, ['function','variable','reference', 'assign', 'evaluate'])"
+                onload="init(value.variable, ['function','variable','reference', 'assign', 'evaluate','source'])"
                 class="inline"
             ></div>
-            <span class="symbol">(</span>
-            <div
-                ng-include="'/horizontal_list.html'"
-                ng-controller="listctrl"
-                onload="init(value.args, ['null','boolean','number','string','object','array','function','evaluate','variable','reference','assign'])"
-                class="inline"
-            ></div>
+            <div ng-if="value.variable.length > 0 && value.variable[0].type !== 'source'">
+                <span class="symbol block">arguments</span>
+                <div
+                    ng-include="'/vertical_list_indexes.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.args, ['null','boolean','number','string','object','array','function','evaluate','variable','reference','assign'])"
+                    class="block"
+                ></div>
+            </div>
             <ul ng-if="status.view_actions" class="list_array">
                 <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
                 <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
@@ -739,6 +780,7 @@
                 ng-include="'/vertical_list.html'"
                 ng-controller="listctrl"
                 onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+                class="inline"
             ></div>
             <ul ng-if="status.view_actions" class="list_array">
                 <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
@@ -750,12 +792,14 @@
     <script type="text/ng-template" id="/if.html">
         <div ng-controller="if" class="box if" ng-click="box_clicked(status)">
             <span class="symbol">if</span>
-            <div
-                ng-include="'/horizontal_list.html'"
-                ng-controller="listctrl"
-                onload="init(value.conditionals, ['conditional'])"
-                class="inline"
-            ></div>
+            <div class="inline">
+                <div
+                    ng-include="'/vertical_list.html'"
+                    ng-controller="listctrl"
+                    onload="init(value.conditionals, ['conditional'])"
+                    class="block"
+                ></div>
+            </div>
             <ul ng-if="status.view_actions" class="list_array">
                 <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
                 <li><div class="box add" style="width: 100%;" ng-click="cut(list, $index)">cut</div></li>
@@ -779,6 +823,7 @@
                 ng-include="'/vertical_list.html'"
                 ng-controller="listctrl"
                 onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+                class="inline"
             ></div>
             <ul ng-if="status.view_actions" class="list_array">
                 <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
@@ -815,6 +860,7 @@
                 ng-include="'/vertical_list.html'"
                 ng-controller="listctrl"
                 onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+                class="inline"
             ></div>
             <ul ng-if="status.view_actions" class="list_array">
                 <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>
@@ -846,6 +892,7 @@
                 ng-include="'/vertical_list.html'"
                 ng-controller="listctrl"
                 onload="init(value.sequence, ['assign', 'evaluate', 'return', 'if', 'while', 'for', 'for-in'])"
+                class="inline"
             ></div>
             <ul ng-if="status.view_actions" class="list_array">
                 <li><div class="box add" style="width: 100%;" ng-click="copy(value)">copy</div></li>

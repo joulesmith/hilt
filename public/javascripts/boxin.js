@@ -311,10 +311,18 @@ define([
                 value : value
             });
         },
+        dependency_file : function(list) {
+
+            list.push({
+                type: 'dependency_file',
+                name : ""
+            });
+        },
         open_file : function(list) {
 
             var ref = {
                 type: 'open_file',
+                path : '',
                 file : null
             };
 
@@ -422,10 +430,11 @@ define([
                 'sequence' : []
             });
         },
-        javascript : function(list) {
+        source : function(list) {
             list.push({
-                type: 'javascript',
-                source : "source"
+                type: 'source',
+                value : "",
+                edit : true
             });
         }
     };
@@ -465,6 +474,15 @@ define([
                 $scope.status.edit = false;
             };
 
+            $scope.get_path = function () {
+
+                if ($scope.$parent.get_path) {
+                    return $scope.$parent.get_path() + "/" + $scope.value.name;
+                }else{
+                    return "";
+                }
+            };
+
         }
     ]);
 
@@ -481,6 +499,39 @@ define([
             $scope.change_name = function() {
                 $scope.value.name = $scope.status.name_tmp;
                 $scope.status.edit = false;
+            };
+
+            $scope.get_path = function () {
+                return $scope.$parent.get_path() + "/" + $scope.value.name;
+            };
+
+        }
+    ]);
+
+
+    app.controller('dependency_file', [
+        '$scope',
+        function($scope){
+
+            $scope.status = {
+                view : $scope.value.name === '',
+                edit : $scope.value.name === '',
+                version_tmp : $scope.value.version,
+                name_tmp : $scope.value.name
+            };
+
+            $scope.change_name = function() {
+                $scope.value.name = $scope.status.name_tmp;
+                $scope.status.edit = false;
+            };
+
+            $scope.change_version = function() {
+                $scope.value.version = $scope.status.version_tmp;
+                $scope.status.edit_version = false;
+            };
+
+            $scope.get_path = function () {
+                return $scope.$parent.get_path() + "/" + $scope.value.name;
             };
 
         }
@@ -504,6 +555,18 @@ define([
                 path_tmp : $scope.value.path,
                 edit_path : $scope.value.path === ''
             };
+
+            if ($scope.value.path === '') {
+                $scope.choose_file = function(path, var_name) {
+                    $scope.value.path = path;
+                    $scope.status.edit_path = false;
+
+                    if ($scope.value.name === '') {
+                        $scope.status.name_tmp = var_name;
+                        $scope.change_variable();
+                    }
+                };
+            }
 
             $scope.change_variable = function() {
 
@@ -601,12 +664,27 @@ define([
             };
 	}]);
 
+    app.controller('source', [
+        '$scope',
+        function($scope){
+
+            $scope.status = {
+                edit : $scope.value.value === '',
+                src_tmp : $scope.value.value,
+            };
+
+            $scope.change = function() {
+                $scope.value.value = $scope.status.src_tmp;
+                $scope.status.edit = false;
+            }
+
+	}]);
+
     app.controller('null', [
         '$scope',
         function($scope){
 
-			$scope.init = function(v){
-
+            $scope.status = {
             };
 	}]);
 
@@ -857,8 +935,6 @@ define([
 
             types['module']($scope.value);
 
-            $scope.choose_file = {};
-
             $scope.clipboard = [];
 
             $scope.copy = function(value) {
@@ -873,9 +949,10 @@ define([
 
             $scope.opened = [];
 
-            $scope.open = function(value) {
+            $scope.open = function(value, path) {
                 $scope.opened.push({
                     type: 'open_file',
+                    path : path,
                     value : value
                 });
             };
@@ -890,22 +967,18 @@ define([
             var current_status = $scope.status;
 
             $scope.box_clicked = function(status) {
-                current_status.view_actions = false;
-
-                current_status = status;
-                current_status.view_actions = !current_status.close_view;
-                current_status.close_view = false;
-
+                if (!$scope.click_handled) {
+                    current_status.view_actions = false;
+                    current_status = status;
+                    current_status.view_actions = true;
+                    $scope.click_handled = true;
+                }
             };
 
-            $scope.final = function () {
-                console.log(click_handled);
-                click_handled = false;
-            };
 
             var root = {
                 'type' : 'directory',
-                'name' : 'root',
+                'name' : 'package',
                 'nodes' : []
             };
 
