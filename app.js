@@ -14,15 +14,44 @@ var passport = require('passport');
 
 mongoose.connect('mongodb://localhost/news');
 
-// add the schemas to  mongoose 
-require('./models/Posts');
-require('./models/Comments');
-require('./models/Users');
+// add the schemas to  mongoose
+require('./models/user');
+require('./models/jwtSecret');
+require('./models/resource');
+require('./models/permission');
 
-require('./config/passport');
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
+var index = require('./routes/index');
+var auth = require('./routes/auth');
+
+// prepare secret for jwt
+
+var JWTSecret = mongoose.model("broadsword_jwtSecret");
+
+JWTSecret.findOne({}, function(err, doc){
+    if (err) {
+        throw new Error("cannot find secret");
+
+    }else if (doc){
+        // load the secret from the database
+
+        auth.update_secret();
+    }else{
+
+        var newsecret = new JWTSecret({});
+        newsecret.change();
+
+        newsecret.save(function(err){
+            // load the secret from the database
+            if (err) {
+                throw new Error("cannot add new secret");
+            }
+
+            auth.update_secret();
+        });
+
+    }
+});
 
 var app = express();
 
@@ -30,16 +59,18 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 // uncomment after placing your favicon in /public
 //app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', routes);
-app.use('/users', users);
+
+app.use('/', index);
+app.use('/auth', auth);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -71,7 +102,5 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-
-app.use(passport.initialize());
 
 module.exports = app;

@@ -1,0 +1,190 @@
+<html>
+<head>
+    <link href="./stylesheets/test.css" rel="stylesheet">
+</head>
+<body>
+
+    <div class="channel_column">
+        <div class="menu">
+            <span>SOmething goes here.</span>
+        </div>
+
+        <div class="channel">
+            <div class="ch_top"><span class="ch_name">green channel [V] </span></div>
+            <div class="ch_mid"><span class="ch_value" id="value1">7.7 </span></div>
+            <a href="#channel1">
+                <canvas id="radial1" width="100" height="100" class="radial"></canvas>
+            </a>
+        </div>
+
+
+        <div class="channel">
+            <div class="ch_top"><span class="ch_name">cold channel </span></div>
+            <div class="ch_mid"><span class="ch_value" id="value2"> 0.99</span></div>
+            <a href="#channel2">
+                <canvas id="radial2" width="100" height="100" class="radial"></canvas>
+            </a>
+        </div>
+
+
+        <div class="channel">
+            <div class="ch_top"><span class="ch_name">hot channel [kV]</span></div>
+            <div class="ch_mid"><span class="ch_value" id="value3">33 </span></div>
+            <a href="#channel3">
+                <canvas id="radial3" width="100" height="100" class="radial"></canvas>
+            </a>
+        </div>
+    </div>
+    <div class="control">
+
+    </div>
+
+    <script>
+        window.onload = function() {
+            var green = ["#ffff00", "#d1ff00", "#08ff3e", "#00ff00"];
+            var hot = ["#fff500", "#ff9800", "#ff7100", "#ff0000"];
+            var cold = ["#9cf4ff", "#32d6f1", "#3296f1", "#936ffb"];
+
+            window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+                    window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
+
+
+            function step(timestamp) {
+
+                var t = (timestamp)/1000;
+
+                var drawRadial = function(canvas_id, value, active, old, positive_colors, negative_colors) {
+
+                    var color_levels = value > 0 ? positive_colors : negative_colors;
+
+                    var canvas = document.getElementById(canvas_id);
+                    var ctx = canvas.getContext("2d");
+
+                    var w = canvas.width;
+                    var h = canvas.height;
+                    var delta = 2.0*Math.PI/400;
+
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    ctx.clearRect(0, 0, w, h);
+
+
+
+                    ctx.translate(w / 2, h / 2);
+                    ctx.rotate(0.5 * Math.PI);
+
+                    ctx.lineWidth = 4;
+
+                    if (active) {
+                        if (old) {
+                            ctx.strokeStyle="#ffe100"; // active but old data
+                        }else{
+                            ctx.strokeStyle="#00ffa6"; // active
+                        }
+                    }else{
+
+                        //ctx.strokeStyle="#ff5000"; // inactive
+                        ctx.strokeStyle="#000000";
+                    }
+
+                    //ctx.moveTo(0, 0);
+
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 0.5*0.23*w, 0.8*Math.PI, 1.2*Math.PI, true);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(-0.6*0.23*w, 0);
+                    ctx.stroke();
+
+                    var drawArcFill = function(r0, r1, theta0, theta1, color) {
+
+                        ctx.beginPath();
+                        ctx.arc(0, 0, r0, theta0, theta1);
+
+                        ctx.lineTo(r1 * Math.cos(theta1), r1 * Math.sin(theta1));
+
+                        ctx.arc(0, 0, r1, theta1, theta0, true);
+
+                        ctx.lineTo(r0 * Math.cos(theta0), r0 * Math.sin(theta0));
+
+                        ctx.fillStyle = color || "#27ff00";
+                        ctx.fill();
+                    };
+
+
+
+                    // 0.0 <= value <= 1.0
+                    var drawSegments = function(value, r0, r1) {
+                        // units of 0.01, 0.05, 0.1, 0.5
+
+                        //drawArcFill(r0*0.9, r1*1.05, 0.0, 2.0*Math.PI, "#000000");
+
+                        var sign = value > 0 ? 1 : -1;
+
+                        var remainder = Math.abs(value);
+                        var begin_theta = 0;
+
+                        if (remainder >= 1.0) {
+
+                            if (Math.round(t*4) % 3 === 0) {
+                                drawArcFill(2*(r1 - r0) / 3 + r0, r1, 0.0, 2.0*Math.PI, color_levels[3]);
+
+                            }else if (Math.round(t*4) % 3 === 1) {
+
+                                drawArcFill((r1 - r0) / 3 + r0, 2*(r1 - r0) / 3 + r0, 0.0, 2.0*Math.PI, color_levels[3]);
+                            }else{
+
+                                drawArcFill(r0, (r1 - r0) / 3 + r0, 0.0, 2.0*Math.PI, color_levels[3]);
+                            }
+                            return;
+                        }
+
+                        if (remainder >= 0.5) {
+                            // draw the 0.5 level arc
+                            drawArcFill(r0, r1, delta, 1.0*Math.PI, color_levels[2]);
+                            remainder = remainder - 0.5;
+                            begin_theta += 1.0*Math.PI;
+                        }
+
+                        while (remainder >= 0.1) {
+                            // draw the 0.1 levels arc
+                            drawArcFill(r0, r1, begin_theta + delta, begin_theta + 0.2*Math.PI, color_levels[1]);
+                            remainder = remainder - 0.1;
+                            begin_theta += 0.2*Math.PI;
+                        }
+
+                        if (remainder > 0.0){
+                            drawArcFill(r0, r1, begin_theta + delta, Math.max(begin_theta + delta, Math.min(2*Math.PI - delta, begin_theta + 2*Math.PI*remainder)), color_levels[0]);
+                        }
+
+                    }
+
+                    drawSegments(value, 0.23*w, 0.45*w);
+                };
+
+
+
+
+                var value = 2.0*Math.sin(t*2*Math.PI/20);
+                document.getElementById("value1").innerHTML = (value * 10).toFixed(2);
+                drawRadial("radial1", value, true, false, green, hot);
+
+                value = 2.0*Math.sin((t+5)*2*Math.PI/20);
+                document.getElementById("value2").innerHTML = (value).toFixed(2);
+                drawRadial("radial2", value, true, false, cold, green);
+
+                value = 2*Math.sin((t+10)*2*Math.PI/20);
+                document.getElementById("value3").innerHTML = (value * 100).toFixed(1);
+                drawRadial("radial3", value, false, false, hot, cold);
+
+                requestAnimationFrame(step);
+            }
+
+            requestAnimationFrame(step);
+
+
+        };
+    </script>
+</body>
+</html>
