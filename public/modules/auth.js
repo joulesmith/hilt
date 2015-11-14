@@ -17,9 +17,11 @@
 
 "use strict";
 
-define(function (){
+define(['angular'], function (angular){
 
-    return function(Restangular, $window){
+    var module = angular.module('auth', []);
+
+    module.factory('auth', ['Restangular', '$window', function(Restangular, $window){
 
         var Auth = Restangular.all('auth');
 
@@ -67,22 +69,43 @@ define(function (){
         /**
             Register a new user using a username and a password.
 
-            user must have user.username and user.password
+            user must have user.username and user.email
         */
         auth.register = function(user){
 
             Auth.post(user).then(function(data){
-                saveToken(data.token);
+
             });
 
         };
 
+        auth.setPassword = function(secret, password){
+
+            Auth.put({
+                username : username,
+                secret : secret,
+                password : password
+            })
+            .then(function(data){
+
+            }, function(error) {
+
+            });
+        };
+
         /**
-            user must have user.username and user.password
+
         */
-        auth.logIn = function(user){
-            Auth.put(user).then(function(data){
+        auth.logIn = function(username, password){
+
+            Auth.get({
+                username : username,
+                password : password
+            })
+            .then(function(data){
                 saveToken(data.token);
+            }, function(error) {
+
             });
         };
 
@@ -92,4 +115,6 @@ define(function (){
 
         return auth;
     };
+
+    return module;
 });

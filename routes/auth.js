@@ -22,7 +22,6 @@ module.exports = router;
 
 
 var mongoose = require('mongoose');
-var passport = require('passport');
 var jwt = require('jsonwebtoken');
 
 // use mongoose database objects
@@ -34,125 +33,105 @@ var User = mongoose.model("broadsword_user");
 // this will hold the secret to use when generating and verifying tokens.
 var secret = "";
 
-
 var register = function(req, res, next) {
+    var username = req.body.username + '';
+    var email = req.body.email + '';
+
     User.findOne({
-        username : req.param('username')
+        username : username;
     }, function (err, user){
         if (err) { next(err); return; }
 
-        // this username already exists
-        if (user) { return res.redirect('/login'); }
+        if (!user) {
+            var newuser = new User({
+                username : username,
+                email : email
+            });
+        }
 
-        var newuser = new User({
-            username : req.params.username,
-            email : req.query.email
-        });
-
-        newuser.resetSalt();
-
-        var secret = newuser.generateReset();
-
-        // todo: send the secret through a trusted channel to the user.
-
-        newuser.save(function (err) {
+        user.generateSecret(function(err, secret){
             if (err) return next(err);
+
+            // todo: send the secret through a trusted channel (i.e. email) to the user.
 
             next();
         });
 
-    });
-};
 
-var get_salt = function(req, res, next) {
-    res.json({
-        salt : req.user.public_salt
     });
 };
 
 var set_password = function(req, res, next) {
+    var username = req.body.username + '';
+    var password = req.body.password + '';
+    var secret = req.body.secret + '';
 
     User.findOne({
-        username : req.params.username
+        username : username
     }, function (err, user){
-        if (err) { next(err); return; }
+        if (err) { return next(err); }
 
-        if (!user) { return res.redirect('/register'); }
+        if (!user) { return next({message : 'User does not exist.'}); }
 
-
-        // they need to know the secret to set the password
-        if (!user.verifyReset(req.params.secret)) {
-            return res.redirect('/login');
-        }
-
-        user.setPassword(req.params.password);
-
-        user.save(function (err) {
-            if (err) return next(err);
-
-            next();
-        });
+        user.setPassword(secret, password, next);
     });
-
 
 };
 
 // authenticate a user logging in
 var login = function(req, res, next){
+    var username = req.body.username + '';
+    var password = req.body.password + '';
 
     if (secret === "") {
-        return res.status(400).json({message: 'Authentication cannot be performed at this time.'});
+        return next({message: 'Authentication cannot be performed at this time.'});
     }
 
     User.findOne({
-        username : req.params.username
+        username : username
     }, function (err, user){
         if (err) { next(err); return; }
 
-        if (!user) { return res.redirect('/register'); }
+        if (!user) { return next({message : 'User does not exist.'}); }
 
+        user.verifyPassword(password, function(err, valid_password){
+            if (err) return next(err);
 
-        if (!user.verifyPassword(req.params.password)) {
-            return res.redirect('/login');
-        }
+            if (!valid_password) return next({message : 'invalid password.'});
 
-        // set expiration to 60 days
-        var exp = new Date();
+            // set expiration to 60 days
+            var exp = new Date();
 
-        exp.setDate(exp.getDate() + 60);
+            exp.setDate(exp.getDate() + 60);
 
-        // this information is what the generated token can vouche for.
-        var claim = {
-            _id: user._id,
-            expiration: parseInt(exp.getTime() / 1000),
-        };
+            // this information is what the generated token can vouche for.
+            var claim = {
+                _id: user._id,
+                expiration: parseInt(exp.getTime() / 1000),
+            };
 
-        // generate a token, and include information that can be claimed later
-        return res.json({token: jwt.sign(claim, secret)});
+            // generate a token, and include information that can be claimed later
+            res.json({token: jwt.sign(claim, secret)});
+        });
+
     });
 };
 
 // register a new user
 router.post(
-    '/:username',
+    '/',
     register
-);
-
-// get the public salt used to send the password
-router.get(
-    '/salt/:username',
-    get_salt
 );
 
 // set the password for the user
 router.put(
-    '/:username/:secret/:password',
+    '/',
     set_password
 );
 
 // login by sending the hash of the salt and password
 router.get(
-    'token/:username/:password',
+    '/',
     login
 );
 

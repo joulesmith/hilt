@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+var bcrypt = require('bcrypt');
 var crypto = require('crypto');
 
 var UserSchema = new mongoose.Schema({
@@ -6,51 +7,60 @@ var UserSchema = new mongoose.Schema({
 
     email : String,
 
-    reset_hash: String,
-    password_hash: String,
-
-    public_salt: String,
-    private_salt: String,
+    secret_hash: {type : String, default : ''},
+    password_hash: {type : String, default : ''}
 });
 
-UserSchema.methods.resetSalt = function(){
-    this.secret_hash = "";
-    this.password_hash = "";
+UserSchema.methods.generateSecret = function(cb) {
 
-    this.public_salt = crypto.randomBytes(16).toString('hex');
-    this.private_salt = crypto.randomBytes(16).toString('hex');
+    if (this.secret_hash !== '') {
+        return cb({message: 'secret already generated.'});
+    }
 
-};
-
-UserSchema.methods.generateReset = function(){
     var secret = crypto.randomBytes(16).toString('hex');
 
-    this.reset_hash = crypto.pbkdf2Sync(secret, this.private_salt, 1000, 64).toString('hex');
+    bcrypt.hash(secret, 10, function(err, hash) {
+        if (err) return cb(err);
 
-    return secret;
+        this.secret_hash = hash;
+
+        this.save(function(err, user){
+            cb(err, secret);
+        });
+    });
 };
 
-UserSchema.methods.verifyReset = function(secret){
+UserSchema.methods.setPassword = function(secret, password, cb) {
+
     if (this.secret_hash === '') {
-        return false;
+        return cb({message: 'cannot set password without a secret.'});
     }
 
-    var secret_hash = crypto.pbkdf2Sync(secret, this.private_salt, 1000, 64).toString('hex');
+    bcrypt.compare(secret, this.secret_hash, function(err, valid_secret) {
+        if (err) return cb(err);
 
-    return this.secret_hash === secret_hash;
+        if (!valid_secret) {
+            return cb({message : 'invalid secret. password was not set.'});
+        }
+
+        bcrypt.hash(password, 10, function(err, hash) {
+            if (err) return cb(err);
+
+            this.secret_hash = '';
+            this.password_hash = hash;
+
+            this.save(cb);
+        });
+    });
 };
 
-UserSchema.methods.setPassword = function(password) {
-    this.password_hash = crypto.pbkdf2Sync(password, this.private_salt, 1000, 64).toString('hex');
-};
-
-UserSchema.methods.verifyPassword = function(password) {
+UserSchema.methods.verifyPassword = function(password, cb) {
 
     if (this.password_hash === '') {
-        return false;
+        return cb({message: 'password is not set'});
     }
 
-    return this.password_hash === crypto.pbkdf2Sync(password, this.private_salt, 1000, 64).toString('hex');
+    bcrypt.compare(password, this.password_hash, cb);
 };
 
 
