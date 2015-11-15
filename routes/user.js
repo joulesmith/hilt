@@ -31,60 +31,85 @@ var Resource = mongoose.model("broadsword_resource");
 var User = mongoose.model("broadsword_user");
 
 // this will hold the secret to use when generating and verifying tokens.
-var secret = "";
+var jwt_secret = "";
 
 var register = function(req, res, next) {
     var username = req.body.username + '';
     var email = req.body.email + '';
 
     User.findOne({
-        username : username;
+        username : username
     }, function (err, user){
-        if (err) { next(err); return; }
+        if (err) { return next(err); }
 
-        if (!user) {
-            var newuser = new User({
-                username : username,
-                email : email
-            });
-        }
+        if (user) return next(new Error("User already exists"));
 
-        user.generateSecret(function(err, secret){
+        var newuser = new User({
+            username : username,
+            email : email
+        }).generateSecret(function(err, secret){
             if (err) return next(err);
 
             // todo: send the secret through a trusted channel (i.e. email) to the user.
+            console.log(secret);
 
-            next();
+            res.json({});
         });
-
 
     });
 };
 
-var set_password = function(req, res, next) {
+var reset = function(req, res, next) {
     var username = req.body.username + '';
-    var password = req.body.password + '';
-    var secret = req.body.secret + '';
 
     User.findOne({
         username : username
     }, function (err, user){
         if (err) { return next(err); }
 
-        if (!user) { return next({message : 'User does not exist.'}); }
+        if (!user) return next(new Error("User does not exist"));
 
-        user.setPassword(secret, password, next);
+
+        user.generateSecret(function(err, secret){
+            if (err) return next(err);
+
+            // todo: send the secret through a trusted channel (i.e. email) to the user.
+            console.log(secret);
+
+            res.json({});
+        })
+
+    });
+};
+
+var set_password = function(req, res, next) {
+    var username = req.params.username + '';
+    var password = req.query.password + '';
+    var secret = req.query.secret + '';
+
+    User.findOne({
+        username : username
+    }, function (err, user){
+        if (err) { return next(err); }
+
+        if (!user) { return next(new Error('User does not exist.')); }
+
+        user.setPassword(secret, password, function(err){
+            if (err) return next(err);
+
+            res.json({});
+        });
     });
 
 };
 
 // authenticate a user logging in
 var login = function(req, res, next){
-    var username = req.body.username + '';
-    var password = req.body.password + '';
+    var username = req.params.username + '';
+    var password = req.query.password + '';
 
-    if (secret === "") {
-        return next({message: 'Authentication cannot be performed at this time.'});
+    if (jwt_secret === "") {
+        return next(new Error('Authentication cannot be performed at this time.'));
     }
 
     User.findOne({
@@ -92,12 +117,12 @@ var login = function(req, res, next){
     }, function (err, user){
         if (err) { next(err); return; }
 
-        if (!user) { return next({message : 'User does not exist.'}); }
+        if (!user) { return next(new Error('User does not exist.')); }
 
         user.verifyPassword(password, function(err, valid_password){
             if (err) return next(err);
 
-            if (!valid_password) return next({message : 'invalid password.'});
+            if (!valid_password) return next(new Error('invalid password.'));
 
             // set expiration to 60 days
             var exp = new Date();
@@ -111,7 +136,7 @@ var login = function(req, res, next){
             };
 
             // generate a token, and include information that can be claimed later
-            res.json({token: jwt.sign(claim, secret)});
+            res.json({token: jwt.sign(claim, jwt_secret)});
         });
 
     });
@@ -125,13 +150,13 @@ router.post(
 
 // set the password for the user
 router.put(
-    '/',
+    '/:username',
     set_password
 );
 
 // login by sending the hash of the salt and password
 router.get(
-    '/',
+    '/:username',
     login
 );
 
@@ -142,7 +167,7 @@ router.update_secret = function() {
         if (err) {
             // try again later?
         }else{
-            secret = doc.secret;
+            jwt_secret = doc.secret;
         }
     });
 };

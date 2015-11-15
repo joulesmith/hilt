@@ -17,13 +17,15 @@
 
 "use strict";
 
-define(['angular'], function (angular){
+define(['angular', 'restangular'], function (angular, restangular){
 
-    var module = angular.module('auth', []);
+    var module = angular.module('user', ['restangular']);
 
-    module.factory('auth', ['Restangular', '$window', function(Restangular, $window){
 
-        var Auth = Restangular.all('auth');
+    // apparently angular is just a global name space for dependencies anyway, so
+    module.factory('user.auth', ['Restangular', '$window', function(Restangular, $window){
+
+        var Auth = Restangular.all('user');
 
         var auth = {};
         var token_location = 'broadsword_token_location';
@@ -71,50 +73,96 @@ define(['angular'], function (angular){
 
             user must have user.username and user.email
         */
-        auth.register = function(user){
+        auth.register = function(user, response){
 
             Auth.post(user).then(function(data){
-
+                response(data);
+            }, function(error) {
+                response(error);
             });
 
         };
 
-        auth.setPassword = function(secret, password){
+        auth.setPassword = function(user, response){
 
-            Auth.put({
-                username : username,
-                secret : secret,
-                password : password
+            Auth.one(user.username).put({
+                secret : user.secret,
+                password : user.password
             })
             .then(function(data){
-
+                response(data);
             }, function(error) {
-
+                response(error);
             });
         };
 
         /**
-
+            user.username
+            user.password
         */
-        auth.logIn = function(username, password){
+        auth.login = function(user, response){
 
-            Auth.get({
-                username : username,
-                password : password
-            })
+            Auth.one(user.username).get({password : user.password})
             .then(function(data){
                 saveToken(data.token);
+                response(data);
             }, function(error) {
-
+                response(error);
             });
         };
 
-        auth.logOut = function(){
+        auth.logout = function(){
             removeToken();
         };
 
         return auth;
-    };
+    }]);
 
-    return module;
+
+    module.controller('user.login', ['$scope', 'user.auth', function($scope, auth){
+        $scope.user = {
+            username : "",
+            password : ""
+        };
+
+        $scope.auth = auth;
+
+        $scope.response = function(err) {
+            if (err) {
+                $scope.message = err;
+            }
+        };
+    }]);
+
+    module.controller('user.register', ['$scope', 'user.auth', function($scope, auth){
+        $scope.user = {
+            username : "",
+            email : ""
+        };
+
+        $scope.auth = auth;
+
+        $scope.response = function(err) {
+            if (err) {
+                $scope.message = err;
+            }
+        };
+    }]);
+
+    module.controller('user.reset', ['$scope', 'user.auth', function($scope, auth){
+        $scope.user = {
+            username : "",
+            password : "",
+            secret : ""
+        };
+
+        $scope.auth = auth;
+
+        $scope.response = function(err) {
+            if (err) {
+                $scope.message = err;
+            }
+        };
+    }]);
+
 });

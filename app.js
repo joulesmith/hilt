@@ -22,7 +22,7 @@ require('./models/permission');
 
 
 var index = require('./routes/index');
-var auth = require('./routes/auth');
+var user = require('./routes/user');
 
 // prepare secret for jwt
 
@@ -35,7 +35,7 @@ JWTSecret.findOne({}, function(err, doc){
     }else if (doc){
         // load the secret from the database
 
-        auth.update_secret();
+        user.update_secret();
     }else{
 
         var newsecret = new JWTSecret({});
@@ -47,7 +47,7 @@ JWTSecret.findOne({}, function(err, doc){
                 throw new Error("cannot add new secret");
             }
 
-            auth.update_secret();
+            user.update_secret();
         });
 
     }
@@ -70,7 +70,10 @@ app.use(cookieParser());
 
 
 app.use('/', index);
-app.use('/auth', auth);
+
+
+app.use('/user', user);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

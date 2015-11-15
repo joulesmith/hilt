@@ -22,27 +22,34 @@ require.config({
     baseUrl : './modules',
     paths : {
         'angular' : '../lib/angular.min',
-        'domReady': '../lib/domReady'
+        'domReady': '../lib/domReady',
+        'lodash' : '../lib/lodash.min',
+        'restangular' : '../lib/restangular'
     },
     shim: {
         'angular' : {
             exports : 'angular'
-        }
+        },
+        'lodash' : {
+            exports : '_'
+        },
+        'restangular' : {
+            deps: ['lodash'],
+            exports : 'restangular'
+        },
     }
 });
 
 // first thing to actually be run in the app
-require(['angular', 'domReady', 'auth'], function(angular, domReady, auth) {
+require(['angular', 'domReady', 'user'], function(angular, domReady, user) {
 
     // create the root entry point to the application
-    var app = angular.module('app', ['auth'], function($rootScopeProvider){
+    var app = angular.module('app', ['user'], function($rootScopeProvider){
         // no other initialization here
     });
 
     app.controller('MainCtrl', ['$scope', function ($scope) {
-
-
-        $scope.greetMe = 'Hello World';
+        $scope.greetMe = "Hello World.";
     }]);
 
     // wait for the entire dom to be loaded before trying to run angular modules
