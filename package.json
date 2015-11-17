@@ -41,12 +41,7 @@
   "devDependencies": {
 
   },
-  "licenses": [
-    {
-      "type": "GNU General Public License, Version 3.0 or later",
-      "url": "http://www.gnu.org/licenses/"
-    }
-  ],
+  "license": "MIT",
   "readme": "See README file",
   "readmeFilename": "README.md",
   "bugs": {

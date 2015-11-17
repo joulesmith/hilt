@@ -3,12 +3,16 @@ var bcrypt = require('bcrypt');
 var crypto = require('crypto');
 
 var UserSchema = new mongoose.Schema({
-    username: {type: String, lowercase: true, unique: true},
-
     email : String,
 
-    secret_hash: {type : String, default : ''},
-    password_hash: {type : String, default : ''}
+    passwordHash: {type : String, default : ''},
+    tokenSalt : {type : String, default : ''},
+    tokenHash : {type : String, default : ''},
+
+    google : {
+        email : {type : String, default : ''},
+        accessToken : {type : String, default : ''}
+    }
 });
 
 UserSchema.methods.generateSecret = function(cb) {
@@ -22,7 +26,9 @@ UserSchema.methods.generateSecret = function(cb) {
     var secret = crypto.randomBytes(16).toString('hex');
 
     bcrypt.hash(secret, 10, function(err, hash) {
-        if (err) return cb(err);
+        if (err) {
+            return cb(err);
+        }
 
         that.secret_hash = hash;
 
@@ -32,39 +38,65 @@ UserSchema.methods.generateSecret = function(cb) {
     });
 };
 
-UserSchema.methods.setPassword = function(secret, password, cb) {
+UserSchema.methods.setPassword = function(new_password, cb) {
     var that = this;
 
-    if (this.secret_hash === '') {
-        return cb(new Error('cannot set password without a secret.'));
-    }
-
-    bcrypt.compare(secret, this.secret_hash, function(err, valid_secret) {
-        if (err) return cb(err);
-
-        if (!valid_secret) {
-            return cb(new Error('invalid secret. password was not set.'));
+    bcrypt.hash(new_password, 10, function(err, hash) {
+        if (err) {
+            return cb(err);
         }
 
-        bcrypt.hash(password, 10, function(err, hash) {
-            if (err) return cb(err);
+        that.passwordHash = hash;
 
-            that.secret_hash = '';
-            that.password_hash = hash;
-
-            that.save(cb);
-        });
+        that.save(cb);
     });
+
+
 };
 
 UserSchema.methods.verifyPassword = function(password, cb) {
 
-    if (this.password_hash === '') {
+    if (this.passwordHash === '') {
         return cb(new Error('password is not set'));
     }
 
-    bcrypt.compare(password, this.password_hash, cb);
+    bcrypt.compare(password, this.passwordHash, cb);
 };
 
+UserSchema.methods.generateToken = function(cb) {
+    var that = this;
 
-mongoose.model('broadsword_user', UserSchema);
+    this.tokenSalt = crypto.randomBytes(16).toString('hex');
+    var token = crypto.randomBytes(16).toString('hex');
+
+    crypto.pbkdf2(token, this.tokenSalt, 1000, 64, 'sha256', function(err, key) {
+        if (err) {
+            return cb(err);
+        }
+
+        that.tokenHash = key.toString('hex');
+
+        that.save(function(err, user){
+            if (err) {
+                return cb(err);
+            }
+
+            cb(null, token);
+        });
+    });
+
+};
+
+UserSchema.methods.verifyToken = function(token, cb) {
+    var that = this;
+
+    crypto.pbkdf2(token, this.tokenSalt, 1000, 64, 'sha256', function(err, key) {
+        if (err) {
+            return cb(err);
+        }
+
+        cb(null, key.toString('hex') === that.tokenHash);
+    });
+}
+
+mongoose.model('user', UserSchema);

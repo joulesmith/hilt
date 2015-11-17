@@ -21,37 +21,9 @@ require('./models/resource');
 require('./models/permission');
 
 
-var index = require('./routes/index');
-var user = require('./routes/user');
+var indexRout = ;
 
-// prepare secret for jwt
-
-var JWTSecret = mongoose.model("broadsword_jwtSecret");
-
-JWTSecret.findOne({}, function(err, doc){
-    if (err) {
-        throw new Error("cannot find secret");
-
-    }else if (doc){
-        // load the secret from the database
-
-        user.update_secret();
-    }else{
-
-        var newsecret = new JWTSecret({});
-        newsecret.change();
-
-        newsecret.save(function(err){
-            // load the secret from the database
-            if (err) {
-                throw new Error("cannot add new secret");
-            }
-
-            user.update_secret();
-        });
-
-    }
-});
+var userAuth = require('./middleware/user');
 
 var app = express();
 
@@ -67,12 +39,10 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(userAuth());
 
-
-app.use('/', index);
-
-
-app.use('/user', user);
+app.use('/', require('./routes/index'));
+app.use('/api/users', require('./routs/api/users'));
 
 
 // catch 404 and forward to error handler
