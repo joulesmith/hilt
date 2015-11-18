@@ -11,7 +11,7 @@ module.exports = function() {
 
         var authorization = JSON.parse(new Buffer(req.headers.authorization, 'base64').toString('utf8'));
 
-        if (authorization._id && authorization.token){
+        if (authorization._id && authorization.secret){
             User.findById(authorization._id, function(err, user){
                 if (err) return next(err);
 

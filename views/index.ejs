@@ -1,20 +1,26 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="./stylesheets/bootstrap.css" rel="stylesheet">
-    <link href="./stylesheets/test_code.css" rel="stylesheet">
 
+    <!-- load modules and initialization script -->
     <script data-main="index" src="lib/require.js"></script>
+
+    <!-- load needed angular template files -->
+    <% include modules/common.ejs %>
+    <% include modules/user.ejs %>
 </head>
 <body ng-controller="MainCtrl">
 
-    {{greetMe}}
-
-    <div ng-include="'/user/register.html'" ></div>
-    <div ng-include="'/user/reset.html'" ></div>
-    <div ng-include="'/user/login.html'" ></div>
-
-    <% include user.ejs %>
+    <!-- Top level of page layout and logic -->
+    <div class="container-fluid">
+        <div class="row">
+          <div class="col-md-4" ng-include="'/user/register.html'"></div>
+          <div class="col-md-4" ng-include="'/user/reset.html'"></div>
+          <div class="col-md-4" ng-include="'/user/login.html'" ></div>
+        </div>
+    </div>
 
 </body>
 </html>

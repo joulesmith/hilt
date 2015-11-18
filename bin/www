@@ -13,7 +13,7 @@ var socketio = require('socket.io');
 /**
  * Get port from environment and store in Express.
  */
-
+// TODO use config file to set this
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
@@ -26,7 +26,7 @@ var server = http.createServer(app);
 /**
  * Add socket.io to server
  */
-require('../server').set_io(socketio(server));
+//require('../server').set_io(socketio(server));
 
 /**
  * Listen on provided port, on all network interfaces.

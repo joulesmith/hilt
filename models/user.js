@@ -8,52 +8,41 @@ var UserSchema = new mongoose.Schema({
     passwordHash: {type : String, default : ''},
     tokenSalt : {type : String, default : ''},
     tokenHash : {type : String, default : ''},
+    tokenExpiration : {type : Number, default : 0}, // (ms) unix time
 
+    // store credentials to use google services for this user
     google : {
         email : {type : String, default : ''},
         accessToken : {type : String, default : ''}
     }
 });
 
-UserSchema.methods.generateSecret = function(cb) {
-
-    var that = this;
-
-    if (this.secret_hash !== '') {
-        return cb(new Error('secret already generated.'));
-    }
-
-    var secret = crypto.randomBytes(16).toString('hex');
-
-    bcrypt.hash(secret, 10, function(err, hash) {
-        if (err) {
-            return cb(err);
-        }
-
-        that.secret_hash = hash;
-
-        that.save(function(err, user){
-            cb(err, secret);
-        });
-    });
-};
-
+/**
+ * Set a password
+ * @param  {String}   new_password New password to use
+ * @param  {Function} cb           Callback(error, user)
+ */
 UserSchema.methods.setPassword = function(new_password, cb) {
-    var that = this;
+    var user = this;
 
     bcrypt.hash(new_password, 10, function(err, hash) {
         if (err) {
             return cb(err);
         }
 
-        that.passwordHash = hash;
+        user.passwordHash = hash;
 
-        that.save(cb);
+        user.save(cb);
     });
 
 
 };
 
+/**
+ * Verify a given password against the hash in the database
+ * @param  {String}   password plaintext password to validate against stored hash
+ * @param  {Function} cb       Callback (error, valid)
+ */
 UserSchema.methods.verifyPassword = function(password, cb) {
 
     if (this.passwordHash === '') {
@@ -63,23 +52,35 @@ UserSchema.methods.verifyPassword = function(password, cb) {
     bcrypt.compare(password, this.passwordHash, cb);
 };
 
-UserSchema.methods.generateToken = function(cb) {
-    var that = this;
+/**
+ * Generates a token to replace use of password for authentication.
+ * @param  {Number}   milliseconds How long this token will be valid.
+ * @param  {Function} cb           Callback (error, token)
+ */
+UserSchema.methods.generateToken = function(milliseconds, cb) {
+    var user = this;
 
-    this.tokenSalt = crypto.randomBytes(16).toString('hex');
-    var token = crypto.randomBytes(16).toString('hex');
+    user.tokenSalt = crypto.randomBytes(16).toString('hex');
+    user.tokenExpiration = milliseconds + Date.now();
+    var secret = crypto.randomBytes(16).toString('hex');
 
-    crypto.pbkdf2(token, this.tokenSalt, 1000, 64, 'sha256', function(err, key) {
+    crypto.pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256', function(err, key) {
         if (err) {
             return cb(err);
         }
 
-        that.tokenHash = key.toString('hex');
+        user.tokenHash = key.toString('hex');
 
-        that.save(function(err, user){
+        user.save(function(err, user){
             if (err) {
                 return cb(err);
             }
+
+            var token = {
+                _id : user._id,
+                secret : secret,
+                expiration : user.tokenExpiration
+            };
 
             cb(null, token);
         });
@@ -88,14 +89,18 @@ UserSchema.methods.generateToken = function(cb) {
 };
 
 UserSchema.methods.verifyToken = function(token, cb) {
-    var that = this;
+    var user = this;
 
-    crypto.pbkdf2(token, this.tokenSalt, 1000, 64, 'sha256', function(err, key) {
+    if (token.expiration < user.tokenExpiration) {
+        return cb(null, false);
+    }
+
+    crypto.pbkdf2(token.secret, user.tokenSalt, 1000, 64, 'sha256', function(err, key) {
         if (err) {
             return cb(err);
         }
 
-        cb(null, key.toString('hex') === that.tokenHash);
+        cb(null, key.toString('hex') === user.tokenHash);
     });
 }
 

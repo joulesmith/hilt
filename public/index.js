@@ -41,14 +41,25 @@ require.config({
 });
 
 // first thing to actually be run in the app
-require(['angular', 'domReady', 'user'], function(angular, domReady, user) {
+require([
+    'angular',
+    'domReady',
+    'user',
+    'common'
+], function(
+    angular,
+    domReady) {
 
     // create the root entry point to the application
-    var app = angular.module('app', ['user'], function($rootScopeProvider){
+    var app = angular.module('app', ['common', 'user'], function($rootScopeProvider){
         // no other initialization here
     });
 
     app.controller('MainCtrl', ['$scope', function ($scope) {
+        $scope.admin = {
+            allow_password_reset : true
+        }
+
         $scope.greetMe = "Hello World.";
     }]);
 

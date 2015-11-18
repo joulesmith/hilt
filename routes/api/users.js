@@ -9,16 +9,36 @@ var User = mongoose.model("user");
 
 // creates a new user
 router.post('/', function(req, res, next) {
+
+
+    console.log('email: ' + req.body.email);
+
+    if (!req.body.email || req.body.email === '') {
+        return res.status(400).json({
+            error : {
+                message : 'email must be supplied'
+            }
+        });
+    }
+
+    if (!req.body.password || req.body.password === '') {
+        return res.status(400).json({
+            error : 'password must be supplied'
+        });
+    }
+
     User.findOne({
         email : '' + req.body.email
     }, function (err, user){
         if (err) {
-            return next(err);
+            return res.status(500).json({
+                error : err
+            });
         }
 
         if (user) {
             return res.status(400).json({
-                message : 'email already in use.'
+                error : 'email already in use.'
             });
         }
 
@@ -26,7 +46,7 @@ router.post('/', function(req, res, next) {
             email : '' + req.body.email
         });
 
-        newuser.setPassword(null, '' + req.body.password, function(err, user){
+        newuser.setPassword('' + req.body.password, function(err, user){
             if (err) {
                 return next(err);
             }

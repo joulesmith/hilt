@@ -25,13 +25,17 @@ define(['angular', 'restangular'], function (angular, restangular){
     // apparently angular is just a global name space for dependencies anyway, so
     module.factory('user.auth', ['Restangular', '$window', function(Restangular, $window){
 
-        var Auth = Restangular.all('user');
+        var Auth = Restangular.all('api').all('users');
 
         var auth = {};
         var token_location = 'broadsword_token_location';
 
         var saveToken = function (token){
-            $window.localStorage[token_location] = token;
+
+            $window.localStorage[token_location] = {
+                token : token,
+                base64 : (new Buffer(JSON.stringify(token), 'utf8')).toString('base64')
+            };
         };
 
         var removeToken = function() {
@@ -40,12 +44,6 @@ define(['angular', 'restangular'], function (angular, restangular){
 
         auth.getToken = function(){
             return $window.localStorage[token_location];
-        };
-
-        auth.getHeader = function() {
-            return {
-                headers: {Authorization: 'Bearer ' + auth.getToken()}
-            };
         };
 
         /**
@@ -58,9 +56,8 @@ define(['angular', 'restangular'], function (angular, restangular){
             var token = $window.localStorage[token_location];
 
             if(token){
-                var payload = JSON.parse($window.atob(token.split('.')[1]));
-
-                if (payload.expiration > Date.now() / 1000){
+                // if expiration in the future, still valid
+                if (token.expiration > Date.now()){
                     return payload._id;
                 }
             }
@@ -75,10 +72,11 @@ define(['angular', 'restangular'], function (angular, restangular){
         */
         auth.register = function(user, response){
 
-            Auth.post(user).then(function(data){
-                response(data);
-            }, function(error) {
-                response(error);
+            Auth.post(user).then(function(res){
+                response(res);
+            }, function(res) {
+                console.log(res);
+                response(res);
             });
 
         };
@@ -90,7 +88,7 @@ define(['angular', 'restangular'], function (angular, restangular){
                 password : user.password
             })
             .then(function(data){
-                response(data);
+                response(null, data);
             }, function(error) {
                 response(error);
             });
@@ -105,7 +103,7 @@ define(['angular', 'restangular'], function (angular, restangular){
             Auth.one(user.username).get({password : user.password})
             .then(function(data){
                 saveToken(data.token);
-                response(data);
+                response(null, data);
             }, function(error) {
                 response(error);
             });
@@ -118,23 +116,8 @@ define(['angular', 'restangular'], function (angular, restangular){
         return auth;
     }]);
 
-
-    module.controller('user.login', ['$scope', 'user.auth', function($scope, auth){
-        $scope.user = {
-            username : "",
-            password : ""
-        };
-
-        $scope.auth = auth;
-
-        $scope.response = function(err) {
-            if (err) {
-                $scope.message = err;
-            }
-        };
-    }]);
-
     module.controller('user.register', ['$scope', 'user.auth', function($scope, auth){
+
         $scope.user = {
             username : "",
             email : ""
@@ -142,25 +125,44 @@ define(['angular', 'restangular'], function (angular, restangular){
 
         $scope.auth = auth;
 
-        $scope.response = function(err) {
-            if (err) {
-                $scope.message = err;
+        $scope.response = function(res) {
+            if (res.data.error) {
+                $scope.error = res.data.error;
             }
         };
     }]);
 
+    module.controller('user.login', ['$scope', 'user.auth', function($scope, auth){
+        var ctrl = this;
+
+        ctrl.user = {
+            username : "",
+            password : ""
+        };
+
+        ctrl.auth = auth;
+
+        ctrl.response = function(err) {
+            if (err) {
+                ctrl.error = err;
+            }
+        };
+    }]);
+
+
+
     module.controller('user.reset', ['$scope', 'user.auth', function($scope, auth){
-        $scope.user = {
+        this.user = {
             username : "",
             password : "",
             secret : ""
         };
 
-        $scope.auth = auth;
+        this.auth = auth;
 
-        $scope.response = function(err) {
-            if (err) {
-                $scope.message = err;
+        this.response = function(res) {
+            if (res.data.error) {
+                this.error = res.data.error;
             }
         };
     }]);

@@ -15,18 +15,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var mongoose = require('mongoose');
-var crypto = require('crypto');
+"use strict";
+
+define(['angular', 'restangular'], function (angular, restangular){
+
+    var module = angular.module('common', []);
 
 
-var JWTSecretSchema = new mongoose.Schema({
-  secret: String,
-  date : Date
+    module.controller('common.error', ['$scope', function($scope){
+
+        $scope.init = function(error) {
+            $scope.error = error;
+        };
+    }]);
+
 });
-
-JWTSecretSchema.methods.change = function(){
-  this.secret = crypto.randomBytes(16).toString('hex');
-  this.date = Date.now();
-};
-
-mongoose.model('broadsword_jwtSecret', JWTSecretSchema);
