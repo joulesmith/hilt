@@ -12,6 +12,18 @@ var AdministratorSchema = new mongoose.Schema({
     // only these users should be able to alter any value in this document.
     users : [{ type: mongoose.Schema.Types.ObjectId, ref: 'user' }],
 
+    // can be used to enable password reset by sending an email with a reset code.
+    // keep in mind that email is not encrypted, and so someone (e.g. NSA) could theoretically
+    // view the code and reset the password without a user's consent and enter their
+    // account.
+    enablePasswordReset : {type : Boolean, default : false},
+
+    //
+    termsAndConditions : {type : String, default : ''},
+
+    // used to enable requirement to agree to the terms and conditions
+    requireAgreement : {type : Boolean, default : false},
+
     // this is a public RSA key used to encrypt bank account information entered
     // in accounts. This prevents bank account information from being compromised
     // even if the database entries are viewed. The account information is only left
@@ -19,7 +31,7 @@ var AdministratorSchema = new mongoose.Schema({
     // to use this key to encrypt on the client side before being sent to the server.
     // the private key is not stored on the server, and is only used by the person
     // authorized to process the bank deposits.
-    rsa_public_key_pem : {type : String, default : ''},
+    rsaPublicKeyPEM : {type : String, default : ''},
 
     // These are the values needed to ininiate a payment using braintree.
     // Since these values can only be used to send money too our account, we cannot
@@ -49,11 +61,11 @@ AdministratorSchema.methods.generateRSA = function(cb) {
 
     var key = ursa.generatePrivateKey();
     var rsa_private_key_pem = key.toPrivatePem().toString('ascii');
-    this.rsa_public_key_pem = key.toPublicPem().toString('ascii');
+    this.rsaPublicKeyPEM = key.toPublicPem().toString('ascii');
 
     this.save(function(err, auth){
         cb(err, {
-            rsa_private_key_pem : rsa_private_key_pem
+            rsaPrivateKeyPEM : rsa_private_key_pem
         });
     });
 };
@@ -62,7 +74,7 @@ AdministratorSchema.methods.generateRSA = function(cb) {
 // by an authorized person at a later date (who has the private key).
 AdministratorSchema.methods.encryptRSA = function(plaintext, cb) {
 
-    var public_key = ursa.createPublicKey(this.rsa_public_key_pem);
+    var public_key = ursa.createPublicKey(this.rsaPublicKeyPEM);
 
     var ciphertext = public_key.encrypt(plaintext, 'utf8', 'base64');
 

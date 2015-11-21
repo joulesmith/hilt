@@ -4,14 +4,17 @@ var router = express.Router();
 module.exports = router;
 var mongoose = require('mongoose');
 
+var zxcvbn = require('zxcvbn');
+
 // use mongoose database objects
 var User = mongoose.model("user");
+
+var email_regex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[A-Z]{2}|com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|museum)\b/;
+
 
 // creates a new user
 router.post('/', function(req, res, next) {
 
-
-    console.log('email: ' + req.body.email);
 
     if (!req.body.email || req.body.email === '') {
         return res.status(400).json({
@@ -21,9 +24,23 @@ router.post('/', function(req, res, next) {
         });
     }
 
+    if (!email_regex.test(req.body.email)) {
+        return res.status(400).json({
+            error : {
+                message : 'invalid email address'
+            }
+        });
+    }
+
     if (!req.body.password || req.body.password === '') {
         return res.status(400).json({
             error : 'password must be supplied'
+        });
+    }
+
+    if (zxcvbn(req.body.password).score < 3) {
+        return res.status(400).json({
+            error : 'password is not complex enough'
         });
     }
 

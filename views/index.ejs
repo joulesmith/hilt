@@ -1,26 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="./stylesheets/bootstrap.css" rel="stylesheet">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- load modules and initialization script -->
-    <script data-main="index" src="lib/require.js"></script>
+        <title>Hi</title>
 
-    <!-- load needed angular template files -->
-    <% include modules/common.ejs %>
-    <% include modules/user.ejs %>
-</head>
-<body ng-controller="MainCtrl">
+        <!-- Boostrap styles-->
+        <link href="./css/bootstrap.css" rel="stylesheet">
 
-    <!-- Top level of page layout and logic -->
-    <div class="container-fluid">
-        <div class="row">
-          <div class="col-md-4" ng-include="'/user/register.html'"></div>
-          <div class="col-md-4" ng-include="'/user/reset.html'"></div>
-          <div class="col-md-4" ng-include="'/user/login.html'" ></div>
+        <!-- load modules and initialization script -->
+        <script data-main="index" src="lib/require.js"></script>
+
+        <!-- load needed angular template files -->
+        <% include modules/common.ejs %>
+        <% include modules/user.ejs %>
+    </head>
+    <body ng-controller="MainCtrl">
+
+        <!-- Top level of page layout and logic -->
+        <div class="container-fluid">
+            <div class="row">
+              <div ui-view></div>
+            </div>
         </div>
-    </div>
-
-</body>
+    </body>
 </html>

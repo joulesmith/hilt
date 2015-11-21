@@ -38,6 +38,7 @@ app.use(userAuth());
 app.use('/', require('./routes/index'));
 
 // api routs
+app.use('/api/util', require('./routes/api/util'));
 app.use('/api/users', require('./routes/api/users'));
 
 

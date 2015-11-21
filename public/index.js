@@ -1,20 +1,3 @@
-/*
-    Copyright (C) 2015  Joulesmith Energy Technologies, LLC
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 "use strict";
 
 require.config({
@@ -24,7 +7,9 @@ require.config({
         'angular' : '../lib/angular.min',
         'domReady': '../lib/domReady',
         'lodash' : '../lib/lodash.min',
-        'restangular' : '../lib/restangular'
+        'restangular' : '../lib/restangular',
+        'ui-router' : '../lib/angular-ui-router.min',
+        'ui-bootstrap' : '../lib/ui-bootstrap.min'
     },
     shim: {
         'angular' : {
@@ -37,6 +22,14 @@ require.config({
             deps: ['lodash'],
             exports : 'restangular'
         },
+        'ui-bootstrap' : {
+            deps: ['angular'],
+            exports : 'ui-bootstrap'
+        },
+        'ui-router' : {
+            deps: ['angular'],
+            exports : 'ui-router'
+        }
     }
 });
 
@@ -45,22 +38,39 @@ require([
     'angular',
     'domReady',
     'user',
-    'common'
+    'common',
+    'ui-bootstrap',
+    'ui-router'
 ], function(
     angular,
     domReady) {
 
     // create the root entry point to the application
-    var app = angular.module('app', ['common', 'user'], function($rootScopeProvider){
-        // no other initialization here
-    });
+    var app = angular.module('app', [
+        'common',
+        'user',
+        'ui.bootstrap',
+        'ui.router'
+    ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
+        $urlRouterProvider.otherwise('/');
+
+        $stateProvider.state('home', {
+            url : '/',
+            template : 'home'
+        }).state('user_register', {
+            url : '/user/register',
+            templateUrl : '/user/register.html'
+        });
+    }]);
 
     app.controller('MainCtrl', ['$scope', function ($scope) {
         $scope.admin = {
-            allow_password_reset : true
+            requireEmailConfirmation : true,
+            enablePasswordReset : true,
+            requireAgreement : true,
         }
 
-        $scope.greetMe = "Hello World.";
+        $scope.title = "Hello World.";
     }]);
 
     // wait for the entire dom to be loaded before trying to run angular modules
