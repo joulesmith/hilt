@@ -1,13 +1,14 @@
-<script type="text/ng-template" id="/user/register.html">
-    <div ng-controller="user.register" class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Register New User</h3>
-        </div>
-        <div class="panel-body">
+<script type="text/ng-template" id="/user.html">
+    <div ui-view></div>
+</script>
+
+<script type="text/ng-template" id="/user.register.html">
+    <div class="row">
+        <div class="col-sm-offset-2 col-sm-8">
             <form ng-submit="submit()"  class="form-horizontal">
                 <div class="form-group row ng-class: user.email.classes.group;">
                     <label for="email" class="col-sm-2 control-label">Email</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-10 col-lg-6">
                         <input
                             ng-model="user.email.value"
                             ng-change="validate.email();"
@@ -21,7 +22,7 @@
                 </div>
                 <div ng-if="admin.requireEmailConfirmation" class="form-group row ng-class: user.emailConfirmation.classes.group;">
                     <label for="email" class="col-sm-2 control-label">Code</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-10 col-lg-6">
                         <div class="input-group">
                             <div ng-if="admin.requireEmailConfirmation" class="input-group-btn">
                                 <button type="button" class="btn btn-primary" ng-disabled="!user.email.success">Send</button>
@@ -41,7 +42,7 @@
                 </div>
                 <div class="form-group row ng-class: user.password.classes.group;">
                     <label for="password" class="col-sm-2 control-label">Password</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-10 col-lg-6">
                         <input
                             ng-model="user.password.value"
                             ng-change="validate.password(); validate.passwordConfirm();"
@@ -54,11 +55,12 @@
 
                         <h6>Password Strength:<b> {{user.password.testResult.strength}} / 4</b></h6>
 
-                        <h6>Crack Time:<b> {{user.password.testResult.crackTime}}</b></h6>
+                        <h6>Time to Crack:<b> {{user.password.testResult.crackTime}}</b></h6>
 
                         <div ng-if="user.password.testResult.warnings.length > 0" class="alert alert-danger" role="alert">
                             <h6 ng-repeat="pw_error in user.password.testResult.warnings">
                                 <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                                <span class="sr-only">Suggestion:</span>
                                 {{pw_error}}
                             </h6>
                         </div>
@@ -66,7 +68,7 @@
                 </div>
                 <div class="form-group row ng-class: user.passwordConfirm.classes.group;">
                     <label for="password" class="col-sm-2 control-label">Re-enter Password</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-10 col-lg-6">
                         <input
                             ng-model="user.passwordConfirm.value"
                             ng-change="validate.passwordConfirm();"
@@ -79,7 +81,7 @@
                     </div>
                 </div>
                 <div ng-if="admin.requireAgreement" class="form-group row">
-                    <div class="col-sm-offset-2 col-sm-10">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
                         <div class="checkbox">
                             <label class="control-label">
                                 <input ng-model='user.agreeToTaC' type="checkbox">
@@ -90,7 +92,7 @@
                     </div>
                 </div>
                 <div ng-if="admin.enablePasswordReset" class="form-group row">
-                    <div class="col-sm-offset-2 col-sm-10">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
                         <div class="checkbox">
                             <label class="control-label">
                                 <input ng-model='user.enablePasswordReset' type="checkbox">
@@ -108,13 +110,13 @@
                     </div>
                 </div>
                 <div class="form-group row">
-                    <div class="col-sm-offset-2 col-sm-10">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
                         <button type="submit" class="btn btn-primary" ng-disabled="!allowRegister()">Register</button>
                     </div>
                 </div>
                 <div ng-if='error' class="form-group row">
-                    <div class="col-sm-offset-2 col-sm-10">
-                        <div ng-include="'common.error'" ng-controller="common.error" onload="init(error)"><div>
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+                        <div ng-include="'/common.error.html'" ng-controller="common.error" onload="init(error)"><div>
                     </div>
                 </div>
             </form>
@@ -123,66 +125,190 @@
 </script>
 
 
-<script type="text/ng-template" id="/user/login.html">
-    <div ng-controller="user.login as ctrl" class="">
-        <form ng-submit="ctrl.auth.login(user, ctrl.response)" class="form-horizontal">
-            <div class="form-group">
-                <label for="email" class="col-sm-2 control-label">Email</label>
-                <div class="col-sm-10">
-                    <input ng-model="user.email" type="email" class="form-control" id="email" placeholder="Email">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="password" class="col-sm-2 control-label">Password</label>
-                <div class="col-sm-10">
-                    <input ng-model="user.password" type="password" class="form-control" id="password" placeholder="Password">
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-offset-2 col-sm-10">
-                    <button type="submit" class="btn btn-default">Sign In</button>
-                </div>
-            </div>
-            <div ng-if='admin.allow_password_reset' class="form-group">
-                <div class="col-sm-offset-2 col-sm-10">
-                    <a style="cursor: pointer;">reset password</a>
-                </div>
-            </div>
-        </form>
+<script type="text/ng-template" id="/user.login.html">
+    <div class="row">
+        <div class="col-sm-offset-2 col-sm-8">
+            <form ng-submit="submit()"  class="form-horizontal">
+                <div class="form-group row">
+                    <label for="email" class="col-sm-2 control-label">Email</label>
+                    <div class="col-sm-10 col-lg-6">
+                        <input
+                            ng-model="user.email"
 
-        <div ng-if='ctrl.error' ng-include="'/common/error.html'"><div>
+                            type="email"
+                            class="form-control "
+                            id="email"
+                            placeholder="Email">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="password" class="col-sm-2 control-label">Password</label>
+                    <div class="col-sm-10 col-lg-6">
+                        <input
+                            ng-model="user.password"
+
+                            type="password"
+                            class="form-control form-control-success"
+                            id="password"
+                            placeholder="Password">
+                    </div>
+                </div>
+
+
+                <div class="form-group row">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+                        <div class="checkbox">
+                            <label class="control-label">
+                                <input ng-model='user.rememberLogin' type="checkbox">
+                                Remember Login
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </div>
+                </div>
+                <div ng-if='error' class="form-group row">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+                        <div ng-include="'/common.error.html'" ng-controller="common.error"><div>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 </script>
 
-<script type="text/ng-template" id="/user/reset.html">
-    <div ng-controller="user.reset as ctrl" class="">
-        <form ng-submit="ctrl.auth.setPassword(user, ctrl.response)" class="form-horizontal">
 
-            <div class="form-group">
-                <label for="email" class="col-sm-2 control-label">Email</label>
-                <div class="col-sm-10">
-                    <input ng-model="user.email" type="email" class="form-control" id="email" placeholder="Email">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="password" class="col-sm-2 control-label">Password</label>
-                <div class="col-sm-10">
-                    <input ng-model="user.password" type="password" class="form-control" id="password" placeholder="New Password">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="secret" class="col-sm-2 control-label">Secret</label>
-                <div class="col-sm-10">
-                    <input ng-model="user.secret" type="text" class="form-control" id="secret" placeholder="Secret">
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-offset-2 col-sm-10">
-                    <button type="submit" class="btn btn-default">Reset Password</button>
-                </div>
-            </div>
+<script type="text/ng-template" id="/user.reset.html">
+    <div class="row">
+        <div class="col-sm-offset-2 col-sm-8">
+            <form ng-submit="submit()"  class="form-horizontal">
+                <div class="form-group row ng-class: user.email.classes.group;">
+                    <label for="email" class="col-sm-2 control-label">Email</label>
+                    <div class="col-sm-10 col-lg-6">
+                        <input
+                            ng-model="user.email.value"
+                            ng-change="validate.email();"
 
-        </form>
-        <div ng-if='ctrl.error' ng-include="'/common/error.html'"><div>
+                            type="email"
+                            class="form-control "
+                            id="email"
+                            placeholder="Email">
+                        <span ng-show="user.email.success" class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
+                    </div>
+                </div>
+                <div ng-if="admin.requireEmailConfirmation" class="form-group row ng-class: user.emailConfirmation.classes.group;">
+                    <label for="email" class="col-sm-2 control-label">Code</label>
+                    <div class="col-sm-10 col-lg-6">
+                        <div class="input-group">
+                            <div ng-if="admin.requireEmailConfirmation" class="input-group-btn">
+                                <button type="button" class="btn btn-primary" ng-disabled="!user.email.success">Send</button>
+                            </div>
+                            <input
+                                ng-model="user.emailConfirmation.value"
+                                ng-change="validate.emailConfirmation();"
+
+                                type="text"
+                                class="form-control form-control-success"
+                                id="emailConfirmation"
+                                placeholder="Email Confirmation Code"
+                                autocomplete="false">
+                            <span ng-show="user.emailConfirmation.success" class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row ng-class: user.password.classes.group;">
+                    <label for="password" class="col-sm-2 control-label">Password</label>
+                    <div class="col-sm-10 col-lg-6">
+                        <input
+                            ng-model="user.password.value"
+                            ng-change="validate.password(); validate.passwordConfirm();"
+
+                            type="password"
+                            class="form-control form-control-success"
+                            id="password"
+                            placeholder="Password">
+                        <span ng-show="user.password.success" class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
+
+                        <h6>Password Strength:<b> {{user.password.testResult.strength}} / 4</b></h6>
+
+                        <h6>Time to Crack:<b> {{user.password.testResult.crackTime}}</b></h6>
+
+                        <div ng-if="user.password.testResult.warnings.length > 0" class="alert alert-danger" role="alert">
+                            <h6 ng-repeat="pw_error in user.password.testResult.warnings">
+                                <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                                {{pw_error}}
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row ng-class: user.passwordConfirm.classes.group;">
+                    <label for="password" class="col-sm-2 control-label">Re-enter Password</label>
+                    <div class="col-sm-10 col-lg-6">
+                        <input
+                            ng-model="user.passwordConfirm.value"
+                            ng-change="validate.passwordConfirm();"
+
+                            type="password"
+                            class="form-control form-control-success"
+                            id="passwordConfirm"
+                            placeholder="Re-enter Password">
+                        <span ng-show="user.passwordConfirm.success" class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
+                    </div>
+                </div>
+                <div ng-if="admin.requireAgreement" class="form-group row">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+                        <div class="checkbox">
+                            <label class="control-label">
+                                <input ng-model='user.agreeToTaC' type="checkbox">
+                                Agree to
+                            </label>
+                            <a href="{{admin.termsAndConditions}}">terms and conditions</a>.
+                        </div>
+                    </div>
+                </div>
+                <div ng-if="admin.enablePasswordReset" class="form-group row">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+                        <div class="checkbox">
+                            <label class="control-label">
+                                <input ng-model='user.enablePasswordReset' type="checkbox">
+                                Enable Emailed Password Resets
+                            </label>
+                        </div>
+                        <div ng-if="user.enablePasswordReset" class="alert alert-danger" role="alert">
+                            <h6>
+                                <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                                Allowing your password to be reset by email is discouraged since email communication
+                                is not secure, and could allow un-authorized access to your account.
+                                However, without this enabled your password cannot be reset if you forget it.
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+                        <button type="submit" class="btn btn-primary" ng-disabled="!allowRegister()">Register</button>
+                    </div>
+                </div>
+                <div ng-if='error' class="form-group row">
+                    <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+                        <div ng-include="'common.error'" ng-controller="common.error" onload="init(error)"><div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</script>
+
+<script type="text/ng-template" id="/user.welcome.html">
+    <div ng-if='!api.user._id'>
+        <a ui-sref="user.register">Register</a>
+        <a ui-sref="user.login">Login</a>
+    </div>
+    <div ng-if='api.user._id'>
+        Welcome : <a ui-sref="user.controlPanel">{{api.isLoggedIn()}}</a>,
+        <a ng-click="logout()" style="cursor: pointer;">Logout</a>
     </div>
 </script>

@@ -5,6 +5,7 @@ require.config({
     baseUrl : './modules',
     paths : {
         'angular' : '../lib/angular.min',
+        'ngRoute' : '../lib/angular-route.min',
         'domReady': '../lib/domReady',
         'lodash' : '../lib/lodash.min',
         'restangular' : '../lib/restangular',
@@ -15,11 +16,15 @@ require.config({
         'angular' : {
             exports : 'angular'
         },
+        'ngRoute' : {
+            deps: ['angular'],
+            exports : 'ngRoute'
+        },
         'lodash' : {
             exports : '_'
         },
         'restangular' : {
-            deps: ['lodash'],
+            deps: ['angular', 'lodash'],
             exports : 'restangular'
         },
         'ui-bootstrap' : {
@@ -37,6 +42,7 @@ require.config({
 require([
     'angular',
     'domReady',
+    'ngRoute',
     'user',
     'common',
     'ui-bootstrap',
@@ -47,27 +53,26 @@ require([
 
     // create the root entry point to the application
     var app = angular.module('app', [
-        'common',
-        'user',
+        'ngRoute',
         'ui.bootstrap',
-        'ui.router'
+        'ui.router',
+        'common',
+        'user'
     ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
         $urlRouterProvider.otherwise('/');
 
-        $stateProvider.state('home', {
-            url : '/',
-            template : 'home'
-        }).state('user_register', {
-            url : '/user/register',
-            templateUrl : '/user/register.html'
-        });
+        $stateProvider
+            .state('home', {
+                url : '/',
+                template : 'home'
+            });
     }]);
 
     app.controller('MainCtrl', ['$scope', function ($scope) {
         $scope.admin = {
-            requireEmailConfirmation : true,
-            enablePasswordReset : true,
-            requireAgreement : true,
+            requireEmailConfirmation : false,
+            enablePasswordReset : false,
+            requireAgreement : false,
         }
 
         $scope.title = "Hello World.";

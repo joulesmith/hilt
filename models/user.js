@@ -6,9 +6,10 @@ var UserSchema = new mongoose.Schema({
     email : String,
 
     passwordHash: {type : String, default : ''},
+    secretSalt : {type : String, default : ''},
     tokenSalt : {type : String, default : ''},
     tokenHash : {type : String, default : ''},
-    tokenExpiration : {type : Number, default : 0}, // (ms) unix time
+    expiration : {type : Number, default : 0}, // (ms) unix time
 
     // store credentials to use google services for this user
     google : {
@@ -53,34 +54,76 @@ UserSchema.methods.verifyPassword = function(password, cb) {
 };
 
 /**
- * Generates a token to replace use of password for authentication.
- * @param  {Number}   milliseconds How long this token will be valid.
- * @param  {Function} cb           Callback (error, token)
+ * Resets the salt and hash used to generate/verify tokens
+ * @param  {[type]}   milliseconds How long this secret will be valid.
+ * @param  {Function} cb           [description]
+ * @return {[type]}                [description]
  */
-UserSchema.methods.generateToken = function(milliseconds, cb) {
+UserSchema.methods.resetTokens = function(password, milliseconds, cb) {
     var user = this;
-
+    // the tokens valididy are limited by a secret which can be changed,
+    // and by a time limit even on otherwise valid secrets.
+    user.secretSalt = crypto.randomBytes(16).toString('hex');
     user.tokenSalt = crypto.randomBytes(16).toString('hex');
-    user.tokenExpiration = milliseconds + Date.now();
-    var secret = crypto.randomBytes(16).toString('hex');
+    user.expiration = milliseconds + Date.now();
 
-    crypto.pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256', function(err, key) {
+    // this has is to make sure the password hash cannot be used to generate a secret without the password
+    crypto.pbkdf2(password, user.secretSalt, 1000, 64, 'sha256', function(err, pwhash) {
         if (err) {
             return cb(err);
         }
 
-        user.tokenHash = key.toString('hex');
+        // this hash is to make cracking the password from the secret harder, although
+        // the secret should neven be seen, but just in case. it's slow but only needed
+        // when creating a token
+        bcrypt.hash(pwhash.toString('hex'), 10, function(err, secret) {
+            if (err) {
+                return cb(err);
+            }
 
-        user.save(function(err, user){
+            // this is to ensure the token value in the database cannot be used to generate a secret
+            crypto.pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256', function(err, tokenHash) {
+                if (err) {
+                    return cb(err);
+                }
+
+                user.tokenHash = tokenHash.toString('hex');
+
+                user.save(cb);
+            });
+        });
+    });
+};
+
+/**
+ * Generates a token to replace use of password for authentication.
+ * @param  {Number}   milliseconds How long this token will be valid.
+ * @param  {Function} cb           Callback (error, token)
+ */
+UserSchema.methods.generateToken = function(password, cb) {
+    var user = this;
+
+    // this has is to make sure the password hash cannot be used to generate a secret without the password
+    crypto.pbkdf2(password, user.secretSalt, 1000, 64, 'sha256', function(err, pwhash) {
+        if (err) {
+            return cb(err);
+        }
+
+        // this hash is to make cracking the password from the secret harder, although
+        // the secret should neven be seen, but just in case. it's slow but only needed
+        // when creating a token
+        bcrypt.hash(pwhash.toString('hex'), 10, function(err, secret) {
             if (err) {
                 return cb(err);
             }
 
             var token = {
                 _id : user._id,
-                secret : secret,
-                expiration : user.tokenExpiration
+                secret : secret
             };
+
+            token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
+            token.expiration = user.expiration;
 
             cb(null, token);
         });
@@ -91,16 +134,17 @@ UserSchema.methods.generateToken = function(milliseconds, cb) {
 UserSchema.methods.verifyToken = function(token, cb) {
     var user = this;
 
-    if (token.expiration < user.tokenExpiration) {
+    if (Date.now() > user.expiration) {
         return cb(null, false);
     }
 
-    crypto.pbkdf2(token.secret, user.tokenSalt, 1000, 64, 'sha256', function(err, key) {
+    // this is to ensure the token value in the database cannot be used to generate a secret
+    crypto.pbkdf2(token.secret, user.tokenSalt, 1000, 64, 'sha256', function(err, tokenHash) {
         if (err) {
             return cb(err);
         }
 
-        cb(null, key.toString('hex') === user.tokenHash);
+        cb(null, tokenHash.toString('hex') === user.tokenHash);
     });
 }
 

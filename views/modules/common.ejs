@@ -1,9 +1,12 @@
 
 
-<script type="text/ng-template" id="common.error">
-    <div class="row bg-danger">
-        <h3 ng-show="error.message">{{error.message}}</h1>
-        <h4 ng-show="error.status">{{error.status}}</h2>
+<script type="text/ng-template" id="/common.error.html">
+    <div class="row alert alert-danger" role="alert">
+        <h6 ng-show="error.message">
+            <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+            <span class="sr-only">Error:</span>
+            {{error.message}}
+        </h6>
         <pre ng-show="error.stack">{{error.stack}}</pre>
     </div>
 </script>

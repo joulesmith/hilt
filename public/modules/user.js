@@ -2,31 +2,36 @@
 
 define(['angular', 'restangular'], function (angular, restangular){
 
-    var module = angular.module('user', ['restangular']);
+    var module = angular.module('user', ['restangular'])
+        .config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
+            $stateProvider
+                .state('user', {
+                    url : '/user',
+                    templateUrl : '/user.html'
+                })
+                .state('user.register', {
+                    url : '/register',
+                    templateUrl : '/user.register.html',
+                    controller : 'user.register'
+                })
+                .state('user.login', {
+                    url : '/login',
+                    templateUrl : '/user.login.html',
+                    controller : 'user.login'
+                });
+        }]);
 
 
     // apparently angular is just a global name space for dependencies anyway, so
-    module.factory('user.auth', ['Restangular', '$window', '$http', function(Restangular, $window, $http){
+    module.factory('user.api', ['Restangular', '$window', '$http', function(Restangular, $window, $http){
 
         var Auth = Restangular.all('api').all('users');
 
-        var auth = {};
-        var token_location = 'broadsword_token_location';
+        var api = {};
+        var token = null;
 
-        var saveToken = function (token){
-
-            $window.localStorage[token_location] = {
-                token : token,
-                base64 : (new Buffer(JSON.stringify(token), 'utf8')).toString('base64')
-            };
-        };
-
-        var removeToken = function() {
-            $window.localStorage.removeItem(token_location);
-        }
-
-        auth.getToken = function(){
-            return $window.localStorage[token_location];
+        api.user = {
+            _id : null
         };
 
         /**
@@ -35,31 +40,40 @@ define(['angular', 'restangular'], function (angular, restangular){
 
             @return false if not logged in, or the _id of the user in the token
         */
-        auth.isLoggedIn = function() {
-            var token = $window.localStorage[token_location];
+        api.isLoggedIn = function() {
 
-            if(token){
-                // if expiration in the future, still valid
-                if (token.expiration > Date.now()){
-                    return payload._id;
-                }
+            if (token && Date.now() < token.expiration) {
+                api.user._id = token._id;
+                return token._id;
             }
+
+            token = JSON.parse($window.localStorage.getItem("token"));
+
+            if (token && Date.now() < token.expiration) {
+                api.user._id = token._id;
+                return token._id;
+            }
+
+            token = null;
+            api.user._id = null;
 
             return false;
         };
 
+        api.isLoggedIn();
+
         /**
             Register a new user using a email and a password.
 
-            user must have user.username and user.email
+            user must have user.email and user.password
         */
-        auth.register = function(user){
+        api.register = function(user){
 
             return $http.post('/api/users', user);
 
         };
 
-        auth.setPassword = function(user, response){
+        api.setPassword = function(user, response){
 
             Auth.one(user.username).put({
                 secret : user.secret,
@@ -73,33 +87,43 @@ define(['angular', 'restangular'], function (angular, restangular){
         };
 
         /**
-            user.username
+            user.email
             user.password
         */
-        auth.login = function(user, response){
+        api.login = function(user){
 
-            Auth.one(user.username).get({password : user.password})
-            .then(function(data){
-                saveToken(data.token);
-                response(null, data);
-            }, function(error) {
-                response(error);
-            });
+
+            return $http.post('/api/users/token', user)
+                .then(function(res){
+
+                    if (res.data.token) {
+                        token = res.data.token;
+
+                        api.user._id = token._id;
+
+                        $http.defaults.headers.common.Authorization = token.base64;
+
+                        if (user.rememberLogin) {
+                            $window.localStorage.setItem("token", JSON.stringify(token));
+                        }
+                    }
+                });
         };
 
-        auth.logout = function(){
-            removeToken();
+        api.logout = function(){
+            token = null;
+            $window.localStorage.removeItem('token');
         };
 
-        auth.passwordStrength = function(password, callback) {
+        api.passwordStrength = function(password, callback) {
 
             return $http.post('/api/util/passwordStrength', {password : password});
         };
 
-        return auth;
+        return api;
     }]);
 
-    module.controller('user.register', ['$scope', 'user.auth', '$state', function($scope, auth, $state){
+    module.controller('user.register', ['$scope', 'user.api', '$state', function($scope, api, $state){
 
         $scope.user = {
             email : {
@@ -132,7 +156,8 @@ define(['angular', 'restangular'], function (angular, restangular){
                     },
                 },
                 testResult : {
-                    score              : 0
+                    strength : 0,
+                    crackTime : 'less than a second'
                 }
             },
             passwordConfirm : {
@@ -146,6 +171,7 @@ define(['angular', 'restangular'], function (angular, restangular){
                 }
             },
             agreeToTaC : false,
+            enablePasswordReset : false
         };
 
         //var email_regex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
@@ -171,7 +197,7 @@ define(['angular', 'restangular'], function (angular, restangular){
             password : function() {
                 //var result = owasp.test($scope.user.password.value);
 
-                auth.passwordStrength($scope.user.password.value)
+                api.passwordStrength($scope.user.password.value)
                 .then(function(res){
                     $scope.user.password.testResult = res.data;
                     var valid = res.data.strength >= 3;
@@ -208,57 +234,68 @@ define(['angular', 'restangular'], function (angular, restangular){
             return false;
         };
 
-        $scope.classes = {
-            username : "",
-            email : "",
-            agreeToTaC : false,
+        $scope.submit = function () {
+            api.register({
+                email : $scope.user.email.value,
+                emailConfirmation : $scope.user.emailConfirmation.value,
+                password : $scope.user.password.value,
+                agreeToTaC : $scope.user.agreeToTaC,
+                enablePasswordReset : $scope.user.enablePasswordReset
+            }).then(function(res){
+                api.login({
+                    email : $scope.user.email.value,
+                    password : $scope.user.password.value
+                }).then(function(){
+                    $state.go('home');
+                }, function(res){
+                    if (res.data.error) {
+                        $scope.error = res.data.error;
+                    }
+                });
+
+            }, function(res){
+                if (res.data.error) {
+                    $scope.error = res.data.error;
+                }
+            });
         };
+    }]);
 
-        $scope.auth = auth;
+    module.controller('user.login', ['$scope', 'user.api', '$state', function($scope, api, $state){
 
-        $scope.response = function(res) {
-            if (res.data.error) {
-                $scope.error = res.data.error;
-            }
+        $scope.user = {
+            email : "",
+            password : "",
+            rememberLogin : false
         };
 
         $scope.submit = function () {
-            $state.go('home');
-        }
-    }]);
-
-    module.controller('user.login', ['$scope', 'user.auth', function($scope, auth){
-        var ctrl = this;
-
-        ctrl.user = {
-            username : "",
-            password : ""
-        };
-
-        ctrl.auth = auth;
-
-        ctrl.response = function(err) {
-            if (err) {
-                ctrl.error = err;
-            }
+            api.login($scope.user)
+                .then(function(res){
+                    $state.go('home');
+                }, function(res){
+                    $scope.error = res.data.error;
+                });
         };
     }]);
 
 
 
-    module.controller('user.reset', ['$scope', 'user.auth', function($scope, auth){
+    module.controller('user.reset', ['$scope', 'user.api', function($scope, api){
         this.user = {
             username : "",
             password : "",
             secret : ""
         };
+    }]);
 
-        this.auth = auth;
+    module.controller('user.welcome', ['$scope', '$state', 'user.api', function($scope, $state, api){
 
-        this.response = function(res) {
-            if (res.data.error) {
-                this.error = res.data.error;
-            }
+        $scope.api = api;
+
+        $scope.logout = function() {
+            api.logout();
+            $state.go('home');
         };
     }]);
 
