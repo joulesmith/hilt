@@ -1,12 +1,12 @@
 
 
 <script type="text/ng-template" id="/common.error.html">
-    <div class="row alert alert-danger" role="alert">
+    <div class="row alert alert-danger" role="alert" ng-click="show_stack=!show_stack">
         <h6 ng-show="error.message">
             <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
             <span class="sr-only">Error:</span>
             {{error.message}}
         </h6>
-        <pre ng-show="error.stack">{{error.stack}}</pre>
+        <pre ng-show="show_stack">{{error.stack}}</pre>
     </div>
 </script>

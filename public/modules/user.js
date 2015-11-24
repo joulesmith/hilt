@@ -42,18 +42,30 @@ define(['angular', 'restangular'], function (angular, restangular){
         */
         api.isLoggedIn = function() {
 
-            if (token && Date.now() < token.expiration) {
+            if (token) {
+                api.user._id = token._id;
+                return token._id;
+            }
+
+            token = JSON.parse($window.sessionStorage.getItem("token"));
+
+            if (token && token.base64) {
+                $http.defaults.headers.common.Authorization = token.base64;
                 api.user._id = token._id;
                 return token._id;
             }
 
             token = JSON.parse($window.localStorage.getItem("token"));
 
-            if (token && Date.now() < token.expiration) {
+            if (token && token.base64) {
+                $http.defaults.headers.common.Authorization = token.base64;
                 api.user._id = token._id;
                 return token._id;
             }
 
+
+
+            $http.defaults.headers.common.Authorization = '';
             token = null;
             api.user._id = null;
 
@@ -105,6 +117,8 @@ define(['angular', 'restangular'], function (angular, restangular){
 
                         if (user.rememberLogin) {
                             $window.localStorage.setItem("token", JSON.stringify(token));
+                        }else{
+                            $window.sessionStorage.setItem("token", JSON.stringify(token));
                         }
                     }
                 });
@@ -113,9 +127,11 @@ define(['angular', 'restangular'], function (angular, restangular){
         api.logout = function(){
             token = null;
             $window.localStorage.removeItem('token');
+            $window.sessionStorage.removeItem('token');
+            $http.defaults.headers.common.Authorization = '';
         };
 
-        api.passwordStrength = function(password, callback) {
+        api.passwordStrength = function(password) {
 
             return $http.post('/api/util/passwordStrength', {password : password});
         };
@@ -206,8 +222,8 @@ define(['angular', 'restangular'], function (angular, restangular){
                     $scope.user.password.classes.group["has-success"] = valid;
                     $scope.user.password.classes.group["has-feedback"] = valid;
 
-                }, function(data){
-
+                }, function(res){
+                    $scope.error = res.data.error;
                 });
 
 

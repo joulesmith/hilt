@@ -1,6 +1,11 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt');
 var crypto = require('crypto');
+var Promise = require('bluebird');
+
+var bcrypt_hash = Promise.promisify(bcrypt.hash);
+var bcrypt_compare = Promise.promisify(bcrypt.compare);
+var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 var UserSchema = new mongoose.Schema({
     email : String,
@@ -9,7 +14,6 @@ var UserSchema = new mongoose.Schema({
     secretSalt : {type : String, default : ''},
     tokenSalt : {type : String, default : ''},
     tokenHash : {type : String, default : ''},
-    expiration : {type : Number, default : 0}, // (ms) unix time
 
     // store credentials to use google services for this user
     google : {
@@ -21,131 +25,122 @@ var UserSchema = new mongoose.Schema({
 /**
  * Set a password
  * @param  {String}   new_password New password to use
- * @param  {Function} cb           Callback(error, user)
  */
-UserSchema.methods.setPassword = function(new_password, cb) {
+UserSchema.methods.setPassword = function(new_password) {
     var user = this;
 
-    bcrypt.hash(new_password, 10, function(err, hash) {
-        if (err) {
-            return cb(err);
-        }
+    return bcrypt_hash(new_password, 10)
+        .then(function(hash) {
+            console.log('now need to reset tokens.');
+            user.passwordHash = hash;
 
-        user.passwordHash = hash;
-
-        user.save(cb);
-    });
-
-
-};
-
-/**
- * Verify a given password against the hash in the database
- * @param  {String}   password plaintext password to validate against stored hash
- * @param  {Function} cb       Callback (error, valid)
- */
-UserSchema.methods.verifyPassword = function(password, cb) {
-
-    if (this.passwordHash === '') {
-        return cb(new Error('password is not set'));
-    }
-
-    bcrypt.compare(password, this.passwordHash, cb);
+            return user.resetTokens(new_password);
+        });
 };
 
 /**
  * Resets the salt and hash used to generate/verify tokens
  * @param  {[type]}   milliseconds How long this secret will be valid.
- * @param  {Function} cb           [description]
- * @return {[type]}                [description]
  */
-UserSchema.methods.resetTokens = function(password, milliseconds, cb) {
+UserSchema.methods.resetTokens = function(password) {
     var user = this;
-    // the tokens valididy are limited by a secret which can be changed,
+
+    // the tokens valididy are limited by a secret which can be changed any time,
     // and by a time limit even on otherwise valid secrets.
     user.secretSalt = crypto.randomBytes(16).toString('hex');
     user.tokenSalt = crypto.randomBytes(16).toString('hex');
-    user.expiration = milliseconds + Date.now();
 
-    // this has is to make sure the password hash cannot be used to generate a secret without the password
-    crypto.pbkdf2(password, user.secretSalt, 1000, 64, 'sha256', function(err, pwhash) {
-        if (err) {
-            return cb(err);
-        }
+    // this hash is to make sure the password hash cannot be used to generate a secret without the password
+    return crypto_pbkdf2(password, user.secretSalt, 1000, 64, 'sha256')
+        .then(function(pwhash){
 
-        // this hash is to make cracking the password from the secret harder, although
-        // the secret should neven be seen, but just in case. it's slow but only needed
-        // when creating a token
-        bcrypt.hash(pwhash.toString('hex'), 10, function(err, secret) {
-            if (err) {
-                return cb(err);
-            }
+            // this hash is to make cracking the password from the secret harder, although
+            // the secret should neven be seen, but just in case. it's slow but only needed
+            // when creating a token, not verifying. This is so all tokens are the same, and
+            // can only be generated if the user knows their password
+            return bcrypt_hash(pwhash.toString('hex'), 10);
+        })
+        .then(function(secret) {
 
             // this is to ensure the token value in the database cannot be used to generate a secret
-            crypto.pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256', function(err, tokenHash) {
-                if (err) {
-                    return cb(err);
+            // a faster hash is used for verification only.
+            return crypto_pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256');
+        })
+        .then(function(tokenHash){
+            user.tokenHash = tokenHash.toString('hex');
+
+            var result = user.save();
+
+            return result;
+        });
+};
+
+/**
+ * Verify a given password against the hash in the database
+ * @param  {String}   password plaintext password to validate against stored hash
+ */
+UserSchema.methods.verifyPassword = function(password) {
+    var user = this;
+
+    return (new Promise(function (resolve, reject) {
+            try {
+
+                if (user.passwordHash === '') {
+                    throw new Error('password is not set');
                 }
 
-                user.tokenHash = tokenHash.toString('hex');
+                resolve();
+            }catch(e) {
+                reject(e);
+            }
+        }))
+        .then(function(){
+            return bcrypt_compare(password, user.passwordHash);
+        })
+        .then(function(valid){
+            if (valid) {
+                return user;
+            }
 
-                user.save(cb);
-            });
+            return null;
         });
-    });
+
 };
 
 /**
  * Generates a token to replace use of password for authentication.
  * @param  {Number}   milliseconds How long this token will be valid.
- * @param  {Function} cb           Callback (error, token)
  */
 UserSchema.methods.generateToken = function(password, cb) {
     var user = this;
 
-    // this has is to make sure the password hash cannot be used to generate a secret without the password
-    crypto.pbkdf2(password, user.secretSalt, 1000, 64, 'sha256', function(err, pwhash) {
-        if (err) {
-            return cb(err);
-        }
-
-        // this hash is to make cracking the password from the secret harder, although
-        // the secret should neven be seen, but just in case. it's slow but only needed
-        // when creating a token
-        bcrypt.hash(pwhash.toString('hex'), 10, function(err, secret) {
-            if (err) {
-                return cb(err);
-            }
-
+    return crypto_pbkdf2(password, user.secretSalt, 1000, 64, 'sha256')
+        .then(function(pwhash){
+            return bcrypt_hash(pwhash.toString('hex'), 10);
+        })
+        .then(function(secret){
             var token = {
                 _id : user._id,
                 secret : secret
             };
 
+            // this enocding is for use in header authorization.
             token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
             token.expiration = user.expiration;
 
-            cb(null, token);
+            return token;
         });
-    });
 
 };
 
 UserSchema.methods.verifyToken = function(token, cb) {
     var user = this;
 
-    if (Date.now() > user.expiration) {
-        return cb(null, false);
-    }
+    return crypto_pbkdf2(token.secret, user.tokenSalt, 1000, 64, 'sha256')
+        .then(function(tokenHash){
+            return tokenHash.toString('hex') === user.tokenHash;
+        });
 
-    // this is to ensure the token value in the database cannot be used to generate a secret
-    crypto.pbkdf2(token.secret, user.tokenSalt, 1000, 64, 'sha256', function(err, tokenHash) {
-        if (err) {
-            return cb(err);
-        }
-
-        cb(null, tokenHash.toString('hex') === user.tokenHash);
-    });
 }
 
 mongoose.model('user', UserSchema);

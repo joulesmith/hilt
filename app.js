@@ -1,5 +1,6 @@
 var express = require('express');
 var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 var path = require('path');
 
 // connect to database
@@ -40,6 +41,7 @@ app.use('/', require('./routes/index'));
 // api routs
 app.use('/api/util', require('./routes/api/util'));
 app.use('/api/users', require('./routes/api/users'));
+//app.use('/api/profiles', require('./routes/api/profiles'));
 
 
 // catch 404 and forward to error handler
@@ -56,7 +58,8 @@ app.use(function(err, req, res, next) {
 
   res.status(err.status || 500).json({
     error: {
-        message : err.message
+        message : err.message,
+        stack : err.stack
     }
   });
 });

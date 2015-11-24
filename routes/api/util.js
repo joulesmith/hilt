@@ -5,7 +5,7 @@ module.exports = router;
 var zxcvbn = require('zxcvbn');
 
 
-// creates a new user
+// tests the strength of a password using the same algorithm as required for passwords
 router.post('/passwordStrength/', function(req, res, next) {
     var result = zxcvbn(req.body.password);
 
