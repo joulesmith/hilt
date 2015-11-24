@@ -1,8 +1,9 @@
 "use strict";
 
-define(['angular', 'restangular'], function (angular, restangular){
+define(['angular'], function (angular){
 
-    var module = angular.module('user', ['restangular'])
+    // module for grouping common interactions with the user model
+    var module = angular.module('user', [])
         .config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
             $stateProvider
                 .state('user', {
@@ -22,10 +23,8 @@ define(['angular', 'restangular'], function (angular, restangular){
         }]);
 
 
-    // apparently angular is just a global name space for dependencies anyway, so
-    module.factory('user.api', ['Restangular', '$window', '$http', function(Restangular, $window, $http){
-
-        var Auth = Restangular.all('api').all('users');
+    // Creates an interface to the user model api.
+    module.factory('user.api', ['$window', '$http', function($window, $http){
 
         var api = {};
         var token = null;
@@ -85,17 +84,9 @@ define(['angular', 'restangular'], function (angular, restangular){
 
         };
 
-        api.setPassword = function(user, response){
+        api.setPassword = function(user){
 
-            Auth.one(user.username).put({
-                secret : user.secret,
-                password : user.password
-            })
-            .then(function(data){
-                response(null, data);
-            }, function(error) {
-                response(error);
-            });
+
         };
 
         /**
@@ -139,6 +130,7 @@ define(['angular', 'restangular'], function (angular, restangular){
         return api;
     }]);
 
+    // create a new user
     module.controller('user.register', ['$scope', 'user.api', '$state', function($scope, api, $state){
 
         $scope.user = {
@@ -277,6 +269,11 @@ define(['angular', 'restangular'], function (angular, restangular){
         };
     }]);
 
+    //
+    // These are controllers for the views of sub-states of the same name
+    //
+
+    // user login
     module.controller('user.login', ['$scope', 'user.api', '$state', function($scope, api, $state){
 
         $scope.user = {
@@ -296,7 +293,7 @@ define(['angular', 'restangular'], function (angular, restangular){
     }]);
 
 
-
+    // user password reset
     module.controller('user.reset', ['$scope', 'user.api', function($scope, api){
         this.user = {
             username : "",
@@ -305,6 +302,11 @@ define(['angular', 'restangular'], function (angular, restangular){
         };
     }]);
 
+    //
+    // These are controllers for stand-alone components dealing with a user.
+    //
+
+    // light-weight user controls
     module.controller('user.welcome', ['$scope', '$state', 'user.api', function($scope, $state, api){
 
         $scope.api = api;

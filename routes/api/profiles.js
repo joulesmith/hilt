@@ -3,6 +3,8 @@ var express = require('express');
 var router = express.Router();
 module.exports = router;
 var mongoose = require('mongoose');
+var userAuth = require('../../middleware/user');
+
 var ProfilesError = require('../../error')('routes.api.profiles');
 
 // use mongoose database objects
@@ -13,7 +15,7 @@ var prepare = function(content) {
 };
 
 // creates a new profile
-router.post('/', function(req, res, next) {
+router.post('/', userAuth(), function(req, res, next) {
     try{
         if (!req.user) {
             throw new ProfilesError('nouser',
@@ -38,7 +40,7 @@ router.post('/', function(req, res, next) {
 });
 
 // edit
-router.post('/:profile_id', function(req, res, next) {
+router.post('/:profile_id', userAuth(), function(req, res, next) {
     try{
         if (!req.user) {
             throw new ProfilesError('nouser',
@@ -76,12 +78,12 @@ router.post('/:profile_id', function(req, res, next) {
 router.get('/:profile_id', function(req, res, next) {
     try {
         Profile.findById('' + req.params.profile_id)
-            .exec()
-            .then(function(profile){
-                res.json(profile);
-            }, function(error){
-                next(error);
-            });
+        .exec()
+        .then(function(profile){
+            res.json(profile);
+        }, function(error){
+            next(error);
+        });
     }catch(error){
         next(error);
     }

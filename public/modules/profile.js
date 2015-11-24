@@ -1,17 +1,32 @@
 "use strict";
 
-define(['angular', 'restangular'], function (angular, restangular){
+define(['angular'], function (angular){
 
+    //
+    // module for common interactions with the profile model
+    //
     var module = angular.module('profile', [])
         .config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
             $stateProvider
                 .state('profile', {
-                    url : '/profile/:profileId',
-                    templateUrl : 'profile',
-                    controller : 'profile.main'
+                    url : '/profile',
+                    templateUrl : 'profile'
+                })
+                .state('profile.create', {
+                    url : '/create',
+                    templateUrl : 'profile.create',
+                    controller : 'profile.create'
+                })
+                .state('profile.view', {
+                    url : '/:profileId',
+                    templateUrl : 'profile.view',
+                    controller : 'profile.view'
                 });
         }]);
 
+    //
+    // factory to the profile model api
+    //
     module.factory('profile.api', ['$window', '$http', function($window, $http){
 
         var api = {};
@@ -39,13 +54,21 @@ define(['angular', 'restangular'], function (angular, restangular){
             return $http.post('/api/profiles/', {name : name})
                 .then(function(res){
                     return res.data.profile;
+                }, function(res){
+                    // TODO this doesn't seem right, maybe use Error somehow?
+                    throw res.data.error;
                 });
         };
 
         return api;
     });
 
-    module.controller('profile.main', ['$scope', '$state', 'profile.api', function($scope, $state, api){
+    //
+    // Controllers for the views of the sub-states of the same name
+    //
+
+    // view a single profile
+    module.controller('profile.view', ['$scope', '$state', 'profile.api', function($scope, $state, api){
         var _id = $state.params.profileId;
 
         $scope.profile = {};
@@ -60,6 +83,24 @@ define(['angular', 'restangular'], function (angular, restangular){
         }
 
     }]);
+
+    // create a new profile
+    module.controller('profile.create', ['$scope', '$state', 'profile.api', function($scope, $state, api){
+        $scope.name = '';
+
+        $scope.submit = function() {
+            api.createProfile($scope.name)
+            .then(function(profile){
+                $state.go('')
+            }, function(error){
+
+            });
+        };
+    }]);
+
+    //
+    // Controllers for stand-alone components used for viewing profile information
+    //
 
     module.controller('profile.text', ['$scope', function($scope){
         $scope.init = function(element) {
