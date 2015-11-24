@@ -30,11 +30,6 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// applicatin specfic middleware
-var userAuth = require('./middleware/user');
-
-app.use(userAuth());
-
 // view routs
 app.use('/', require('./routes/index'));
 

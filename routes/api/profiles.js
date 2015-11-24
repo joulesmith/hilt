@@ -1,73 +1,88 @@
-define(['express', 'mongoose'], function(express, mongoose) {
-    var router = express.Router();
-    // use mongoose database objects
-    var Profile = mongoose.model("profile");
+// load dependencies
+var express = require('express');
+var router = express.Router();
+module.exports = router;
+var mongoose = require('mongoose');
+var ProfilesError = require('../../error')('routes.api.profiles');
 
-    var prepare = function(content) {
-        return content;
-    };
+// use mongoose database objects
+var Profile = mongoose.model("profile");
 
-    // creates a new profile
-    router.post('/', function(req, res, next) {
+var prepare = function(content) {
+    return content;
+};
+
+// creates a new profile
+router.post('/', function(req, res, next) {
+    try{
         if (!req.user) {
-            return res.status(401).json({
-                error : {
-                    message : 'Must be logged in.'
-                }
-            });
+            throw new ProfilesError('nouser',
+                'A user must be logged in to create a profile.',
+                [],
+                401);
         }
 
         Profile.create({
             user : req.user,
-            name : '' + req.body.name,
-            content : prepare(req.body.content)
+            name : '' + req.body.name
         })
-            .save()
-            .then(function(user){
-                res.json({});
-            }, function(error){
-                next(error);
-            });
-    });
+        .save()
+        .then(function(profile){
+            res.json({});
+        }, function(error){
+            next(error);
+        });
+    }catch(error){
+        next(error);
+    }
+});
 
-    // edit
-    router.post('/:profile_id', function(req, res, next) {
+// edit
+router.post('/:profile_id', function(req, res, next) {
+    try{
         if (!req.user) {
-            return res.status(401).json({
-                error : {
-                    message : 'Must be logged in.'
-                }
-            });
+            throw new ProfilesError('nouser',
+                'A user must be logged in to create a profile.',
+                [],
+                401);
         }
 
-        Profile.findById(req.params.profile_id)
-            .exec()
-            .then(function(profile){
-                if (profile.user !== req.user) {
-                    throw new Error('Cannot edit this profile.');
-                }
+        Profile.findById('' + req.params.profile_id)
+        .exec()
+        .then(function(profile){
+            if (profile.user !== req.user) {
+                throw new ProfilesError('unauthorized',
+                    'A user can only edit their own profiles.',
+                    [],
+                    401);
+            }
 
-                profile.name = '' + req.body.name,
-                profile.content = prepare(req.body.content);
+            // update profile information
+            profile.name = '' + req.body.name,
+            profile.content = prepare(req.body.content);
 
-                return profile.save();
-            })
-            .then(function(profile){
-                res.json({});
-            }, function(error){
-                next(error);
-            });
-    });
+            return profile.save();
+        })
+        .then(function(profile){
+            res.json({});
+        }, function(error){
+            next(error);
+        });
+    }catch(error){
+        next(error);
+    }
+});
 
-    router.get('/:profile_id', function(req, res, next) {
-        Profile.findById(req.params.profile_id)
+router.get('/:profile_id', function(req, res, next) {
+    try {
+        Profile.findById('' + req.params.profile_id)
             .exec()
             .then(function(profile){
                 res.json(profile);
             }, function(error){
                 next(error);
             });
-    });
-
-    return router;
+    }catch(error){
+        next(error);
+    }
 });

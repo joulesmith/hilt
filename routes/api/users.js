@@ -3,6 +3,8 @@ var express = require('express');
 var router = express.Router();
 module.exports = router;
 var mongoose = require('mongoose');
+var userAuth = require('../../middleware/user');
+
 var UsersError = require('../../error')('routes.api.users');
 
 var zxcvbn = require('zxcvbn');
@@ -88,7 +90,7 @@ router.post('/', function(req, res, next) {
 });
 
 // sets a password
-router.post('/password', function(req, res, next) {
+router.post('/password', userAuth(), function(req, res, next) {
     try{
         if (!req.user) {
 
@@ -113,7 +115,7 @@ router.post('/password', function(req, res, next) {
 });
 
 // generates a new token
-router.post('/token',  function(req, res, next){
+router.post('/token', userAuth(),  function(req, res, next){
     try{
         if (!req.user || !req.body.password) {
             throw new UsersError('nouser',
@@ -134,7 +136,7 @@ router.post('/token',  function(req, res, next){
 });
 
 // invalidates all tokens.
-router.post('/token/reset',  function(req, res, next){
+router.post('/token/reset', userAuth(),  function(req, res, next){
     try{
         if (!req.user || !req.body.password) {
             throw new UsersError('nouser',
