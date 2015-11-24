@@ -9,4 +9,10 @@ define(['angular', 'restangular'], function (angular, restangular){
 
     }]);
 
+    module.controller('common.vertical_list', ['$scope', function($scope){
+        $scope.init = function(rows) {
+            $scope.rows = rows;
+        };
+    }]);
+
 });

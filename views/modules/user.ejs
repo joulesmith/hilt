@@ -1,8 +1,8 @@
-<script type="text/ng-template" id="/user.html">
+<script type="text/ng-template" id="user">
     <div ui-view></div>
 </script>
 
-<script type="text/ng-template" id="/user.register.html">
+<script type="text/ng-template" id="user.register">
     <div class="row">
         <div class="col-sm-offset-2 col-sm-8">
             <form ng-submit="submit()"  class="form-horizontal">
@@ -116,7 +116,7 @@
                 </div>
                 <div ng-if='error' class="form-group row">
                     <div class="col-sm-offset-2 col-sm-10 col-lg-6">
-                        <div ng-include="'/common.error.html'" ng-controller="common.error" onload="init(error)"><div>
+                        <div ng-include="'common.error'" ng-controller="common.error" onload="init(error)"><div>
                     </div>
                 </div>
             </form>
@@ -125,7 +125,7 @@
 </script>
 
 
-<script type="text/ng-template" id="/user.login.html">
+<script type="text/ng-template" id="user.login">
     <div class="row">
         <div class="col-sm-offset-2 col-sm-8">
             <form ng-submit="submit()"  class="form-horizontal">
@@ -172,7 +172,7 @@
                 </div>
                 <div ng-if='error' class="form-group row">
                     <div class="col-sm-offset-2 col-sm-10 col-lg-6">
-                        <div ng-include="'/common.error.html'" ng-controller="common.error"><div>
+                        <div ng-include="'common.error'" ng-controller="common.error"><div>
                     </div>
                 </div>
             </form>
@@ -181,7 +181,7 @@
 </script>
 
 
-<script type="text/ng-template" id="/user.reset.html">
+<script type="text/ng-template" id="user.reset">
     <div class="row">
         <div class="col-sm-offset-2 col-sm-8">
             <form ng-submit="submit()"  class="form-horizontal">
@@ -302,7 +302,7 @@
     </div>
 </script>
 
-<script type="text/ng-template" id="/user.welcome.html">
+<script type="text/ng-template" id="user.welcome">
     <div ng-if='!api.user._id'>
         <a ui-sref="user.register">Register</a>
         <a ui-sref="user.login">Login</a>

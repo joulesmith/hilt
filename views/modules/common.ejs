@@ -1,6 +1,6 @@
 
 
-<script type="text/ng-template" id="/common.error.html">
+<script type="text/ng-template" id="common.error">
     <div class="row alert alert-danger" role="alert" ng-click="show_stack=!show_stack">
         <h6 ng-show="error.message">
             <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
@@ -9,4 +9,21 @@
         </h6>
         <pre ng-show="show_stack">{{error.stack}}</pre>
     </div>
+</script>
+
+<script type="text/ng-template" id="common.vertical_list">
+        <div ng-repeat="row in rows"  class="row">
+            <div
+                ng-repeat="element in row.elements"
+                ng-include="element.type"
+                onload="init(element)"
+                ng-class="'col-md-' + element.width + ' col-md-offset-' + element.offset">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <button type="button" class="btn btn-default btn-xs btn-block">+</button>
+            </div>
+        </div>
+
 </script>

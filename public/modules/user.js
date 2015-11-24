@@ -7,16 +7,16 @@ define(['angular', 'restangular'], function (angular, restangular){
             $stateProvider
                 .state('user', {
                     url : '/user',
-                    templateUrl : '/user.html'
+                    templateUrl : 'user'
                 })
                 .state('user.register', {
                     url : '/register',
-                    templateUrl : '/user.register.html',
+                    templateUrl : 'user.register',
                     controller : 'user.register'
                 })
                 .state('user.login', {
                     url : '/login',
-                    templateUrl : '/user.login.html',
+                    templateUrl : 'user.login',
                     controller : 'user.login'
                 });
         }]);
