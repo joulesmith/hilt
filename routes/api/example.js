@@ -38,7 +38,8 @@ router.post('/:id', userAuth(), function(req, res, next) {
         })
         .then(function(example){
             res.json(example);
-        }, function(error){
+        })
+        .catch(function(error){
             next(error);
         });
     }catch(error){
@@ -53,7 +54,8 @@ router.get('/:id', function(req, res, next) {
         .exec()
         .then(function(example){
             res.json(example);
-        }, function(error){
+        })
+        .catch(function(error){
             next(error);
         });
     }catch(error){

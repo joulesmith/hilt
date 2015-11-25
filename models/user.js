@@ -4,6 +4,7 @@ var crypto = require('crypto');
 var Promise = require('bluebird');
 
 var bcrypt_hash = Promise.promisify(bcrypt.hash);
+var bcrypt_genSalt = Promise.promisify(bcrypt.genSalt);
 var bcrypt_compare = Promise.promisify(bcrypt.compare);
 var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
@@ -31,9 +32,10 @@ UserSchema.methods.setPassword = function(new_password) {
 
     return bcrypt_hash(new_password, 10)
         .then(function(hash) {
-            console.log('now need to reset tokens.');
+
             user.passwordHash = hash;
 
+            // reset tokens because password changed
             return user.resetTokens(new_password);
         });
 };
@@ -47,18 +49,19 @@ UserSchema.methods.resetTokens = function(password) {
 
     // the tokens valididy are limited by a secret which can be changed any time,
     // and by a time limit even on otherwise valid secrets.
-    user.secretSalt = crypto.randomBytes(16).toString('hex');
     user.tokenSalt = crypto.randomBytes(16).toString('hex');
 
-    // this hash is to make sure the password hash cannot be used to generate a secret without the password
-    return crypto_pbkdf2(password, user.secretSalt, 1000, 64, 'sha256')
-        .then(function(pwhash){
+    // this salt is to make sure the password hash cannot be used to generate a secret without the password
+    return bcrypt_genSalt(10)
+        .then(function(secretSalt){
+
+            user.secretSalt = secretSalt;
 
             // this hash is to make cracking the password from the secret harder, although
             // the secret should neven be seen, but just in case. it's slow but only needed
-            // when creating a token, not verifying. This is so all tokens are the same, and
+            // when creating a token, not verifying. This is so all tokens are the same (given the salt), and
             // can only be generated if the user knows their password
-            return bcrypt_hash(pwhash.toString('hex'), 10);
+            return bcrypt_hash(password, secretSalt);
         })
         .then(function(secret) {
 
@@ -69,9 +72,7 @@ UserSchema.methods.resetTokens = function(password) {
         .then(function(tokenHash){
             user.tokenHash = tokenHash.toString('hex');
 
-            var result = user.save();
-
-            return result;
+            return user.save();
         });
 };
 
@@ -114,10 +115,7 @@ UserSchema.methods.verifyPassword = function(password) {
 UserSchema.methods.generateToken = function(password, cb) {
     var user = this;
 
-    return crypto_pbkdf2(password, user.secretSalt, 1000, 64, 'sha256')
-        .then(function(pwhash){
-            return bcrypt_hash(pwhash.toString('hex'), 10);
-        })
+    return bcrypt_hash(password, user.secretSalt)
         .then(function(secret){
             var token = {
                 _id : user._id,
@@ -126,7 +124,6 @@ UserSchema.methods.generateToken = function(password, cb) {
 
             // this enocding is for use in header authorization.
             token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
-            token.expiration = user.expiration;
 
             return token;
         });

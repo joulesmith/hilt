@@ -4,12 +4,13 @@ mongoose.Promise = require('bluebird');
 var path = require('path');
 
 // connect to database
-// TODO have this set from a configuration file
+// TODO: have this set from a configuration file
 mongoose.connect('mongodb://localhost/broadsword');
 
 // load schemas to mongoose
 require('./models/administrator');
 require('./models/user');
+require('./models/profile');
 
 var app = express();
 
@@ -24,7 +25,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-// uncomment after placing your favicon in /public
+// TODO: have this set from configuration file
 //app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -35,8 +36,8 @@ app.use('/', require('./routes/index'));
 
 // api routs
 app.use('/api/util', require('./routes/api/util'));
-app.use('/api/users', require('./routes/api/users'));
-//app.use('/api/profiles', require('./routes/api/profiles'));
+app.use('/api/user', require('./routes/api/user'));
+app.use('/api/profile', require('./routes/api/profile'));
 
 
 // catch 404 and forward to error handler
@@ -54,7 +55,8 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500).json({
     error: {
         message : err.message,
-        stack : err.stack
+        stack : err.stack,
+        code : err.code
     }
   });
 });

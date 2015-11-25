@@ -7,7 +7,7 @@
 define(['angular'], function (angular){
 
     //
-    // module for common interactions with the [module_name] model
+    // module for common interactions with the example model
     //
     var module = angular.module('example', [])
         .config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
@@ -24,7 +24,7 @@ define(['angular'], function (angular){
         }]);
 
     //
-    // factory to the profile model api
+    // factory to the example model api
     //
     module.factory('example.api', ['$window', '$http', function($window, $http){
 
@@ -45,7 +45,7 @@ define(['angular'], function (angular){
                 });
         };
 
-        profile.setter = function(_id, source) {
+        api.setter = function(_id, source) {
             return $http.post('/api/examples/' + _id, source)
                 .then(function(res){
                     return source;
@@ -68,7 +68,7 @@ define(['angular'], function (angular){
     }]);
 
     //
-    // Controllers for stand-alone components used for viewing profile information
+    // Controllers for stand-alone components used for viewing example information
     //
 
     // example component view controller

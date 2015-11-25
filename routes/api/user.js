@@ -116,20 +116,25 @@ router.post('/password', userAuth(), function(req, res, next) {
 
 // generates a new token
 router.post('/token', userAuth(),  function(req, res, next){
+
     try{
         if (!req.user || !req.body.password) {
+
             throw new UsersError('nouser',
                 'The email and password combination provided are not valid.',
                 [],
                 401);
         }
 
+
+
         req.user.generateToken('' + req.body.password)
         .then(function(token){
             res.json({token: token});
-        }, function(error){
+        })
+        .catch(function(error){
             next(error);
-        });
+        }).done();
     }catch(error){
         next(error);
     }

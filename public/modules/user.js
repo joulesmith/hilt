@@ -80,7 +80,12 @@ define(['angular'], function (angular){
         */
         api.register = function(user){
 
-            return $http.post('/api/users', user);
+            return $http.post('/api/user', user)
+                .then(function(res){
+                    return res.data;
+                }, function(res){
+                    throw res.data.error;
+                });
 
         };
 
@@ -96,7 +101,7 @@ define(['angular'], function (angular){
         api.login = function(user){
 
 
-            return $http.post('/api/users/token', user)
+            return $http.post('/api/user/token', user)
                 .then(function(res){
 
                     if (res.data.token) {
@@ -112,6 +117,8 @@ define(['angular'], function (angular){
                             $window.sessionStorage.setItem("token", JSON.stringify(token));
                         }
                     }
+                }, function(res){
+                    throw res.data.error;
                 });
         };
 
@@ -124,7 +131,12 @@ define(['angular'], function (angular){
 
         api.passwordStrength = function(password) {
 
-            return $http.post('/api/util/passwordStrength', {password : password});
+            return $http.post('/api/util/passwordStrength', {password : password})
+                .then(function(res){
+                    return res.data;
+                }, function(res){
+                    throw res.data.error;
+                });
         };
 
         return api;
@@ -206,16 +218,17 @@ define(['angular'], function (angular){
                 //var result = owasp.test($scope.user.password.value);
 
                 api.passwordStrength($scope.user.password.value)
-                .then(function(res){
-                    $scope.user.password.testResult = res.data;
-                    var valid = res.data.strength >= 3;
+                .then(function(result){
+                    $scope.user.password.testResult = result;
+                    var valid = result.strength >= 3;
 
                     $scope.user.password.success = valid;
                     $scope.user.password.classes.group["has-success"] = valid;
                     $scope.user.password.classes.group["has-feedback"] = valid;
 
-                }, function(res){
-                    $scope.error = res.data.error;
+                })
+                .catch(function(error){
+                    $scope.error = error;
                 });
 
 
@@ -249,22 +262,18 @@ define(['angular'], function (angular){
                 password : $scope.user.password.value,
                 agreeToTaC : $scope.user.agreeToTaC,
                 enablePasswordReset : $scope.user.enablePasswordReset
-            }).then(function(res){
-                api.login({
+            })
+            .then(function(user){
+                return api.login({
                     email : $scope.user.email.value,
                     password : $scope.user.password.value
-                }).then(function(){
-                    $state.go('home');
-                }, function(res){
-                    if (res.data.error) {
-                        $scope.error = res.data.error;
-                    }
                 });
-
-            }, function(res){
-                if (res.data.error) {
-                    $scope.error = res.data.error;
-                }
+            })
+            .then(function(){
+                $state.go('home');
+            })
+            .catch(function(error){
+                $scope.error = error;
             });
         };
     }]);
@@ -284,11 +293,12 @@ define(['angular'], function (angular){
 
         $scope.submit = function () {
             api.login($scope.user)
-                .then(function(res){
-                    $state.go('home');
-                }, function(res){
-                    $scope.error = res.data.error;
-                });
+            .then(function(res){
+                $state.go('home');
+            })
+            .catch(function(error){
+                $scope.error = error;
+            });
         };
     }]);
 

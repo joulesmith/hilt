@@ -9,7 +9,8 @@ module.exports = function(namespace){
     var NamespaceError = function(code, template, parameters, status) {
         Error.captureStackTrace(this, this.constructor);
 
-        this.message = '[' + namespace + '.'  + code + '] ';
+        this.code = namespace + '.'  + code;
+        this.message = '';
 
         if (parameters && parameters.length > 0) {
             this.message += template.replace(/\{\d+\}/g, function(match) {

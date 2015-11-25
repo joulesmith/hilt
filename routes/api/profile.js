@@ -24,14 +24,16 @@ router.post('/', userAuth(), function(req, res, next) {
                 401);
         }
 
-        Profile.create({
-            user : req.user,
-            name : '' + req.body.name
-        })
-        .save()
+        var new_profile = new Profile({
+            user : req.user._id,
+            name : '' + req.body.name,
+            sections : []
+        });
+
+        new_profile.save()
         .then(function(profile){
-            res.json({});
-        }, function(error){
+            res.json(profile);
+        }).catch(function(error){
             next(error);
         });
     }catch(error){
@@ -66,8 +68,8 @@ router.post('/:profile_id', userAuth(), function(req, res, next) {
             return profile.save();
         })
         .then(function(profile){
-            res.json({});
-        }, function(error){
+            res.json(profile);
+        }).catch(function(error){
             next(error);
         });
     }catch(error){
@@ -81,7 +83,8 @@ router.get('/:profile_id', function(req, res, next) {
         .exec()
         .then(function(profile){
             res.json(profile);
-        }, function(error){
+        })
+        .catch(function(error){
             next(error);
         });
     }catch(error){

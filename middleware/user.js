@@ -4,6 +4,7 @@ var User = mongoose.model("user");
 
 module.exports = function() {
     return function(req, res, next) {
+
         try {
 
             if (req.body.email && req.body.password){
@@ -25,11 +26,14 @@ module.exports = function() {
                     }
 
                     next();
-                }, function(error){
+                })
+                .catch(function(error){
                     next(error);
                 });
 
             }else if (req.headers && req.headers.authorization && req.headers.authorization !== '') {
+
+
 
                 var token = JSON.parse(new Buffer(req.headers.authorization, 'base64').toString('utf8'));
 
@@ -40,13 +44,15 @@ module.exports = function() {
 
                         return user.verifyToken(token);
                     })
-                    .then(function(valid){
-                        if (valid) {
+                    .then(function(user){
+                        if (user) {
+
                             req.user = user;
                         }
 
                         next();
-                    }, function(error){
+                    })
+                    .catch(function(error){
                         next(error);
                     });
                 }else{

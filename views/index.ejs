@@ -16,6 +16,7 @@
         <!-- load needed angular template files -->
         <% include modules/common.ejs %>
         <% include modules/user.ejs %>
+        <% include modules/profile.ejs %>
     </head>
     <body ng-controller="MainCtrl">
 
@@ -25,6 +26,7 @@
 
             <div class="row">
                 <div ng-include="'user.welcome'" ng-controller="user.welcome"></div>
+                <a href="/#/profile/search">Profiles</a>
             </div>
             <div class="row">
               <div ui-view></div>

@@ -12,6 +12,11 @@ define(['angular'], function (angular){
                     url : '/profile',
                     templateUrl : 'profile'
                 })
+                .state('profile.search', {
+                    url : '/search',
+                    templateUrl : 'profile.search',
+                    controller : 'profile.search'
+                })
                 .state('profile.create', {
                     url : '/create',
                     templateUrl : 'profile.create',
@@ -33,39 +38,55 @@ define(['angular'], function (angular){
 
         api.getProfile = function(_id, profile) {
 
-            return $http.get('/api/profiles/' + _id)
+            return $http.get('/api/profile/' + _id)
                 .then(function(res){
-                    if (res.data.profile) {
-                        angular.copy(res.data.profile, profile);
+
+                    if (res.data) {
+                        angular.copy(res.data, profile);
                     }
 
                     return profile;
+                })
+                .catch(function(res){
+                    // TODO: this doesn't seem right, maybe use Error somehow?
+                    throw res.data.error;
                 });
         };
 
         profile.saveProfile = function(_id, profile) {
-            return $http.post('/api/profiles/' + _id, profile)
+            return $http.post('/api/profile/' + _id, profile)
                 .then(function(res){
                     return profile;
+                })
+                .catch(function(res){
+                    // TODO: this doesn't seem right, maybe use Error somehow?
+                    throw res.data.error;
                 });
         };
 
         api.createProfile = function(name) {
-            return $http.post('/api/profiles/', {name : name})
+            return $http.post('/api/profile/', {name : name})
                 .then(function(res){
-                    return res.data.profile;
-                }, function(res){
-                    // TODO this doesn't seem right, maybe use Error somehow?
+                    return res.data;
+                })
+                .catch(function(res){
+                    // TODO: this doesn't seem right, maybe use Error somehow?
                     throw res.data.error;
                 });
         };
 
         return api;
-    });
+    }]);
 
     //
     // Controllers for the views of the sub-states of the same name
     //
+
+    // search for profiles
+    module.controller('profile.search', ['$scope', '$state', 'profile.api', function($scope, $state, api){
+
+
+    }]);
 
     // view a single profile
     module.controller('profile.view', ['$scope', '$state', 'profile.api', function($scope, $state, api){
@@ -77,8 +98,9 @@ define(['angular'], function (angular){
             api.getProfile(_id, $scope.profile)
             .then(function(profile){
 
-            }, function(res){
-                $scope.error = res.data.error;
+            })
+            .catch(function(error){
+                $scope.error = error;
             });
         }
 
@@ -91,9 +113,10 @@ define(['angular'], function (angular){
         $scope.submit = function() {
             api.createProfile($scope.name)
             .then(function(profile){
-                $state.go('')
-            }, function(error){
-
+                $state.go('profile.view', {profileId : profile._id});
+            })
+            .catch(function(error){
+                $scope.error = error;
             });
         };
     }]);
