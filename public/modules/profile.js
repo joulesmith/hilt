@@ -29,6 +29,18 @@ define(['angular'], function (angular){
                 });
         }]);
 
+    // this is to ensure inputs are integers (not strings) when needed
+    module.directive('number', function(){
+        return {
+            require: 'ngModel',
+            link: function(scope, ele, attr, ctrl){
+                ctrl.$parsers.unshift(function(viewValue){
+                    return Number(viewValue);
+                });
+            }
+        };
+    });
+
     //
     // factory to the profile model api
     //
@@ -40,6 +52,7 @@ define(['angular'], function (angular){
 
             return $http.get('/api/profile/' + _id)
                 .then(function(res){
+
 
                     if (res.data) {
                         angular.copy(res.data, profile);
@@ -53,7 +66,7 @@ define(['angular'], function (angular){
                 });
         };
 
-        profile.saveProfile = function(_id, profile) {
+        api.saveProfile = function(_id, profile) {
             return $http.post('/api/profile/' + _id, profile)
                 .then(function(res){
                     return profile;
@@ -120,6 +133,10 @@ define(['angular'], function (angular){
             rows : []
         };
 
+        $scope.status = {
+            edit : false
+        }
+
         $scope.allowed = [
             {
                 name : 'row',
@@ -132,7 +149,8 @@ define(['angular'], function (angular){
         ];
 
         $scope.addRow = function(index) {
-            if (index) {
+
+            if (typeof index !== 'undefined') {
                 $scope.profile.rows.splice(index, 0, {
                     elements : []
                 })
@@ -142,6 +160,10 @@ define(['angular'], function (angular){
                 });
             }
         };
+
+        $scope.deleteRow = function(index) {
+            $scope.profile.rows.splice(index, 1);
+        }
 
         $scope.moveUp = function(index) {
             if (index > 0) {
@@ -160,33 +182,93 @@ define(['angular'], function (angular){
         };
 
         $scope.moveLeft = function(row, index) {
-            if (index > 0) {
-                var tmp = row.elements[index];
+            if (row.elements[index].offset > 0) {
+                row.elements[index].offset--;
+                if (index < row.elements.length - 1) {
+                    row.elements[index + 1].offset++;
+                }
+            }else if (index > 0) {
+                var tmp_element = row.elements[index];
+                tmp_element.offset = row.elements[index - 1].offset;
+                row.elements[index - 1].offset = 0;
                 row.elements[index] = row.elements[index - 1];
-                row.elements[index - 1] = tmp;
+                row.elements[index - 1] = tmp_element;
             }
         };
 
         $scope.moveRight= function(row, index) {
-            if (index < row.elements.length - 1) {
-                var tmp = row.elements[index];
+            var offset = 0.0;
+            for(var i = 0; i < index; i++) {
+                offset += row.elements[i].offset + row.elements[i].width;
+            }
+
+            if (index === row.elements.length - 1) {
+                if (row.elements[index].offset < 12 - row.elements[index].width - offset) {
+                    row.elements[index].offset++;
+                }
+            }else if (row.elements[index + 1].offset > 0) {
+                row.elements[index].offset++;
+                row.elements[index + 1].offset--;
+            }else {
+                var tmp_element = row.elements[index];
+
                 row.elements[index] = row.elements[index + 1];
-                row.elements[index + 1] = tmp;
+                row.elements[index].offset = tmp_element.offset;
+                tmp_element.offset = 0;
+                row.elements[index + 1] = tmp_element;
             }
         };
 
-        $scope.addElementTo = function(row) {
+        $scope.changeWidth= function(row, index) {
+
+        };
+
+        $scope.addTextTo = function(row) {
             row.elements.push({
                 type : 'profile.text',
-                text : 'Hello World',
+                text : '',
                 offset : 0,
                 width : 1
+            });
+        };
+
+        $scope.addImageTo = function(row) {
+            row.elements.push({
+                type : 'profile.image',
+                src : '',
+                offset : 0,
+                width : 1
+            });
+        };
+
+        $scope.deleteElement = function(row, index) {
+            if (index < row.elements.length - 1) {
+                row.elements[index + 1].offset += row.elements[index].offset + row.elements[index].width;
+            }
+
+            row.elements.splice(index, 1);
+        };
+
+        $scope.save = function() {
+            $scope.profile.data = JSON.stringify($scope.profile.rows);
+            api.saveProfile($scope.profile._id, $scope.profile)
+            .then(function(profile){
+
+            })
+            .catch(function(error){
+                $scope.error = error;
             });
         };
 
         if (_id && _id !== '') {
             api.getProfile(_id, $scope.profile)
             .then(function(profile){
+
+                if ($scope.profile.data !== ''){
+                    $scope.profile.rows = JSON.parse($scope.profile.data);
+                }else{
+                    $scope.profile.rows = [];
+                }
 
             })
             .catch(function(error){
@@ -221,22 +303,14 @@ define(['angular'], function (angular){
     //
 
     module.controller('profile.text', ['$scope', function($scope){
-        $scope.status = {
-            edit : false,
-            text_tmp : 'stuff'
-        };
 
-        $scope.init = function(element) {
-            $scope.element = element;
-            $scope.status.text_tmp = element.text;
-        };
-
-        $scope.edit = function() {
-                $scope.element.text = $scope.status.text_tmp;
-                $scope.status.edit = false;
-        };
 
 
     }]);
 
+    module.controller('profile.image', ['$scope', function($scope){
+
+
+
+    }]);
 });

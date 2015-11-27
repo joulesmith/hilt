@@ -46,7 +46,7 @@ router.post('/:profile_id', userAuth(), function(req, res, next) {
     try{
         if (!req.user) {
             throw new ProfileError('nouser',
-                'A user must be logged in to create a profile.',
+                'A user must be logged in to edit a profile.',
                 [],
                 401);
         }
@@ -54,7 +54,7 @@ router.post('/:profile_id', userAuth(), function(req, res, next) {
         Profile.findById('' + req.params.profile_id)
         .exec()
         .then(function(profile){
-            if (profile.user !== req.user) {
+            if (profile.user !== req.user._id) {
                 throw new ProfileError('unauthorized',
                     'A user can only edit their own profiles.',
                     [],
@@ -63,7 +63,7 @@ router.post('/:profile_id', userAuth(), function(req, res, next) {
 
             // update profile information
             profile.name = '' + req.body.name,
-            profile.content = prepare(req.body.content);
+            profile.data = prepare(req.body.data);
 
             return profile.save();
         })
