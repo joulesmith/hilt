@@ -52,10 +52,13 @@
                             id="password"
                             placeholder="Password">
                         <span ng-show="user.password.success" class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
-
+                        <uib-progressbar
+                            class="progress-striped active"
+                            value="user.password.testResult.strength * 25"
+                            type="{{(['danger','danger', 'danger', 'warning', 'success'])[user.password.testResult.strength]}}">
+                        </uib-progressbar>
                         <h6>Password Strength:<b> {{user.password.testResult.strength}} / 4</b></h6>
-
-                        <h6>Time to Crack:<b> {{user.password.testResult.crackTime}}</b></h6>
+                        <h6>Estimated Time to Crack:<b> {{user.password.testResult.crackTime}}</b></h6>
 
                         <div ng-if="user.password.testResult.warnings.length > 0" class="alert alert-danger" role="alert">
                             <h6 ng-repeat="pw_error in user.password.testResult.warnings">
@@ -311,4 +314,36 @@
         Welcome : <a ui-sref="user.controlPanel">{{api.isLoggedIn()}}</a>,
         <a ng-click="logout()" style="cursor: pointer;">Logout</a>
     </div>
+</script>
+
+<script type="text/ng-template" id="user.navbar">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <div class="collapse navbar-collapse" id="myNavbar">
+                <ul class="nav navbar-nav">
+                    <li ng-click="moveUp($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-up" aria-hidden="true" ></span></a></li>
+                    <li ng-click="addRow($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-plus" aria-hidden="true" ></span></a></li>
+                    <li ng-click="moveDown($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></a></li>
+                    <li ng-click="addElementTo(row)" style="cursor:pointer;"><a>add element</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="#">
+                            <span class="glyphicon glyphicon-user"></span> Sign Up</a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <span class="glyphicon glyphicon-log-in"></span> Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 </script>

@@ -9,8 +9,8 @@ require.config({
         'domReady': '../lib/domReady',
         'lodash' : '../lib/lodash.min',
         'restangular' : '../lib/restangular',
-        'ui-router' : '../lib/angular-ui-router.min',
-        'ui-bootstrap' : '../lib/ui-bootstrap.min'
+        'uiRouter' : '../lib/angular-ui-router.min',
+        'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min'
     },
     shim: {
         'angular' : {
@@ -20,20 +20,18 @@ require.config({
             deps: ['angular'],
             exports : 'ngRoute'
         },
+        'uiRouter' : {
+            deps: ['angular']
+        },
+        'uiBootstrap' : {
+            deps: ['angular']
+        },
         'lodash' : {
             exports : '_'
         },
         'restangular' : {
             deps: ['angular', 'lodash'],
             exports : 'restangular'
-        },
-        'ui-bootstrap' : {
-            deps: ['angular'],
-            exports : 'ui-bootstrap'
-        },
-        'ui-router' : {
-            deps: ['angular'],
-            exports : 'ui-router'
         }
     }
 });
@@ -46,8 +44,8 @@ require([
     'user',
     'common',
     'profile',
-    'ui-bootstrap',
-    'ui-router'
+    'uiBootstrap',
+    'uiRouter'
 ], function(
     angular,
     domReady) {

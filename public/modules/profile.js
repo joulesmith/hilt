@@ -75,6 +75,22 @@ define(['angular'], function (angular){
                 });
         };
 
+        api.search = function(words) {
+            return $http({
+                    url: '/api/profile/',
+                    method: "GET",
+                    params: {
+                        words: words
+                    }
+                })
+                .then(function(res) {
+                    return res.data;
+                })
+                .catch(function(res) {
+                    throw res.data.error;
+                });
+        };
+
         return api;
     }]);
 
@@ -84,15 +100,89 @@ define(['angular'], function (angular){
 
     // search for profiles
     module.controller('profile.search', ['$scope', '$state', 'profile.api', function($scope, $state, api){
-
-
+        $scope.profiles = [];
+        $scope.words = '';
+        $scope.search = function(){
+            api.search($scope.words)
+            .then(function(profiles){
+                angular.copy(profiles, $scope.profiles);
+            }, function(error){
+                $scope.error = error;
+            });
+        };
     }]);
 
     // view a single profile
     module.controller('profile.view', ['$scope', '$state', 'profile.api', function($scope, $state, api){
         var _id = $state.params.profileId;
 
-        $scope.profile = {};
+        $scope.profile = {
+            rows : []
+        };
+
+        $scope.allowed = [
+            {
+                name : 'row',
+                make : function() {
+                    return {
+                        elements : []
+                    };
+                }
+            }
+        ];
+
+        $scope.addRow = function(index) {
+            if (index) {
+                $scope.profile.rows.splice(index, 0, {
+                    elements : []
+                })
+            }else{
+                $scope.profile.rows.push({
+                    elements : []
+                });
+            }
+        };
+
+        $scope.moveUp = function(index) {
+            if (index > 0) {
+                var tmp = $scope.profile.rows[index];
+                $scope.profile.rows[index] = $scope.profile.rows[index - 1];
+                $scope.profile.rows[index - 1] = tmp;
+            }
+        };
+
+        $scope.moveDown= function(index) {
+            if (index < $scope.profile.rows.length - 1) {
+                var tmp = $scope.profile.rows[index];
+                $scope.profile.rows[index] = $scope.profile.rows[index + 1];
+                $scope.profile.rows[index + 1] = tmp;
+            }
+        };
+
+        $scope.moveLeft = function(row, index) {
+            if (index > 0) {
+                var tmp = row.elements[index];
+                row.elements[index] = row.elements[index - 1];
+                row.elements[index - 1] = tmp;
+            }
+        };
+
+        $scope.moveRight= function(row, index) {
+            if (index < row.elements.length - 1) {
+                var tmp = row.elements[index];
+                row.elements[index] = row.elements[index + 1];
+                row.elements[index + 1] = tmp;
+            }
+        };
+
+        $scope.addElementTo = function(row) {
+            row.elements.push({
+                type : 'profile.text',
+                text : 'Hello World',
+                offset : 0,
+                width : 1
+            });
+        };
 
         if (_id && _id !== '') {
             api.getProfile(_id, $scope.profile)
@@ -121,14 +211,32 @@ define(['angular'], function (angular){
         };
     }]);
 
+    module.controller('profile.row', ['$scope', function($scope){
+        $scope.isCollapsed = true;
+
+    }]);
+
     //
     // Controllers for stand-alone components used for viewing profile information
     //
 
     module.controller('profile.text', ['$scope', function($scope){
+        $scope.status = {
+            edit : false,
+            text_tmp : 'stuff'
+        };
+
         $scope.init = function(element) {
             $scope.element = element;
+            $scope.status.text_tmp = element.text;
         };
+
+        $scope.edit = function() {
+                $scope.element.text = $scope.status.text_tmp;
+                $scope.status.edit = false;
+        };
+
+
     }]);
 
 });

@@ -9,9 +9,15 @@ define(['angular', 'restangular'], function (angular, restangular){
 
     }]);
 
-    module.controller('common.vertical_list', ['$scope', function($scope){
-        $scope.init = function(rows) {
-            $scope.rows = rows;
+    module.controller('common.grid', ['$scope', function($scope){
+        $scope.init = function(grid, allowed) {
+            $scope.grid = grid;
+            $scope.allowed = allowed;
+            $scope.add_row = function() {
+                grid.rows.push({
+                    elements : []
+                });
+            };
         };
     }]);
 
