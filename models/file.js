@@ -1,3 +1,5 @@
+"use strict";
+
 var apimodelfactory = require('./apifactory');
 var fs = require('fs');
 var path = require('path');
@@ -8,22 +10,25 @@ var Promise = require('bluebird');
 var FileError = error('routes.api.file');
 
 module.exports = function(app) {
-    apimodelfactory({
-        name : 'file',
-        authenticate : {
-            write : true, // require user authorization and permission to do this
-            read : false, // non-users can do this
-            execute : false // non-users can do this
-        },
-        api : {
-            state : {
-                name : {type : String, default : ''},
-                type : {type : String, default : ''},
-                size : {type : Number, default : 0},
-                hash : {type : String, default : '', index : true}
+    apimodelfactory(app, {
+        file : {
+            authenticate : {
+                write : true, // require user authorization and permission to do this
+                read : false, // anyone
+                execute : false // anyone
             },
-            // no restrictions to access, only uses http gets to base url
-            static : {},
+            state : {
+                settable : {
+
+                },
+                internal : {
+                    name : {type : String, default : ''},
+                    type : {type : String, default : ''},
+                    size : {type : Number, default : 0},
+                    hash : {type : String, default : '', index : true}
+                },
+                index : {owner: 1, name: 1}, //
+            },
             create : function(req){
                 var file = this;
 
@@ -65,6 +70,8 @@ module.exports = function(app) {
                     [],
                     405);
             },
+            // no restrictions to access, only uses http gets to base url
+            static : {},
             // need execute permission, only uses http gets to specific resource
             safe : {
                 // GET /api/file/:id/data
@@ -94,12 +101,11 @@ module.exports = function(app) {
                 }
             },
             // need both execute and write permission, uses http posts to specific resource
-            unsafe : {}
-        },
-        internal : {
-            index : {owner: 1, name: 1},
-            methods : {}
-        },
-        app : app
+            unsafe : {},
+            // only accessible on the server
+            internal : {
+
+            }
+        }
     });
 };
