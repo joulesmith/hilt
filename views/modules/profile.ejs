@@ -80,8 +80,10 @@
                             </span></a>
                             <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
                                 <li ng-click="addRow($index)" style="cursor:pointer;"><a>Row</a></li>
+                                <li ng-click="addColumnTo(row)" style="cursor:pointer;"><a>Column</a></li>
                                 <li ng-click="addTextTo(row)" style="cursor:pointer;"><a>Text</a></li>
                                 <li ng-click="addImageTo(row)" style="cursor:pointer;"><a>Image</a></li>
+                                <li ng-if="clipboard" ng-click="pasteElement(row)" style="cursor:pointer;"><a>Paste</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -92,7 +94,7 @@
             <div
                 ng-repeat="element in row.elements"
                 ng-include="element.type"
-                ng-class="'col-md-' + element.width + ' col-md-offset-' + element.offset" style="outline:1px solid rgb(231, 231, 231);">
+                ng-class="'col-sm-' + element.width + ' col-sm-offset-' + element.offset" style="{{status.edit ? 'outline:1px solid rgb(231, 231, 231);' : ''}}">
             </div>
         </div>
     </div>
@@ -138,35 +140,37 @@
             <span ng-click="moveRight(row, $index)" class="glyphicon glyphicon-arrow-right" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
 
             <textarea ng-model="element.text" class="form-control" rows="3" placeholder="Enter Text"></textarea>
-            <p ng-click="deleteElement(row, $index)" style="cursor:pointer;">delete</p>
+            <a ng-click="cutElement(row, $index)" style="cursor:pointer;">cut</a>
         </div>
     </div>
 </script>
 
 <script type="text/ng-template" id="profile.image">
     <div ng-controller="profile.image">
-        <img ng-src="{{element.src}}" alt="{{element.alt}}" class="img-responsive" style="width:100%"/>
+
         <div ng-if="status.edit">
-        <span ng-click="moveLeft(row, $index)" class="glyphicon glyphicon-arrow-left" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+            <span ng-click="moveLeft(row, $index)" class="glyphicon glyphicon-arrow-left" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
 
-        <select number ng-model="element.width" class="form-control" style="width: 1em; display: inline;">
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-            <option>5</option>
-            <option>6</option>
-            <option>7</option>
-            <option>8</option>
-            <option>9</option>
-            <option>10</option>
-            <option>11</option>
-            <option>12</option>
-        </select>
+            <select number ng-model="element.width" class="form-control" style="width: 1em; display: inline;">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+                <option>11</option>
+                <option>12</option>
+            </select>
 
-        <span ng-click="moveRight(row, $index)" class="glyphicon glyphicon-arrow-right" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+            <span ng-click="moveRight(row, $index)" class="glyphicon glyphicon-arrow-right" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
             <input ng-model="element.src" type="text" class="form-control" placeholder="Source URL">
-            <p ng-click="deleteElement(row, $index)" style="cursor:pointer;">delete</p>
+            <span ng-click="upload()" class="glyphicon glyphicon-upload" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+            <a ng-click="cutElement(row, $index)" style="cursor:pointer;">cut</a>
         </div>
+        <img ng-src="{{element.src}}" alt="{{element.alt}}" class="img-responsive" style="width:100%"/>
     </div>
 </script>
