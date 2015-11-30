@@ -10,6 +10,8 @@ var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 var UserSchema = new mongoose.Schema({
     email : String,
+    groups : [{ type: mongoose.Schema.Types.ObjectId, ref: 'group' }],
+    attributes : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
 
     passwordHash: {type : String, default : ''},
     secretSalt : {type : String, default : ''},

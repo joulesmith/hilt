@@ -40,13 +40,15 @@ module.exports = function() {
                 if (token._id && token.secret){
                     User.findById(token._id).exec()
                     .then(function(user){
-                        if (!user) return next();
+                        if (!user) {
+                            next();
+                            return null;
+                        }
 
                         return user.verifyToken(token);
                     })
                     .then(function(user){
                         if (user) {
-
                             req.user = user;
                         }
 

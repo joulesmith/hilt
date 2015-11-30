@@ -14,6 +14,10 @@ var prepare = function(content) {
     return content;
 };
 
+var bodyParser = require('body-parser');
+router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: false }));
+
 // creates a new profile
 router.post('/', userAuth(), function(req, res, next) {
     try{

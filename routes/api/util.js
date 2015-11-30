@@ -4,6 +4,9 @@ var router = express.Router();
 module.exports = router;
 var zxcvbn = require('zxcvbn');
 
+var bodyParser = require('body-parser');
+router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: false }));
 
 // tests the strength of a password using the same algorithm as required for passwords
 router.post('/passwordStrength/', function(req, res, next) {

@@ -8,6 +8,9 @@ var userAuth = require('../../middleware/user');
 var UsersError = require('../../error')('routes.api.users');
 
 var zxcvbn = require('zxcvbn');
+var bodyParser = require('body-parser');
+router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: false }));
 
 // use mongoose database objects
 var User = mongoose.model("user");

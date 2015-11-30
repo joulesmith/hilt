@@ -26,6 +26,8 @@
     "debug": "~2.1.1",
     "ejs": "~2.3.1",
     "express": "~4.12.2",
+    "formidable": "^1.0.17",
+    "lodash": "^3.10.1",
     "mongoose": "^4.2.7",
     "morgan": "~1.5.1",
     "nodemailer": "0.3.29",

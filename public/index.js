@@ -43,6 +43,7 @@ require([
     'ngRoute',
     'user',
     'common',
+    'file',
     'profile',
     'uiBootstrap',
     'uiRouter'
@@ -57,7 +58,8 @@ require([
         'ui.router',
         'common',
         'user',
-        'profile'
+        'profile',
+        'file'
     ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
         $urlRouterProvider.otherwise('/');
 

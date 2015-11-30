@@ -22,23 +22,23 @@ app.use(express.static(path.join(__dirname, 'public')));
 // third party middleware
 var favicon = require('serve-favicon');
 var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+
 
 // TODO: have this set from configuration file
 //app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
 
 // view routs
 app.use('/', require('./routes/index'));
 
 // api routs
+//
+// TODO: convert these to the combined api/model format
 app.use('/api/util', require('./routes/api/util'));
 app.use('/api/user', require('./routes/api/user'));
 app.use('/api/profile', require('./routes/api/profile'));
 
+require('./models/file')(app);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -54,9 +54,10 @@ app.use(function(err, req, res, next) {
 
   res.status(err.status || 500).json({
     error: {
+        status : err.status || 500,
         message : err.message,
         stack : err.stack,
-        code : err.code
+        code : err.code || 'internalerror'
     }
   });
 });

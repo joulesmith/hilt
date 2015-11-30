@@ -119,6 +119,7 @@ define(['angular'], function (angular){
             api.search($scope.words)
             .then(function(profiles){
                 angular.copy(profiles, $scope.profiles);
+                $scope.error = null;
             }, function(error){
                 $scope.error = error;
             });
@@ -135,7 +136,9 @@ define(['angular'], function (angular){
 
         $scope.status = {
             edit : false
-        }
+        };
+
+        $scope.isCollapsed = true;
 
         $scope.allowed = [
             {
@@ -241,19 +244,30 @@ define(['angular'], function (angular){
             });
         };
 
-        $scope.deleteElement = function(row, index) {
+        $scope.clipboard = null;
+
+        $scope.cutElement = function(row, index) {
             if (index < row.elements.length - 1) {
                 row.elements[index + 1].offset += row.elements[index].offset + row.elements[index].width;
             }
 
+            $scope.clipboard = row.elements[index];
             row.elements.splice(index, 1);
+        };
+
+        $scope.pasteElement = function(row) {
+            if ($scope.clipboard) {
+                $scope.clipboard.offset = 0;
+                row.elements.push($scope.clipboard);
+                $scope.clipboard = null;
+            }
         };
 
         $scope.save = function() {
             $scope.profile.data = JSON.stringify($scope.profile.rows);
             api.saveProfile($scope.profile._id, $scope.profile)
             .then(function(profile){
-
+                $scope.error = null;
             })
             .catch(function(error){
                 $scope.error = error;
@@ -270,6 +284,7 @@ define(['angular'], function (angular){
                     $scope.profile.rows = [];
                 }
 
+                $scope.error = null;
             })
             .catch(function(error){
                 $scope.error = error;
@@ -285,6 +300,7 @@ define(['angular'], function (angular){
         $scope.submit = function() {
             api.createProfile($scope.name)
             .then(function(profile){
+                $scope.error = null;
                 $state.go('profile.view', {profileId : profile._id});
             })
             .catch(function(error){
@@ -308,9 +324,26 @@ define(['angular'], function (angular){
 
     }]);
 
-    module.controller('profile.image', ['$scope', function($scope){
+    module.controller('profile.image', ['$scope', '$uibModal', function($scope, $uibModal){
 
+        $scope.upload = function() {
+            var modalInstance = $uibModal.open({
+                animation: true,
+                templateUrl: 'file.upload',
+                controller: 'file.upload',
+                size: null,
+                resolve: {
+                    remoteFile: function() {
+                        return $scope.remoteFile;
+                    }
+                }
+            });
 
+            modalInstance.result
+            .then(function(remoteFile) {
+                $scope.element.src = '/api/file/' + remoteFile._id + '/data';
+            });
+        };
 
     }]);
 });
