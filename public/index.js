@@ -78,6 +78,8 @@ require([
         }
 
         $scope.title = "Hello World.";
+        $scope.loadingClass = "hide";
+        $scope.mainClass = "show";
     }]);
 
     // wait for the entire dom to be loaded before trying to run angular modules

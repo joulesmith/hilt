@@ -6,7 +6,7 @@ var path = require('path');
 var formidable = require('formidable');
 var error = require('../error');
 var Promise = require('bluebird');
-
+var config = require('../config');
 var FileError = error('routes.api.file');
 
 module.exports = function(app) {
@@ -46,7 +46,7 @@ module.exports = function(app) {
 
                             // move the file to the output folder
                             // TODO: have this set from configuration file
-                            fs.renameSync(files.file.path, path.join(__dirname, 'uploads', '' + file._id) );
+                            fs.renameSync(files.file.path, path.join(config.uploadPath, '' + file._id) );
 
                             file.name = files.file.name;
                             file.type = files.file.type;
@@ -79,7 +79,7 @@ module.exports = function(app) {
                     var file = this;
 
                     var options = {
-                        root: path.join(__dirname, 'uploads'),
+                        root: config.uploadPath,
                         dotfiles: 'deny',
                         headers: {
                             'x-timestamp': Date.now(),

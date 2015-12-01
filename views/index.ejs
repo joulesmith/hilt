@@ -20,10 +20,10 @@
         <% include modules/file.ejs %>
     </head>
     <body ng-controller="MainCtrl">
-
+        <div id="progressbar" class="" ng-class="loadingClass">Loading...</div>
         <!-- Top level of page layout and logic -->
 
-        <div class="container-fluid">
+        <div class="container-fluid hide" ng-class="mainClass">
 
             <div class="row">
                 <div ng-include="'user.welcome'" ng-controller="user.welcome"></div>

@@ -3,9 +3,12 @@ var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var path = require('path');
 
+
+// load configuration file
+var config = require('./config');
+
 // connect to database
-// TODO: have this set from a configuration file
-mongoose.connect('mongodb://localhost/broadsword');
+mongoose.connect("mongodb://" + config.db.host + ":" + config.db.port + "/" + config.db.database);
 
 // load schemas to mongoose
 require('./models/administrator');
@@ -17,16 +20,21 @@ var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
 app.use(express.static(path.join(__dirname, 'public')));
 
+
 // third party middleware
-var favicon = require('serve-favicon');
-var logger = require('morgan');
+if (config.favicon) {
+    var favicon = require('serve-favicon');
+    app.use(favicon(path.join(__dirname, config.favicon)));
+}
 
+if (config.log){
+    var logger = require('morgan');
+    app.use(logger(config.log));
+}
 
-// TODO: have this set from configuration file
-//app.use(favicon(__dirname + '/public/favicon.ico'));
-app.use(logger('dev'));
 
 // view routs
 app.use('/', require('./routes/index'));

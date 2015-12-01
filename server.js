@@ -1,7 +1,8 @@
 
 /**
- * Module dependencies.
+ * dependencies.
  */
+var config = require('./config');
 
 var app = require('./app');
 var debug = require('debug')('broadsword:server');
@@ -12,8 +13,8 @@ var socketio = require('socket.io');
 /**
  * Get port from environment and store in Express.
  */
-// TODO use config file to set this
-var port = normalizePort(process.env.PORT || '3000');
+
+var port = normalizePort(config.http.port);
 app.set('port', port);
 
 /**
