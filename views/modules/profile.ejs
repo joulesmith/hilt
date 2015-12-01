@@ -1,0 +1,176 @@
+<script type="text/ng-template" id="profile">
+    <div ui-view></div>
+</script>
+
+<script type="text/ng-template" id="profile.search">
+    <div class="input-group">
+        <span class="input-group-btn">
+            <button ng-click="search()" class="btn btn-default" type="button">Search</button>
+        </span>
+        <input ng-model="words" type="text" class="form-control" placeholder="Search for...">
+    </div>
+    <!-- /input-group -->
+    <table class="table">
+        <tr>
+            <td>Name</td>
+        </tr>
+        <tr ng-repeat="profile in profiles">
+            <td><a href="#/profile/{{profile._id}}">{{profile.name}}</a></td>
+        </tr>
+    </table>
+
+    <div ng-if='error' class="form-group row">
+        <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+            <div ng-include="'common.error'" ng-controller="common.error"><div>
+        </div>
+    </div>
+</script>
+
+<script type="text/ng-template" id="profile.view">
+
+    <div class="panel panel-default">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" ng-click="isCollapsed = !isCollapsed">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">{{profile.name}}</a>
+                </div>
+                <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
+                    <ul class="nav navbar-nav">
+                        <li ng-if="!status.edit" ng-click="status.edit = true" style="cursor:pointer;"><a>Edit</a></li>
+                        <li ng-if="status.edit" ng-click="save(); status.edit=false;" style="cursor:pointer;"><a>Save</a></li>
+                        <li ng-if="status.edit" ng-click="addRow()" style="cursor:pointer;"><a>Add row</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div ng-repeat="row in profile.rows" ng-include="'profile.row'"></div>
+    </div>
+    <div ng-if='error' class="form-group row">
+        <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+            <div ng-include="'common.error'" ng-controller="common.error"><div>
+        </div>
+    </div>
+</script>
+
+<script type="text/ng-template" id="profile.row">
+    <div ng-controller="profile.row">
+        <nav ng-if="status.edit" class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" ng-click="isCollapsed = !isCollapsed">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
+                    <ul class="nav navbar-nav">
+                        <li ng-click="moveUp($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-up" aria-hidden="true" ></span></a></li>
+                        <li ng-click="moveDown($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></a></li>
+                        <li ng-click="deleteRow($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-minus" aria-hidden="true" ></span></a></li>
+                        <li uib-dropdown class="dropdown">
+                            <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+                                Insert <span class="caret">
+                            </span></a>
+                            <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+                                <li ng-click="addRow($index)" style="cursor:pointer;"><a>Row</a></li>
+                                <li ng-click="addColumnTo(row)" style="cursor:pointer;"><a>Column</a></li>
+                                <li ng-click="addTextTo(row)" style="cursor:pointer;"><a>Text</a></li>
+                                <li ng-click="addImageTo(row)" style="cursor:pointer;"><a>Image</a></li>
+                                <li ng-if="clipboard" ng-click="pasteElement(row)" style="cursor:pointer;"><a>Paste</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="row">
+            <div
+                ng-repeat="element in row.elements"
+                ng-include="element.type"
+                ng-class="'col-sm-' + element.width + ' col-sm-offset-' + element.offset" style="{{status.edit ? 'outline:1px solid rgb(231, 231, 231);' : ''}}">
+            </div>
+        </div>
+    </div>
+
+</script>
+
+<script type="text/ng-template" id="profile.create">
+    <form ng-submit="submit()">
+        <div class="form-group">
+            <label for="name">Profile Name</label>
+            <input ng-model="name" type="text" class="form-control" id="name" placeholder="Name">
+        </div>
+        <button type="submit" class="btn btn-default">Create Profile</button>
+    </form>
+    <div ng-if='error' class="form-group row">
+        <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+            <div ng-include="'common.error'" ng-controller="common.error"><div>
+        </div>
+    </div>
+</script>
+
+<script type="text/ng-template" id="profile.text">
+    <div ng-controller="profile.text">
+        <p ng-if="!status.edit" style="width:100%; word-wrap: break-word;">{{element.text}}</p>
+        <div ng-if="status.edit">
+            <span ng-click="moveLeft(row, $index)" class="glyphicon glyphicon-arrow-left" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+
+            <select number ng-model="element.width" class="form-control" style="width: 1em; display: inline;">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+                <option>11</option>
+                <option>12</option>
+            </select>
+
+            <span ng-click="moveRight(row, $index)" class="glyphicon glyphicon-arrow-right" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+
+            <textarea ng-model="element.text" class="form-control" rows="3" placeholder="Enter Text"></textarea>
+            <a ng-click="cutElement(row, $index)" style="cursor:pointer;">cut</a>
+        </div>
+    </div>
+</script>
+
+<script type="text/ng-template" id="profile.image">
+    <div ng-controller="profile.image">
+
+        <div ng-if="status.edit">
+            <span ng-click="moveLeft(row, $index)" class="glyphicon glyphicon-arrow-left" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+
+            <select number ng-model="element.width" class="form-control" style="width: 1em; display: inline;">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+                <option>11</option>
+                <option>12</option>
+            </select>
+
+            <span ng-click="moveRight(row, $index)" class="glyphicon glyphicon-arrow-right" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+            <input ng-model="element.src" type="text" class="form-control" placeholder="Source URL">
+            <span ng-click="upload()" class="glyphicon glyphicon-upload" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+            <a ng-click="cutElement(row, $index)" style="cursor:pointer;">cut</a>
+        </div>
+        <img ng-src="{{element.src}}" alt="{{element.alt}}" class="img-responsive" style="width:100%"/>
+    </div>
+</script>

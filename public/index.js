@@ -1,20 +1,3 @@
-/*
-    Copyright (C) 2015  Joulesmith Energy Technologies, LLC
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 "use strict";
 
 require.config({
@@ -22,23 +5,79 @@ require.config({
     baseUrl : './modules',
     paths : {
         'angular' : '../lib/angular.min',
-        'domReady': '../lib/domReady'
+        'ngRoute' : '../lib/angular-route.min',
+        'domReady': '../lib/domReady',
+        'lodash' : '../lib/lodash.min',
+        'restangular' : '../lib/restangular',
+        'uiRouter' : '../lib/angular-ui-router.min',
+        'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min'
     },
     shim: {
         'angular' : {
             exports : 'angular'
+        },
+        'ngRoute' : {
+            deps: ['angular'],
+            exports : 'ngRoute'
+        },
+        'uiRouter' : {
+            deps: ['angular']
+        },
+        'uiBootstrap' : {
+            deps: ['angular']
+        },
+        'lodash' : {
+            exports : '_'
+        },
+        'restangular' : {
+            deps: ['angular', 'lodash'],
+            exports : 'restangular'
         }
     }
 });
 
 // first thing to actually be run in the app
-require(['angular', 'domReady'
-], function(angular, domReady) {
+require([
+    'angular',
+    'domReady',
+    'ngRoute',
+    'user',
+    'common',
+    'file',
+    'profile',
+    'uiBootstrap',
+    'uiRouter'
+], function(
+    angular,
+    domReady) {
 
     // create the root entry point to the application
-    angular.module('app', [])
-    .controller('MainCtrl', ['$scope', function ($scope) {
-        $scope.greetMe = 'Hello World';
+    var app = angular.module('app', [
+        'ngRoute',
+        'ui.bootstrap',
+        'ui.router',
+        'common',
+        'user',
+        'profile',
+        'file'
+    ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
+        $urlRouterProvider.otherwise('/');
+
+        $stateProvider
+            .state('home', {
+                url : '/',
+                template : 'home'
+            });
+    }]);
+
+    app.controller('MainCtrl', ['$scope', function ($scope) {
+        $scope.admin = {
+            requireEmailConfirmation : false,
+            enablePasswordReset : false,
+            requireAgreement : false,
+        }
+
+        $scope.title = "Hello World.";
     }]);
 
     // wait for the entire dom to be loaded before trying to run angular modules

@@ -1,105 +1,64 @@
 var express = require('express');
-
-
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-
-
-
 var mongoose = require('mongoose');
-var passport = require('passport');
+mongoose.Promise = require('bluebird');
+var path = require('path');
 
-mongoose.connect('mongodb://localhost/news');
+// connect to database
+// TODO: have this set from a configuration file
+mongoose.connect('mongodb://localhost/broadsword');
 
-// add the schemas to  mongoose
+// load schemas to mongoose
+require('./models/administrator');
 require('./models/user');
-require('./models/jwtSecret');
-require('./models/resource');
-require('./models/permission');
-
-
-var index = require('./routes/index');
-var auth = require('./routes/auth');
-
-// prepare secret for jwt
-
-var JWTSecret = mongoose.model("broadsword_jwtSecret");
-
-JWTSecret.findOne({}, function(err, doc){
-    if (err) {
-        throw new Error("cannot find secret");
-
-    }else if (doc){
-        // load the secret from the database
-
-        auth.update_secret();
-    }else{
-
-        var newsecret = new JWTSecret({});
-        newsecret.change();
-
-        newsecret.save(function(err){
-            // load the secret from the database
-            if (err) {
-                throw new Error("cannot add new secret");
-            }
-
-            auth.update_secret();
-        });
-
-    }
-});
+require('./models/profile');
 
 var app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
-
 app.use(express.static(path.join(__dirname, 'public')));
 
-// uncomment after placing your favicon in /public
+// third party middleware
+var favicon = require('serve-favicon');
+var logger = require('morgan');
+
+
+// TODO: have this set from configuration file
 //app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
 
+// view routs
+app.use('/', require('./routes/index'));
 
-app.use('/', index);
-app.use('/auth', auth);
+// api routs
+//
+// TODO: convert these to the combined api/model format
+app.use('/api/util', require('./routes/api/util'));
+app.use('/api/user', require('./routes/api/user'));
+app.use('/api/profile', require('./routes/api/profile'));
+
+require('./models/file')(app);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+
+    var err = new Error('Resource not found.');
+    err.status = 404;
+    next(err);
 });
 
 // error handlers
 
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-      message: err.message,
-      error: err
-    });
-  });
-}
-
-// production error handler
-// no stacktraces leaked to user
 app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.render('error', {
-    message: err.message,
-    error: {}
+
+  res.status(err.status || 500).json({
+    error: {
+        status : err.status || 500,
+        message : err.message,
+        stack : err.stack,
+        code : err.code || 'internalerror'
+    }
   });
 });
 

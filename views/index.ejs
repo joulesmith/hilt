@@ -1,16 +1,40 @@
-<html>
-<head>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link href="./stylesheets/bootstrap.css" rel="stylesheet">
-    <link href="./stylesheets/test_code.css" rel="stylesheet">
+        <title>Hi</title>
 
-    <script data-main="index" src="lib/require.js"></script>
-</head>
-<body ng-controller="MainCtrl">
+        <!-- Boostrap styles-->
+        <link href="./css/bootstrap.css" rel="stylesheet">
 
-    {{greetMe}}
+        <!-- load modules and initialization script -->
+        <script data-main="index" src="lib/require.js"></script>
 
-    <% include auth.ejs %>
+        <!-- load needed angular template files -->
+        <% include modules/common.ejs %>
+        <% include modules/user.ejs %>
+        <% include modules/profile.ejs %>
+        <% include modules/file.ejs %>
+    </head>
+    <body ng-controller="MainCtrl">
 
-</body>
+        <!-- Top level of page layout and logic -->
+
+        <div class="container-fluid">
+
+            <div class="row">
+                <div ng-include="'user.welcome'" ng-controller="user.welcome"></div>
+                <a href="/#/profile/search">Profiles</a>
+            </div>
+            <div class="row">
+              <div ui-view></div>
+            </div>
+            <div class="row">
+              <div ></div>
+            </div>
+        </div>
+    </body>
 </html>

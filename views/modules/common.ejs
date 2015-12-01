@@ -1,0 +1,43 @@
+
+
+<script type="text/ng-template" id="common.error">
+    <div class="row alert alert-danger" role="alert">
+        <h6 ng-show="error.message">
+            <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+            <span class="sr-only">Error:</span>
+            <span ng-show="show_stack">{{error.status}} {{error.code}}:</span> </span>{{error.message}}</span>
+            <a ng-click="show_stack=!show_stack" style="cursor:pointer; text-decoration:underline;">details</a>
+        </h6>
+        <pre ng-show="show_stack">{{error.stack}}</pre>
+    </div>
+</script>
+
+<script type="text/ng-template" id="common.grid">
+    <div class="panel panel-default">
+        <ul class="list-group">
+            <li ng-repeat="row in grid.rows" class="list-group-item">
+                <div class="row">
+                    <div class="col-md-1">
+                        <span class="glyphicon glyphicon-arrow-up" aria-hidden="true" style="cursor:pointer;"></span>
+                        <br>
+                        <span class="glyphicon glyphicon-arrow-down" aria-hidden="true" style="cursor:pointer;"></span>
+                    </div>
+                    <div class="col-md-11">
+                        <div class="row">
+                            <div
+                                ng-repeat="element in row.elements"
+                                ng-include="element.type"
+                                ng-controller="element.type"
+                                onload="init(element)"
+                                ng-class="'col-md-' + element.width + ' col-md-offset-' + element.offset">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li class="list-group-item">
+                <button ng-click="add_row()" type="button" class="btn btn-default btn-xs btn-block">+</button>
+            </li>
+        </ul>
+    </div>
+</script>
