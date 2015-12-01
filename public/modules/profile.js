@@ -326,22 +326,22 @@ define(['angular'], function (angular){
 
     module.controller('profile.image', ['$scope', '$uibModal', function($scope, $uibModal){
 
-        $scope.upload = function() {
+        $scope.select = function() {
             var modalInstance = $uibModal.open({
                 animation: true,
-                templateUrl: 'file.upload',
-                controller: 'file.upload',
+                templateUrl: 'file.select',
+                controller: 'file.select',
                 size: null,
                 resolve: {
-                    remoteFile: function() {
-                        return $scope.remoteFile;
+                    currentURL: function() {
+                        return $scope.element.src;
                     }
                 }
             });
 
             modalInstance.result
-            .then(function(remoteFile) {
-                $scope.element.src = '/api/file/' + remoteFile._id + '/data';
+            .then(function(newURL) {
+                $scope.element.src = newURL;
             });
         };
 

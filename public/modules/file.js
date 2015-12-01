@@ -69,11 +69,14 @@ define(['angular'], function (angular){
     //
 
     // example component view controller
-    module.controller('file.upload', ['$scope', 'file.api', '$uibModalInstance', function($scope, api, $uibModalInstance){
-        $scope.submit = function() {
+    module.controller('file.select', ['$scope', 'file.api', '$uibModalInstance', 'currentURL', function($scope, api, $uibModalInstance, currentURL){
+
+        $scope.newURL = currentURL;
+
+        $scope.upload = function() {
             api.upload($scope.localFile)
                 .then(function(file){
-                    $scope.remoteFile = file;
+                    $scope.newURL = '/api/file/' + file._id + '/filename/' + file.name;
                 })
                 .catch(function(err){
                     $scope.error = err;
@@ -81,7 +84,7 @@ define(['angular'], function (angular){
         };
 
         $scope.ok = function () {
-          $uibModalInstance.close($scope.remoteFile);
+          $uibModalInstance.close($scope.newURL);
         };
 
         $scope.cancel = function () {

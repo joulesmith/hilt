@@ -7,6 +7,8 @@ var formidable = require('formidable');
 var error = require('../error');
 var Promise = require('bluebird');
 var config = require('../config');
+
+
 var FileError = error('routes.api.file');
 
 module.exports = function(app) {
@@ -44,8 +46,14 @@ module.exports = function(app) {
 
                             if (err) {return reject(err);}
 
+                            if (!files.file || !files.file.path) {
+                                return reject(new FileError('nofile',
+                                    'No file to upload.',
+                                    [],
+                                    400));
+                            }
+
                             // move the file to the output folder
-                            // TODO: have this set from configuration file
                             fs.renameSync(files.file.path, path.join(config.uploadPath, '' + file._id) );
 
                             file.name = files.file.name;
@@ -74,30 +82,33 @@ module.exports = function(app) {
             static : {},
             // need execute permission, only uses http gets to specific resource
             safe : {
-                // GET /api/file/:id/data
-                data : function(req, res) {
-                    var file = this;
+                // GET /api/file/:id/data/:filename
+                filename : {
+                    route : '/:filename',
+                    handler :  function(req, res) {
+                        var file = this;
 
-                    var options = {
-                        root: config.uploadPath,
-                        dotfiles: 'deny',
-                        headers: {
-                            'x-timestamp': Date.now(),
-                            'x-sent': true
-                        }
-                    };
-
-
-                    return (new Promise(function (resolve, reject) {
-                        res.setHeader("Content-Type", file.type);
-                        res.sendFile(file._id, options, function(err){
-                            if (err){
-                                reject(err);
-                            }else{
-                                resolve();
+                        var options = {
+                            root: config.uploadPath,
+                            dotfiles: 'deny',
+                            headers: {
+                                'x-timestamp': Date.now(),
+                                'x-sent': true
                             }
-                        });
-                    }));
+                        };
+
+
+                        return (new Promise(function (resolve, reject) {
+                            res.setHeader("Content-Type", file.type);
+                            res.sendFile(file._id, options, function(err){
+                                if (err){
+                                    reject(err);
+                                }else{
+                                    resolve();
+                                }
+                            });
+                        }));
+                    }
                 }
             },
             // need both execute and write permission, uses http posts to specific resource

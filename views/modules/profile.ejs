@@ -3,12 +3,14 @@
 </script>
 
 <script type="text/ng-template" id="profile.search">
-    <div class="input-group">
-        <span class="input-group-btn">
-            <button ng-click="search()" class="btn btn-default" type="button">Search</button>
-        </span>
-        <input ng-model="words" type="text" class="form-control" placeholder="Search for...">
-    </div>
+    <form ng-submit="search()">
+        <div class="input-group">
+            <span class="input-group-btn">
+                <button class="btn btn-default" type="submit">Search</button>
+            </span>
+            <input ng-model="words" type="text" class="form-control" placeholder="Search for...">
+        </div>
+    </form>
     <!-- /input-group -->
     <table class="table">
         <tr>
@@ -167,8 +169,9 @@
             </select>
 
             <span ng-click="moveRight(row, $index)" class="glyphicon glyphicon-arrow-right" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
-            <input ng-model="element.src" type="text" class="form-control" placeholder="Source URL">
-            <span ng-click="upload()" class="glyphicon glyphicon-upload" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+
+            <button ng-click="select()" class="btn btn-default" type="button">Select Image</button>
+
             <a ng-click="cutElement(row, $index)" style="cursor:pointer;">cut</a>
         </div>
         <img ng-src="{{element.src}}" alt="{{element.alt}}" class="img-responsive" style="width:100%"/>

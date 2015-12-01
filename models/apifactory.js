@@ -526,8 +526,7 @@ module.exports = function(app, models) {
         for(var param in api.safe) {
             // perform a 'get' api call to the resource
             if (api.authenticate.execute){
-                router.get('/:id/' + param,
-                    bodyParser.json(),
+                router.get('/:id/' + param + (api.safe[param].route ? api.safe[param].route : ''),
                     bodyParser.urlencoded({
                         extended: false
                     }),
@@ -538,7 +537,7 @@ module.exports = function(app, models) {
                                 .exec()
                                 .then(function(element) {
                                     permission(req.user, element, 'execute');
-                                    return api.safe[param].apply(element, [req, res]);
+                                    return api.safe[param].handler.apply(element, [req, res]);
                                 })
                                 .catch(function(error) {
                                     next(error);
@@ -548,7 +547,7 @@ module.exports = function(app, models) {
                         }
                     });
             }else{
-                router.get('/:id/' + param,
+                router.get('/:id/' + param + (api.safe[param].route ? api.safe[param].route : ''),
                     bodyParser.urlencoded({
                         extended: false
                     }),
@@ -557,7 +556,7 @@ module.exports = function(app, models) {
                             Model.findById('' + req.params.id)
                                 .exec()
                                 .then(function(element) {
-                                    return api.safe[param].apply(element, [req, res]);
+                                    return api.safe[param].handler.apply(element, [req, res]);
                                 })
                                 .catch(function(error) {
                                     next(error);
