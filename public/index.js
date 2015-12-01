@@ -10,7 +10,8 @@ require.config({
         'lodash' : '../lib/lodash.min',
         'restangular' : '../lib/restangular',
         'uiRouter' : '../lib/angular-ui-router.min',
-        'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min'
+        'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min',
+        'marked' : '../lib/marked'
     },
     shim: {
         'angular' : {

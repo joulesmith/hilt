@@ -58,7 +58,8 @@ router.post('/:profile_id', userAuth(), function(req, res, next) {
         Profile.findById('' + req.params.profile_id)
         .exec()
         .then(function(profile){
-            if (profile.user !== req.user._id) {
+
+            if (!profile.user.equals(req.user._id)) {
                 throw new ProfileError('unauthorized',
                     'A user can only edit their own profiles.',
                     [],

@@ -37,7 +37,7 @@ module.exports = function(app, models) {
                     401);
             }
 
-            if (user === resource.owner) {
+            if (user._id.equals(resource.owner._id)) {
                 return;
             }
 
@@ -88,7 +88,7 @@ module.exports = function(app, models) {
 
         // boilerplate schema for all resource models
         var schema = {
-            owner : { type: mongoose.Schema.Types.ObjectId, ref: 'user', index : true},
+
             // time created in unix time [milliseconds]
             created : {type : Number, default: 0},
             // time last edited in unix time [milliseconds]
@@ -96,7 +96,8 @@ module.exports = function(app, models) {
             // unavailable until this resource can be reviewed for content
             flagged : {type : Boolean, default : false},
             // no longer can be accessed from public api
-            removed : {type : Boolean, default : false}
+            removed : {type : Boolean, default : false},
+            owner : { type: mongoose.Schema.Types.ObjectId, ref: 'user'}
         };
 
         // if a user is not the owner they can still interact with the resource
@@ -280,7 +281,7 @@ module.exports = function(app, models) {
             userAuth(),
             function(req, res, next) {
                 try {
-                    console.log(req.user);
+
                     if (!req.user) {
                         throw new ModelError('nouser',
                             'A user must be logged in to add a [0].', [model],
@@ -503,20 +504,23 @@ module.exports = function(app, models) {
 
         for(var param in api.static) {
 
-            router.get('/' + param,
-                bodyParser.urlencoded({
-                    extended: false
-                }),
-                function(req, res, next) {
-                    try {
-                        api.static[param].apply(null, [req, res])
-                            .catch(function(error) {
-                                next(error);
-                            });
-                    } catch (error) {
-                        next(error);
-                    }
-                });
+            (function(method) {
+                router.get('/' + param + (method.route ? method.route : ''),
+                    bodyParser.urlencoded({
+                        extended: false
+                    }),
+                    function(req, res, next) {
+                        try {
+                            method.handler.apply(null, [req, res])
+                                .catch(function(error) {
+                                    next(error);
+                                });
+                        } catch (error) {
+                            next(error);
+                        }
+                    });
+            })(api.static[param]);
+
         }
 
         //
@@ -524,48 +528,50 @@ module.exports = function(app, models) {
         //
 
         for(var param in api.safe) {
-            // perform a 'get' api call to the resource
-            if (api.authenticate.execute){
-                router.get('/:id/' + param + (api.safe[param].route ? api.safe[param].route : ''),
-                    bodyParser.urlencoded({
-                        extended: false
-                    }),
-                    userAuth(),
-                    function(req, res, next) {
-                        try {
-                            Model.findById('' + req.params.id)
-                                .exec()
-                                .then(function(element) {
-                                    permission(req.user, element, 'execute');
-                                    return api.safe[param].handler.apply(element, [req, res]);
-                                })
-                                .catch(function(error) {
-                                    next(error);
-                                });
-                        } catch (error) {
-                            next(error);
-                        }
-                    });
-            }else{
-                router.get('/:id/' + param + (api.safe[param].route ? api.safe[param].route : ''),
-                    bodyParser.urlencoded({
-                        extended: false
-                    }),
-                    function(req, res, next) {
-                        try {
-                            Model.findById('' + req.params.id)
-                                .exec()
-                                .then(function(element) {
-                                    return api.safe[param].handler.apply(element, [req, res]);
-                                })
-                                .catch(function(error) {
-                                    next(error);
-                                });
-                        } catch (error) {
-                            next(error);
-                        }
-                    });
-            }
+            (function(method) {
+                // perform a 'get' api call to the resource
+                if (api.authenticate.execute){
+                    router.get('/:id/' + param + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        userAuth(),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+                                        permission(req.user, element, 'execute');
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }else{
+                    router.get('/:id/' + param + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }
+            })(api.safe[param]);
         }
 
         //

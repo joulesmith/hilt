@@ -7,7 +7,7 @@ var formidable = require('formidable');
 var error = require('../error');
 var Promise = require('bluebird');
 var config = require('../config');
-
+var mongoose = require('mongoose');
 
 var FileError = error('routes.api.file');
 
@@ -79,7 +79,22 @@ module.exports = function(app) {
                     405);
             },
             // no restrictions to access, only uses http gets to base url
-            static : {},
+            static : {
+                ownedfiles : {
+                    route : '/:userid',
+                    handler : function(req, res) {
+
+                        return mongoose.model('file').find({
+                            owner : '' + req.params.userid
+                        }).then(function(files){
+
+                            res.json({
+                                file : files
+                            });
+                        });
+                    }
+                }
+            },
             // need execute permission, only uses http gets to specific resource
             safe : {
                 // GET /api/file/:id/data/:filename

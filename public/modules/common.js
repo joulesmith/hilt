@@ -1,9 +1,21 @@
 "use strict";
 
-define(['angular', 'restangular'], function (angular, restangular){
+define(['angular', 'marked'], function (angular, marked){
 
     var module = angular.module('common', []);
 
+    module.directive('markdown', ['$parse', function ($parse) {
+        return {
+            restrict: 'A',
+            link: function(scope, element, attrs) {
+                var getter = $parse(attrs.markdown);
+                var text = getter(scope);
+
+                element.html(marked(text));
+
+            }
+        };
+    }]);
 
     module.controller('common.error', ['$scope', function($scope){
 
