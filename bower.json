@@ -16,6 +16,7 @@
     "angular-sanitize": "~1.4.8",
     "lodash": "~3.10.1",
     "angular": "~1.4.8",
-    "requirejs": "~2.1.22"
+    "requirejs": "~2.1.22",
+    "bootstrap": "~3.3.6"
   }
 }

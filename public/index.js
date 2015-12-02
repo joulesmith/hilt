@@ -13,7 +13,7 @@ require.config({
         'uiRouter' : '../lib/angular-ui-router.min',
         'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min',
         "marked" : "../marked/lib/marked",
-        "MathJax" : "../MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+        "MathJax" : "../MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML&amp;delayStartupUntil=configured"
     },
     shim: {
         'angular' : {
@@ -44,7 +44,14 @@ require.config({
             exports : 'marked'
         },
         'MathJax' : {
-            exports : 'MathJax'
+            exports : 'MathJax',
+            init: function () {
+                MathJax.Hub.Config({
+                    skipStartupTypeset: true
+                });
+                MathJax.Hub.Startup.onload();
+                return MathJax;
+            }
         }
     }
 });

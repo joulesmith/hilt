@@ -131,6 +131,10 @@ define(['angular'], function (angular){
         var _id = $state.params.profileId;
 
         $scope.profile = {
+            data : ""
+        };
+
+        $scope.element = {
             rows : []
         };
 
@@ -154,33 +158,46 @@ define(['angular'], function (angular){
         $scope.addRow = function(index) {
 
             if (typeof index !== 'undefined') {
-                $scope.profile.rows.splice(index, 0, {
+                $scope.element.rows.splice(index, 0, {
                     elements : []
                 })
             }else{
-                $scope.profile.rows.push({
+                $scope.element.rows.push({
+                    elements : []
+                });
+            }
+        };
+
+        $scope.addRowTo = function(column, index) {
+
+            if (typeof index !== 'undefined') {
+                column.rows.splice(index, 0, {
+                    elements : []
+                })
+            }else{
+                column.rows.push({
                     elements : []
                 });
             }
         };
 
         $scope.deleteRow = function(index) {
-            $scope.profile.rows.splice(index, 1);
+            $scope.element.rows.splice(index, 1);
         }
 
-        $scope.moveUp = function(index) {
+        $scope.moveUp = function(column, index) {
             if (index > 0) {
-                var tmp = $scope.profile.rows[index];
-                $scope.profile.rows[index] = $scope.profile.rows[index - 1];
-                $scope.profile.rows[index - 1] = tmp;
+                var tmp = column.rows[index];
+                column.rows[index] = column.rows[index - 1];
+                column.rows[index - 1] = tmp;
             }
         };
 
-        $scope.moveDown= function(index) {
-            if (index < $scope.profile.rows.length - 1) {
-                var tmp = $scope.profile.rows[index];
-                $scope.profile.rows[index] = $scope.profile.rows[index + 1];
-                $scope.profile.rows[index + 1] = tmp;
+        $scope.moveDown= function(column, index) {
+            if (index < column.rows.length - 1) {
+                var tmp = column.rows[index];
+                column.rows[index] = column.rows[index + 1];
+                column.rows[index + 1] = tmp;
             }
         };
 
@@ -244,7 +261,17 @@ define(['angular'], function (angular){
             });
         };
 
+        $scope.addColumnTo = function(row) {
+            row.elements.push({
+                type : 'profile.column',
+                rows : [],
+                offset : 0,
+                width : 1
+            });
+        };
+
         $scope.clipboard = null;
+        $scope.clipboard_rows = null;
 
         $scope.cutElement = function(row, index) {
             if (index < row.elements.length - 1) {
@@ -263,8 +290,20 @@ define(['angular'], function (angular){
             }
         };
 
+        $scope.cutRow = function(column, index) {
+            $scope.clipboard_rows = column.rows[index];
+            column.rows.splice(index, 1);
+        };
+
+        $scope.pasteRow = function(column) {
+            if ($scope.clipboard_rows) {
+                column.rows.push($scope.clipboard_rows);
+                $scope.clipboard_rows = null;
+            }
+        };
+
         $scope.save = function() {
-            $scope.profile.data = JSON.stringify($scope.profile.rows);
+            $scope.profile.data = JSON.stringify($scope.element.rows);
             api.saveProfile($scope.profile._id, $scope.profile)
             .then(function(profile){
                 $scope.error = null;
@@ -278,10 +317,8 @@ define(['angular'], function (angular){
             api.getProfile(_id, $scope.profile)
             .then(function(profile){
 
-                if ($scope.profile.data !== ''){
-                    $scope.profile.rows = JSON.parse($scope.profile.data);
-                }else{
-                    $scope.profile.rows = [];
+                if (profile.data !== ''){
+                    $scope.element.rows = JSON.parse(profile.data);
                 }
 
                 $scope.error = null;
@@ -318,10 +355,55 @@ define(['angular'], function (angular){
     // Controllers for stand-alone components used for viewing profile information
     //
 
-    module.controller('profile.text', ['$scope', function($scope){
+    module.controller('profile.column', ['$scope', function($scope){
 
 
 
+    }]);
+
+    module.controller('profile.text', ['$scope', '$uibModal', function($scope, $uibModal){
+
+        $scope.edit = function() {
+            var modalInstance = $uibModal.open({
+                animation: true,
+                templateUrl: 'profile.textEdit',
+                controller: 'profile.textEdit',
+                size: 'lg',
+                resolve: {
+                    textElement: function() {
+                        return $scope.element;
+                    }
+                }
+            });
+
+            modalInstance.result
+            .then(function(element) {
+                $scope.element = element;
+            });
+        };
+    }]);
+
+
+    // example component view controller
+    module.controller('profile.textEdit', ['$scope', 'file.api', '$uibModalInstance', 'textElement', 'user.api', function($scope, file, $uibModalInstance, textElement, user){
+
+        $scope.textElement = textElement;
+
+        $scope.formats = {
+            Default : "Default",
+            MathJaxMarkdown : "Markdown + LaTeX",
+            Markdown : "Markdown",
+            MathJax : "LaTeX",
+            Preformatted : "Code"
+        };
+
+        $scope.ok = function () {
+          $uibModalInstance.close($scope.textElement);
+        };
+
+        $scope.cancel = function () {
+          $uibModalInstance.dismiss('cancel');
+        };
     }]);
 
     module.controller('profile.image', ['$scope', '$uibModal', function($scope, $uibModal){

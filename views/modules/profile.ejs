@@ -1,5 +1,16 @@
+
+<!-- CSS styles specific to this module -->
+<style type="text/css">
+
+    .profile select { padding-top: 0px; padding-bottom: 0px; font-size: 16px;line-height: 28px; height:16px;}
+
+    .profile .navbar { min-height:28px; }
+    .profile .navbar .navbar-brand{ padding: 0px 12px;font-size: 16px;line-height: 28px; }
+    .profile .navbar .navbar-nav > li > a {  padding-top: 0px; padding-bottom: 0px; line-height: 28px; }
+</style>
+
 <script type="text/ng-template" id="profile">
-    <div ui-view></div>
+    <div ui-view class="profile"></div>
 </script>
 
 <script type="text/ng-template" id="profile.search">
@@ -31,7 +42,7 @@
 <script type="text/ng-template" id="profile.view">
 
     <div class="panel panel-default">
-        <nav class="navbar navbar-default">
+        <nav class="navbar navbar-inverse">
             <div class="container-fluid">
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" ng-click="isCollapsed = !isCollapsed">
@@ -51,7 +62,9 @@
                 </div>
             </div>
         </nav>
-        <div ng-repeat="row in profile.rows" ng-include="'profile.row'"></div>
+        <div>
+            <div ng-repeat="row in element.rows" ng-include="'profile.row'"></div>
+        </div>
     </div>
     <div ng-if='error' class="form-group row">
         <div class="col-sm-offset-2 col-sm-10 col-lg-6">
@@ -73,15 +86,15 @@
                 </div>
                 <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
                     <ul class="nav navbar-nav">
-                        <li ng-click="moveUp($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-up" aria-hidden="true" ></span></a></li>
-                        <li ng-click="moveDown($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></a></li>
-                        <li ng-click="deleteRow($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-minus" aria-hidden="true" ></span></a></li>
+                        <li ng-click="moveUp(element, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-up" aria-hidden="true" ></span></a></li>
+                        <li ng-click="moveDown(element, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></a></li>
+                        <li ng-click="cutRow(element, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-minus" aria-hidden="true" ></span></a></li>
                         <li uib-dropdown class="dropdown">
                             <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
-                                Insert <span class="caret">
+                                <span class="glyphicon glyphicon-plus" aria-hidden="true" ></span> <span class="caret">
                             </span></a>
                             <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
-                                <li ng-click="addRow($index)" style="cursor:pointer;"><a>Row</a></li>
+                                <li ng-click="addRowTo(element, $index)" style="cursor:pointer;"><a>Row</a></li>
                                 <li ng-click="addColumnTo(row)" style="cursor:pointer;"><a>Column</a></li>
                                 <li ng-click="addTextTo(row)" style="cursor:pointer;"><a>Text</a></li>
                                 <li ng-click="addImageTo(row)" style="cursor:pointer;"><a>Image</a></li>
@@ -118,62 +131,179 @@
     </div>
 </script>
 
+<script type="text/ng-template" id="profile.column">
+    <div ng-controller="profile.column">
+        <nav ng-if="status.edit" class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" ng-click="isCollapsed = !isCollapsed">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
+                    <ul class="nav navbar-nav">
+                        <li ng-click="moveLeft(row, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-left" aria-hidden="true" ></span></a></li>
+                        <li uib-dropdown class="dropdown">
+                            <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+                                <span class="glyphicon glyphicon-resize-horizontal" aria-hidden="true" ></span> <span class="caret">
+                            </span></a>
+                            <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+                                <li ng-click="element.width=1" style="cursor:pointer;" ng-class="{active:element.width===1}"><a>1</a></li>
+                                <li ng-click="element.width=2" style="cursor:pointer;" ng-class="{active:element.width===2}"><a>2</a></li>
+                                <li ng-click="element.width=3" style="cursor:pointer;" ng-class="{active:element.width===3}"><a>3</a></li>
+                                <li ng-click="element.width=4" style="cursor:pointer;" ng-class="{active:element.width===4}"><a>4</a></li>
+                                <li ng-click="element.width=5" style="cursor:pointer;" ng-class="{active:element.width===5}"><a>5</a></li>
+                                <li ng-click="element.width=6" style="cursor:pointer;" ng-class="{active:element.width===6}"><a>6</a></li>
+                                <li ng-click="element.width=7" style="cursor:pointer;" ng-class="{active:element.width===7}"><a>7</a></li>
+                                <li ng-click="element.width=8" style="cursor:pointer;" ng-class="{active:element.width===8}"><a>8</a></li>
+                                <li ng-click="element.width=9" style="cursor:pointer;" ng-class="{active:element.width===9}"><a>9</a></li>
+                                <li ng-click="element.width=10" style="cursor:pointer;" ng-class="{active:element.width===10}"><a>10</a></li>
+                                <li ng-click="element.width=11" style="cursor:pointer;" ng-class="{active:element.width===11}"><a>11</a></li>
+                                <li ng-click="element.width=12" style="cursor:pointer;" ng-class="{active:element.width===12}"><a>12</a></li>
+                            </ul>
+                        </li>
+                        <li ng-click="moveRight(row, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span></a></li>
+                        <li ng-click="cutElement(row, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-minus" aria-hidden="true" ></span></a></li>
+                        <li uib-dropdown class="dropdown">
+                            <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+                                <span class="glyphicon glyphicon-plus" aria-hidden="true" ></span> <span class="caret">
+                            </span></a>
+                            <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+                                <li ng-click="addRowTo(element)" style="cursor:pointer;"><a>Row</a></li>
+                                <li ng-if="clipboard_rows" ng-click="pasteRow(element)" style="cursor:pointer;"><a>Paste</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div ng-repeat="row in element.rows" ng-include="'profile.row'"></div>
+    </div>
+</script>
+
 <script type="text/ng-template" id="profile.text">
     <div ng-controller="profile.text">
-        <span ng-if="!status.edit" style="width:100%; word-wrap: break-word;" mathjax-markdown="element.text"></span>
-        <div ng-if="status.edit">
-            <span ng-click="moveLeft(row, $index)" class="glyphicon glyphicon-arrow-left" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+        <nav ng-if="status.edit" class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" ng-click="isCollapsed = !isCollapsed">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
+                    <ul class="nav navbar-nav">
+                        <li ng-click="moveLeft(row, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-left" aria-hidden="true" ></span></a></li>
+                        <li uib-dropdown class="dropdown">
+                            <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+                                <span class="glyphicon glyphicon-resize-horizontal" aria-hidden="true" ></span> <span class="caret">
+                            </span></a>
+                            <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+                                <li ng-click="element.width=1" style="cursor:pointer;" ng-class="{active:element.width===1}"><a>1</a></li>
+                                <li ng-click="element.width=2" style="cursor:pointer;" ng-class="{active:element.width===2}"><a>2</a></li>
+                                <li ng-click="element.width=3" style="cursor:pointer;" ng-class="{active:element.width===3}"><a>3</a></li>
+                                <li ng-click="element.width=4" style="cursor:pointer;" ng-class="{active:element.width===4}"><a>4</a></li>
+                                <li ng-click="element.width=5" style="cursor:pointer;" ng-class="{active:element.width===5}"><a>5</a></li>
+                                <li ng-click="element.width=6" style="cursor:pointer;" ng-class="{active:element.width===6}"><a>6</a></li>
+                                <li ng-click="element.width=7" style="cursor:pointer;" ng-class="{active:element.width===7}"><a>7</a></li>
+                                <li ng-click="element.width=8" style="cursor:pointer;" ng-class="{active:element.width===8}"><a>8</a></li>
+                                <li ng-click="element.width=9" style="cursor:pointer;" ng-class="{active:element.width===9}"><a>9</a></li>
+                                <li ng-click="element.width=10" style="cursor:pointer;" ng-class="{active:element.width===10}"><a>10</a></li>
+                                <li ng-click="element.width=11" style="cursor:pointer;" ng-class="{active:element.width===11}"><a>11</a></li>
+                                <li ng-click="element.width=12" style="cursor:pointer;" ng-class="{active:element.width===12}"><a>12</a></li>
+                            </ul>
+                        </li>
+                        <li ng-click="moveRight(row, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span></a></li>
+                        <li ng-click="cutElement(row, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-minus" aria-hidden="true" ></span></a></li>
 
-            <select number ng-model="element.width" class="form-control" style="width: 1em; display: inline;">
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4</option>
-                <option>5</option>
-                <option>6</option>
-                <option>7</option>
-                <option>8</option>
-                <option>9</option>
-                <option>10</option>
-                <option>11</option>
-                <option>12</option>
-            </select>
+                        <li ng-click="edit()" style="cursor:pointer;"><a><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <span ng-if="element.format === 'MathJaxMarkdown'" mathjax-markdown="element.text" style="width:100%; word-wrap: break-word;"></span>
+        <span ng-if="element.format === 'MathJax'" mathjax="element.text" style="width:100%; word-wrap: break-word;"></span>
+        <span ng-if="element.format === 'Markdown'" markdown="element.text" style="width:100%; word-wrap: break-word;"></span>
+        <pre ng-if="element.format === 'Preformatted'" style="width:100%; word-wrap: break-word;">{{element.text}}</pre>
+        <span ng-if="element.format === 'Default'" style="width:100%; word-wrap: break-word;">{{element.text}}</span>
+    </div>
+</script>
 
-            <span ng-click="moveRight(row, $index)" class="glyphicon glyphicon-arrow-right" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
+<script type="text/ng-template" id="profile.textEdit">
 
-            <textarea ng-model="element.text" class="form-control" rows="3" placeholder="Enter Text"></textarea>
-            <a ng-click="cutElement(row, $index)" style="cursor:pointer;">cut</a>
-        </div>
+    <div class="modal-header">
+        <h3 class="modal-title">Edit Text</h3>
+    </div>
+    <div class="modal-body">
+        <form ng-submit="" class="form">
+            <div class="btn-group" uib-dropdown is-open="status.isopen">
+                <button id="single-button" type="button" class="btn btn-default" uib-dropdown-toggle>
+                    Formatting : {{formats[textElement.format]}}
+                    <span class="caret"></span>
+                </button>
+                <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+
+                    <li ng-repeat="(code, display) in formats" ng-click="textElement.format=code;" style="cursor:pointer;" ng-class="{active : code===textElement.format}">
+                        <a>{{display}}</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="form-group">
+                <textarea ng-model="textElement.text" class="form-control" rows="8" ></textarea>
+            </div>
+        </form>
+        <div ng-if="error" ng-include="'common.error'" ng-controller="common.error"></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-primary" type="button" ng-click="ok()">OK</button>
+        <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
     </div>
 </script>
 
 <script type="text/ng-template" id="profile.image">
     <div ng-controller="profile.image">
+        <nav ng-if="status.edit" class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" ng-click="isCollapsed = !isCollapsed">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
+                    <ul class="nav navbar-nav">
+                        <li ng-click="moveLeft(row, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-left" aria-hidden="true" ></span></a></li>
+                        <li uib-dropdown class="dropdown">
+                            <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+                                <span class="glyphicon glyphicon-resize-horizontal" aria-hidden="true" ></span> <span class="caret">
+                            </span></a>
+                            <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+                                <li ng-click="element.width=1" style="cursor:pointer;" ng-class="{active:element.width===1}"><a>1</a></li>
+                                <li ng-click="element.width=2" style="cursor:pointer;" ng-class="{active:element.width===2}"><a>2</a></li>
+                                <li ng-click="element.width=3" style="cursor:pointer;" ng-class="{active:element.width===3}"><a>3</a></li>
+                                <li ng-click="element.width=4" style="cursor:pointer;" ng-class="{active:element.width===4}"><a>4</a></li>
+                                <li ng-click="element.width=5" style="cursor:pointer;" ng-class="{active:element.width===5}"><a>5</a></li>
+                                <li ng-click="element.width=6" style="cursor:pointer;" ng-class="{active:element.width===6}"><a>6</a></li>
+                                <li ng-click="element.width=7" style="cursor:pointer;" ng-class="{active:element.width===7}"><a>7</a></li>
+                                <li ng-click="element.width=8" style="cursor:pointer;" ng-class="{active:element.width===8}"><a>8</a></li>
+                                <li ng-click="element.width=9" style="cursor:pointer;" ng-class="{active:element.width===9}"><a>9</a></li>
+                                <li ng-click="element.width=10" style="cursor:pointer;" ng-class="{active:element.width===10}"><a>10</a></li>
+                                <li ng-click="element.width=11" style="cursor:pointer;" ng-class="{active:element.width===11}"><a>11</a></li>
+                                <li ng-click="element.width=12" style="cursor:pointer;" ng-class="{active:element.width===12}"><a>12</a></li>
+                            </ul>
+                        </li>
+                        <li ng-click="moveRight(row, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span></a></li>
+                        <li ng-click="cutElement(row, $index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-minus" aria-hidden="true" ></span></a></li>
 
-        <div ng-if="status.edit">
-            <span ng-click="moveLeft(row, $index)" class="glyphicon glyphicon-arrow-left" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
-
-            <select number ng-model="element.width" class="form-control" style="width: 1em; display: inline;">
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4</option>
-                <option>5</option>
-                <option>6</option>
-                <option>7</option>
-                <option>8</option>
-                <option>9</option>
-                <option>10</option>
-                <option>11</option>
-                <option>12</option>
-            </select>
-
-            <span ng-click="moveRight(row, $index)" class="glyphicon glyphicon-arrow-right" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
-
-            <button ng-click="select()" class="btn btn-default" type="button">Select Image</button>
-
-            <a ng-click="cutElement(row, $index)" style="cursor:pointer;">cut</a>
-        </div>
+                        <li ng-click="select()" style="cursor:pointer;"><a><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
         <img ng-src="{{element.src}}" alt="{{element.alt}}" class="img-responsive" style="width:100%"/>
     </div>
 </script>
