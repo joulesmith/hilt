@@ -120,7 +120,7 @@
 
 <script type="text/ng-template" id="profile.text">
     <div ng-controller="profile.text">
-        <p ng-if="!status.edit" style="width:100%; word-wrap: break-word;" markdown="element.text"></p>
+        <span ng-if="!status.edit" style="width:100%; word-wrap: break-word;" mathjax-markdown="element.text"></span>
         <div ng-if="status.edit">
             <span ng-click="moveLeft(row, $index)" class="glyphicon glyphicon-arrow-left" aria-hidden="true" style="cursor:pointer; display: inline; width:1em;"></span>
 

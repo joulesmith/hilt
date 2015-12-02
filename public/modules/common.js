@@ -1,25 +1,27 @@
 "use strict";
 
-define(['angular', 'marked'], function (angular, marked){
+define(['angular', 'marked', 'MathJax'], function (angular, marked, MathJax){
 
     var module = angular.module('common', []);
 
-    module.directive('markdown', ['$parse', function ($parse) {
+    module.directive("mathjaxMarkdown", function() {
         return {
-            restrict: 'A',
-            link: function(scope, element, attrs) {
-                var getter = $parse(attrs.markdown);
-                var text = getter(scope);
+            restrict: "A",
+            controller: ["$scope", "$element", "$attrs", function($scope, $element, $attrs) {
+                $scope.$watch($attrs.mathjaxMarkdown, function(value) {
 
-                element.html(marked(text));
+                    $element.html(marked(value));
 
-            }
+                    MathJax.Hub.Queue(["Typeset", MathJax.Hub, $element[0]]);
+                });
+            }]
         };
-    }]);
+    });
 
     module.controller('common.error', ['$scope', function($scope){
 
     }]);
+
 
     module.controller('common.grid', ['$scope', function($scope){
         $scope.init = function(grid, allowed) {
