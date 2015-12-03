@@ -37,7 +37,7 @@ module.exports = function(app, models) {
                     401);
             }
 
-            if (user._id.equals(resource.owner._id)) {
+            if (user._id.equals(resource.owner)) {
                 return;
             }
 
@@ -146,8 +146,8 @@ module.exports = function(app, models) {
         }
 
         // add custom shema to the model
-        for(var param in api.state.internal) {
-            schema[param] = api.state.internal[param];
+        for(var param in api.state.settable) {
+            schema[param] = api.state.settable[param];
         }
 
         for(var param in api.state.internal) {
@@ -271,6 +271,31 @@ module.exports = function(app, models) {
                     next(error);
                 }
             });
+
+        //
+        // static methods
+        //
+
+        for(var prop in api.static) {
+
+            (function(method) {
+                router.get('/' + prop + (method.route ? method.route : ''),
+                    bodyParser.urlencoded({
+                        extended: false
+                    }),
+                    function(req, res, next) {
+                        try {
+                            method.handler.apply(null, [req, res])
+                                .catch(function(error) {
+                                    next(error);
+                                });
+                        } catch (error) {
+                            next(error);
+                        }
+                    });
+            })(api.static[prop]);
+
+        }
 
         // add a new resource
         router.post('/',
@@ -421,6 +446,7 @@ module.exports = function(app, models) {
         }
 
 
+
         // retrieve the resource
         if (api.authenticate.read) {
             router.get('/:id',
@@ -498,30 +524,7 @@ module.exports = function(app, models) {
                 });
         }
 
-        //
-        // static methods
-        //
 
-        for(var param in api.static) {
-
-            (function(method) {
-                router.get('/' + param + (method.route ? method.route : ''),
-                    bodyParser.urlencoded({
-                        extended: false
-                    }),
-                    function(req, res, next) {
-                        try {
-                            method.handler.apply(null, [req, res])
-                                .catch(function(error) {
-                                    next(error);
-                                });
-                        } catch (error) {
-                            next(error);
-                        }
-                    });
-            })(api.static[param]);
-
-        }
 
         //
         // Add exposed api safe methods

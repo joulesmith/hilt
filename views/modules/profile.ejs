@@ -55,7 +55,7 @@
                 </div>
                 <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
                     <ul class="nav navbar-nav">
-                        <li ng-if="!status.edit" ng-click="status.edit = true" style="cursor:pointer;"><a>Edit</a></li>
+                        <li ng-if="!status.edit && user.isLoggedIn() === profile.owner" ng-click="status.edit = true" style="cursor:pointer;"><a>Edit</a></li>
                         <li ng-if="status.edit" ng-click="save(); status.edit=false;" style="cursor:pointer;"><a>Save</a></li>
                         <li ng-if="status.edit" ng-click="addRow()" style="cursor:pointer;"><a>Add row</a></li>
                     </ul>
@@ -235,24 +235,46 @@
 <script type="text/ng-template" id="profile.textEdit">
 
     <div class="modal-header">
-        <h3 class="modal-title">Edit Text</h3>
+        <h3 class="modal-title">Text</h3>
     </div>
     <div class="modal-body">
-        <form ng-submit="" class="form">
-            <div class="btn-group" uib-dropdown is-open="status.isopen">
-                <button id="single-button" type="button" class="btn btn-default" uib-dropdown-toggle>
-                    Formatting : {{formats[textElement.format]}}
-                    <span class="caret"></span>
-                </button>
-                <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
-
-                    <li ng-repeat="(code, display) in formats" ng-click="textElement.format=code;" style="cursor:pointer;" ng-class="{active : code===textElement.format}">
-                        <a>{{display}}</a>
-                    </li>
-                </ul>
+        <nav class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" ng-click="isCollapsed = !isCollapsed">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
+                    <ul class="nav navbar-nav">
+                        <li ng-click="preview=!preview" style="cursor:pointer;"><a><span class="glyphicon glyphicon-eye-open" aria-hidden="true" ></span></a></li>
+                        <li uib-dropdown class="dropdown">
+                            <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+                                Formatting : {{formats[textElement.format]}} <span class="caret">
+                            </span></a>
+                            <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+                                <li ng-repeat="(code, display) in formats" ng-click="textElement.format=code;" style="cursor:pointer;" ng-class="{active : code===textElement.format}">
+                                    <a>{{display}}</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            <div class="form-group">
+        </nav>
+        <form ng-submit="" class="form">
+
+            <div ng-if="!preview" class="form-group">
                 <textarea ng-model="textElement.text" class="form-control" rows="8" ></textarea>
+            </div>
+            <div ng-if="preview">
+                <span ng-if="textElement.format === 'MathJaxMarkdown'" mathjax-markdown="textElement.text" style="width:100%; word-wrap: break-word;"></span>
+                <span ng-if="textElement.format === 'MathJax'" mathjax="textElement.text" style="width:100%; word-wrap: break-word;"></span>
+                <span ng-if="textElement.format === 'Markdown'" markdown="textElement.text" style="width:100%; word-wrap: break-word;"></span>
+                <pre ng-if="textElement.format === 'Preformatted'" style="width:100%; word-wrap: break-word;">{{textElement.text}}</pre>
+                <span ng-if="textElement.format === 'Default'" style="width:100%; word-wrap: break-word;">{{textElement.text}}</span>
             </div>
         </form>
         <div ng-if="error" ng-include="'common.error'" ng-controller="common.error"></div>
@@ -304,6 +326,54 @@
                 </div>
             </div>
         </nav>
-        <img ng-src="{{element.src}}" alt="{{element.alt}}" class="img-responsive" style="width:100%"/>
+        <img ng-src="{{element.src}}" alt="{{element.alt}}" class="img-responsive" style="width:100%;" />
+    </div>
+</script>
+
+<script type="text/ng-template" id="profile.imageEdit">
+
+    <div class="modal-header">
+        <h3 class="modal-title">Image</h3>
+    </div>
+    <div class="modal-body">
+        <form ng-submit="upload()" class="form-horizontal">
+            <div class="form-group row">
+                <label for="selectFile" class="col-sm-3 control-label">Your Files</label>
+                <div class="col-sm-9">
+                    <select multiple class="form-control" id="selectFile">
+                        <option ng-repeat="file in files" ng-click="selected(file)">{{file.name}}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="uploadFile" class="col-sm-3 control-label">Upload File</label>
+                <div class="col-sm-9">
+                    <input file-model="localFile" type="file" id="uploadFile">
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-offset-3 col-sm-9">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </div>
+        </form>
+        <form class="form-horizontal">
+            <div class="form-group row">
+                <label for="newURL" class="col-sm-3 control-label">URL</label>
+                <div class="col-sm-9">
+                    <input
+                        ng-model="newURL"
+                        type="text"
+                        class="form-control"
+                        id="newURL"
+                        placeholder="file URL">
+                </div>
+            </div>
+        </form>
+        <div ng-if="error" ng-include="'common.error'" ng-controller="common.error"></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-primary" type="button" ng-click="ok()" ng-disabled="!newURL">OK</button>
+        <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
     </div>
 </script>

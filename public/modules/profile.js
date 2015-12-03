@@ -53,9 +53,8 @@ define(['angular'], function (angular){
             return $http.get('/api/profile/' + _id)
                 .then(function(res){
 
-
-                    if (res.data) {
-                        angular.copy(res.data, profile);
+                    if (res.data.profile) {
+                        angular.copy(res.data.profile[0], profile);
                     }
 
                     return profile;
@@ -80,7 +79,7 @@ define(['angular'], function (angular){
         api.createProfile = function(name) {
             return $http.post('/api/profile/', {name : name})
                 .then(function(res){
-                    return res.data;
+                    return res.data.profile[0];
                 })
                 .catch(function(res){
                     // TODO: this doesn't seem right, maybe use Error somehow?
@@ -90,14 +89,14 @@ define(['angular'], function (angular){
 
         api.search = function(words) {
             return $http({
-                    url: '/api/profile/',
+                    url: '/api/profile/search',
                     method: "GET",
                     params: {
                         words: words
                     }
                 })
                 .then(function(res) {
-                    return res.data;
+                    return res.data.profile;
                 })
                 .catch(function(res) {
                     throw res.data.error;
@@ -127,8 +126,10 @@ define(['angular'], function (angular){
     }]);
 
     // view a single profile
-    module.controller('profile.view', ['$scope', '$state', 'profile.api', function($scope, $state, api){
+    module.controller('profile.view', ['$scope', '$state', 'profile.api', 'user.api', function($scope, $state, api, user){
         var _id = $state.params.profileId;
+
+        $scope.user = user;
 
         $scope.profile = {
             data : ""
@@ -247,6 +248,7 @@ define(['angular'], function (angular){
             row.elements.push({
                 type : 'profile.text',
                 text : '',
+                format : 'Default',
                 offset : 0,
                 width : 1
             });
@@ -256,6 +258,7 @@ define(['angular'], function (angular){
             row.elements.push({
                 type : 'profile.image',
                 src : '',
+                alt : '',
                 offset : 0,
                 width : 1
             });

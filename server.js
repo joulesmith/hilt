@@ -7,7 +7,6 @@ var config = require('./config');
 var app = require('./app');
 var debug = require('debug')('broadsword:server');
 var http = require('http');
-// add websockets module
 var socketio = require('socket.io');
 
 /**
@@ -26,7 +25,8 @@ var server = http.createServer(app);
 /**
  * Add socket.io to server
  */
-//require('../server').set_io(socketio(server));
+
+var io = socketio(server);
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -95,3 +95,8 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+
+module.exports = {
+    server : server,
+    io : io
+};

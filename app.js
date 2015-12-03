@@ -45,8 +45,9 @@ app.use('/', require('./routes/index'));
 // TODO: convert these to the combined api/model format
 app.use('/api/util', require('./routes/api/util'));
 app.use('/api/user', require('./routes/api/user'));
-app.use('/api/profile', require('./routes/api/profile'));
+//app.use('/api/profile', require('./routes/api/profile'));
 
+require('./models/profile')(app);
 require('./models/file')(app);
 
 // catch 404 and forward to error handler
