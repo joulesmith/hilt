@@ -8,6 +8,8 @@
 var express = require('express');
 var mongoose = require('mongoose');
 var userAuth = require('../middleware/user');
+var user_ioAuth = require('../middleware/user_io');
+
 var error = require('../error');
 var _ = require('lodash');
 
@@ -15,7 +17,7 @@ var User = mongoose.model('user');
 var bodyParser = require('body-parser');
 
 
-module.exports = function(app, models) {
+module.exports = function(server, models) {
 
     for(var model in models) {
 
@@ -146,12 +148,12 @@ module.exports = function(app, models) {
         }
 
         // add custom shema to the model
-        for(var param in api.state.settable) {
-            schema[param] = api.state.settable[param];
+        for(var param in api.state.independent) {
+            schema[param] = api.state.independent[param];
         }
 
-        for(var param in api.state.internal) {
-            schema[param] = api.state.internal[param];
+        for(var param in api.state.dependent) {
+            schema[param] = api.state.dependent[param];
         }
 
         var Schema = new mongoose.Schema(schema);
@@ -164,6 +166,10 @@ module.exports = function(app, models) {
         // these are not exposed in the api, but can be used on database results
         for(var param in api.internal) {
             Schema.methods[param] = api.internal[param];
+        }
+
+        Schema.methods.event = function(name, data) {
+            server.io.to(model + "_" + this._id).emit(name, data);
         }
 
         var Model = mongoose.model(model, Schema);
@@ -319,7 +325,7 @@ module.exports = function(app, models) {
                     new_element.created = Date.now();
                     new_element.edited = Date.now();
 
-                    for (var param in api.state.settable) {
+                    for (var param in api.state.independent) {
                         if (req.body[param]) {
                             new_element[param] = req.body[param];
                         }
@@ -368,7 +374,7 @@ module.exports = function(app, models) {
 
                                 element.edited = Date.now();
 
-                                for (var param in api.state.settable) {
+                                for (var param in api.state.independent) {
                                     if (req.body[param]) {
                                         element[param] = req.body[param];
                                     }
@@ -385,6 +391,8 @@ module.exports = function(app, models) {
                                 return edit_promise;
                             })
                             .then(function(element) {
+                                element.event('changed', element.edited);
+
                                 var response = {};
 
                                 response[model] = [element];
@@ -413,7 +421,7 @@ module.exports = function(app, models) {
 
                                 element.edited = Date.now();
 
-                                for (var param in api.state.settable) {
+                                for (var param in api.state.independent) {
                                     if (req.body[param]) {
                                         element[param] = req.body[param];
                                     }
@@ -430,6 +438,8 @@ module.exports = function(app, models) {
                                 return edit_promise;
                             })
                             .then(function(element) {
+                                element.event('changed', element.edited);
+
                                 var response = {};
 
                                 response[model] = [element];
@@ -629,6 +639,41 @@ module.exports = function(app, models) {
             }
         }
 
-        app.use('/api/' + model, router);
+        server.express.use('/api/' + model, router);
+
+        //
+        // Create the necessary route/event handlers for websocket connections
+        // to this resource.
+        //
+
+        var ioroute = server.io.of('/' + model);
+
+        ioroute.on('connect', function(socket){
+            try{
+                user_ioAuth(socket);
+
+                // listen for changes to a particular resource.
+                socket.on('listen', function(data){
+                    Model.findById('' + data._id)
+                        .exec()
+                        .then(function(element) {
+                            permission(socket.user, element, 'read');
+                            socket.join(model + "_" + element._id);
+                        })
+                        .catch(function(error) {
+                            socket.emit('error', error);
+                        });
+                });
+
+                socket.on('leave', function(data){
+                    socket.leave(model + "_" + data._id);
+                });
+
+            }catch(error) {
+                socket.emit('error', error);
+            }
+
+        });
+
     }
 };

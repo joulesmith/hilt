@@ -11,8 +11,8 @@ var mongoose = require('mongoose');
 
 var FileError = error('routes.api.file');
 
-module.exports = function(app) {
-    apimodelfactory(app, {
+module.exports = function(server) {
+    apimodelfactory(server, {
         file : {
             authenticate : {
                 write : true, // require user authorization and permission to do this
@@ -20,10 +20,10 @@ module.exports = function(app) {
                 execute : false // anyone
             },
             state : {
-                settable : {
+                independent : {
 
                 },
-                internal : {
+                dependent : {
                     name : {type : String, default : ''},
                     type : {type : String, default : ''},
                     size : {type : Number, default : 0},

@@ -4,7 +4,11 @@
  */
 var config = require('./config');
 
-var app = require('./app');
+var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
+
+var express = require('express');
+var app = express();
 var debug = require('debug')('broadsword:server');
 var http = require('http');
 var socketio = require('socket.io');
@@ -96,7 +100,13 @@ function onListening() {
   debug('Listening on ' + bind);
 }
 
+/**
+ * Connect to database
+ */
+mongoose.connect("mongodb://" + config.db.host + ":" + config.db.port + "/" + config.db.database);
+
 module.exports = {
-    server : server,
+    config : config,
+    express : app,
     io : io
 };

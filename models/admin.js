@@ -13,37 +13,42 @@ var Promise = require('bluebird');
 var config = require('../config');
 var mongoose = require('mongoose');
 
-var ProfileError = error('routes.api.profile');
+var AdminError = error('routes.api.admin');
 
 
 module.exports = function(server) {
     apimodelfactory(server, {
-        profile : {
+        admin : {
             authenticate : {
                 write : true, // require user authorization and permission to do this
-                read : false, // anyone
-                execute : false // anyone
+                read : true, //
+                execute : true //
             },
             state : {
                 independent : {
                     name : {type : String, default : ''},
-                    data : {type : String, default : '[]'}
+                    settings : {type : String, default : ''},
                 },
                 dependent : {
+
                 },
-                index : { name: 'text', data: 'text'}, // used for text searches
+                index : null, // used for text searches
             },
-            create : null,
-            update : null,
+            create : function(req, res) {
+                // TODO: update server settings
+            },
+            update : function(req, res) {
+                // TODO: update server settings
+            },
             // no restrictions to access, only uses http gets to base url
             static : {
-                search : {
+                summary : {
                     route : null,
                     handler : function(req, res) {
 
-                        return mongoose.model('profile').find(
+                        return mongoose.model('admin').find(
                             { $text : { $search : '' + req.query.words } },
-                            { _id : 1, score : { $meta: "textScore" } } // don't return whole document since anyone can access this
+                            { "_id": 1, score : { $meta: "textScore" } }
                         )
                         .sort({ score : { $meta : 'textScore' } })
                         .exec()
@@ -67,10 +72,7 @@ module.exports = function(server) {
             // need both execute and write permission, uses http posts to specific resource
             unsafe : {},
             // only accessible on the server
-            internal : {},
-            io : {
-                event : {}
-            }
+            internal : {}
         }
     });
 };

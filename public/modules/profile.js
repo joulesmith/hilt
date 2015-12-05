@@ -44,7 +44,7 @@ define(['angular'], function (angular){
     //
     // factory to the profile model api
     //
-    module.factory('profile.api', ['$window', '$http', function($window, $http){
+    module.factory('profile.api', ['$window', '$http', '$q', function($window, $http, $q){
 
         var api = {};
 
@@ -96,7 +96,26 @@ define(['angular'], function (angular){
                     }
                 })
                 .then(function(res) {
-                    return res.data.profile;
+                    var profiles = [];
+                    var requests = [];
+
+                    for(var i = 0; i < res.data.profile.length; i++) {
+                        requests.push((function(i){
+                            return $http({
+                                url: '/api/profile/' + res.data.profile[i]._id,
+                                method: "GET"
+                            }).then(function(res){
+                                profiles[i] = res.data.profile[0];
+                            }, function(){
+                                // TODO: just ignore them?
+                            });
+                        })(i));
+                    }
+
+
+                    return $q.all(requests).then(function(){
+                        return profiles;
+                    });
                 })
                 .catch(function(res) {
                     throw res.data.error;
@@ -264,6 +283,14 @@ define(['angular'], function (angular){
             });
         };
 
+        $scope.addTitleTo = function(row) {
+            row.elements.push({
+                type : 'profile.title',
+                offset : 0,
+                width : 1
+            });
+        };
+
         $scope.addColumnTo = function(row) {
             row.elements.push({
                 type : 'profile.column',
@@ -397,7 +424,8 @@ define(['angular'], function (angular){
             MathJaxMarkdown : "Markdown + LaTeX",
             Markdown : "Markdown",
             MathJax : "LaTeX",
-            Preformatted : "Code"
+            Preformatted : "Code",
+            HTML : "HTML"
         };
 
         $scope.ok = function () {
@@ -429,6 +457,10 @@ define(['angular'], function (angular){
                 $scope.element.src = newURL;
             });
         };
+
+    }]);
+
+    module.controller('profile.title', ['$scope', '$uibModal', function($scope, $uibModal){
 
     }]);
 });

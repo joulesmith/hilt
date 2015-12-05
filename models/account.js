@@ -18,20 +18,20 @@ var ProfileError = error('routes.api.profile');
 
 module.exports = function(server) {
     apimodelfactory(server, {
-        profile : {
+        account : {
             authenticate : {
                 write : true, // require user authorization and permission to do this
-                read : false, // anyone
-                execute : false // anyone
+                read : true, //
+                execute : true //
             },
             state : {
                 independent : {
-                    name : {type : String, default : ''},
-                    data : {type : String, default : '[]'}
+                    name : {type : String, default : ''}
                 },
                 dependent : {
+
                 },
-                index : { name: 'text', data: 'text'}, // used for text searches
+                index : null, // used for text searches
             },
             create : null,
             update : null,
@@ -43,7 +43,7 @@ module.exports = function(server) {
 
                         return mongoose.model('profile').find(
                             { $text : { $search : '' + req.query.words } },
-                            { _id : 1, score : { $meta: "textScore" } } // don't return whole document since anyone can access this
+                            { score : { $meta: "textScore" } }
                         )
                         .sort({ score : { $meta : 'textScore' } })
                         .exec()

@@ -66,6 +66,18 @@ define(['angular', 'marked', 'MathJax'], function (angular, marked, MathJax){
         };
     });
 
+    module.directive("sanitizedHtml", function($sanitize) {
+        return {
+            restrict: "A",
+            controller: ["$scope", "$element", "$attrs", function($scope, $element, $attrs) {
+                $scope.$watch($attrs.sanitizedHtml, function(value) {
+
+                    $element.html($sanitize(value));
+                });
+            }]
+        };
+    });
+
     module.controller('common.error', ['$scope', function($scope){
 
     }]);

@@ -127,6 +127,7 @@ define(['angular'], function (angular){
             $window.localStorage.removeItem('token');
             $window.sessionStorage.removeItem('token');
             $http.defaults.headers.common.Authorization = '';
+            api.user._id = null;
         };
 
         api.passwordStrength = function(password) {
