@@ -291,6 +291,14 @@ define(['angular'], function (angular){
             });
         };
 
+        $scope.addPaymentTo = function(row) {
+            row.elements.push({
+                type : 'profile.payment',
+                offset : 0,
+                width : 1
+            });
+        };
+
         $scope.addColumnTo = function(row) {
             row.elements.push({
                 type : 'profile.column',
@@ -461,6 +469,26 @@ define(['angular'], function (angular){
     }]);
 
     module.controller('profile.title', ['$scope', '$uibModal', function($scope, $uibModal){
+
+    }]);
+
+    module.controller('profile.payment', ['$scope', '$uibModal', function($scope, $uibModal){
+
+        $scope.payment = function() {
+            console.log('trying to pay');
+            var modalInstance = $uibModal.open({
+                animation: true,
+                templateUrl: 'account.braintree',
+                controller: 'account.braintree',
+                size: null,
+                resolve: {
+                }
+            });
+
+            modalInstance.result
+            .then(function() {
+            });
+        };
 
     }]);
 });

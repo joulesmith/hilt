@@ -13,7 +13,8 @@ require.config({
         'uiRouter' : '../lib/angular-ui-router.min',
         'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min',
         "marked" : "../marked/lib/marked",
-        "MathJax" : "../MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML&amp;delayStartupUntil=configured"
+        "MathJax" : "../MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML&amp;delayStartupUntil=configured",
+        "braintree" : "../braintree-web/dist/braintree"
     },
     shim: {
         'angular' : {
@@ -64,6 +65,7 @@ require([
     'ngSanitize',
     'user',
     'common',
+    'account',
     'file',
     'profile',
     'uiBootstrap',
@@ -79,6 +81,7 @@ require([
         'ui.router',
         'common',
         'user',
+        'account',
         'profile',
         'file',
         'ngSanitize'

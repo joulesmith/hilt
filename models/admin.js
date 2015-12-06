@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * 1715, "to represent in profile," from profile (n.) or Italian profilare. Meaning "to summarize a person in writing" is from 1948
+ * Administration of settings for models.
  */
 
 var apimodelfactory = require('./apifactory');
@@ -36,36 +36,13 @@ module.exports = function(server) {
             },
             create : function(req, res) {
                 // TODO: update server settings
+                // server.api.[model].settings
             },
             update : function(req, res) {
                 // TODO: update server settings
             },
             // no restrictions to access, only uses http gets to base url
             static : {
-                summary : {
-                    route : null,
-                    handler : function(req, res) {
-
-                        return mongoose.model('admin').find(
-                            { $text : { $search : '' + req.query.words } },
-                            { "_id": 1, score : { $meta: "textScore" } }
-                        )
-                        .sort({ score : { $meta : 'textScore' } })
-                        .exec()
-                        .then(function(profile){
-                            if (!profile) {
-                                throw new ProfileError('noresults',
-                                    'No profiles found matching search words.',
-                                    [],
-                                    404);
-                            }
-
-                            res.json({
-                                profile : profile
-                            });
-                        });
-                    }
-                }
             },
             // need execute permission, only uses http gets to specific resource
             safe : {},

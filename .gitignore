@@ -3,3 +3,4 @@ bower_components/
 uploads/
 /npm-debug.log
 /config.js
+/test.js

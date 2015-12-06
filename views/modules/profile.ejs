@@ -127,6 +127,7 @@
                                 <li ng-click="addTextTo(row)" style="cursor:pointer;"><a>Text</a></li>
                                 <li ng-click="addImageTo(row)" style="cursor:pointer;"><a>Image</a></li>
                                 <li ng-click="addTitleTo(row)" style="cursor:pointer;"><a>Title</a></li>
+                                <li ng-click="addPaymentTo(row)" style="cursor:pointer;"><a>Payment</a></li>
                                 <li ng-if="clipboard" ng-click="pasteElement(row)" style="cursor:pointer;"><a>Paste</a></li>
                             </ul>
                         </li>
@@ -497,5 +498,60 @@
             </div>
         </nav>
         <h1 style="width:100%">{{profile.name}}</h1>
+    </div>
+</script>
+
+<script type="text/ng-template" id="profile.payment">
+    <div ng-controller="profile.payment">
+        <nav ng-if="status.edit" class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" ng-click="isCollapsed = !isCollapsed">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
+                    <ul class="nav navbar-nav">
+                        <li ng-click="moveLeft(row, $index)" style="cursor:pointer;"><a>
+                            <span class="glyphicon glyphicon-arrow-left" aria-hidden="true" ></span>
+                            <span class="sr-only">Move Left</span>
+                        </a></li>
+                        <li ng-click="moveRight(row, $index)" style="cursor:pointer;"><a>
+                            <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+                            <span class="sr-only">Move Right</span>
+                        </a></li>
+                        <li uib-dropdown class="dropdown">
+                            <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+                                <span class="glyphicon glyphicon-resize-horizontal" aria-hidden="true" ></span>
+                                <span class="sr-only">Payment Width</span>
+                                <span class="caret">
+                            </span></a>
+                            <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+                                <li ng-click="element.width=1" style="cursor:pointer;" ng-class="{active:element.width===1}"><a>1</a></li>
+                                <li ng-click="element.width=2" style="cursor:pointer;" ng-class="{active:element.width===2}"><a>2</a></li>
+                                <li ng-click="element.width=3" style="cursor:pointer;" ng-class="{active:element.width===3}"><a>3</a></li>
+                                <li ng-click="element.width=4" style="cursor:pointer;" ng-class="{active:element.width===4}"><a>4</a></li>
+                                <li ng-click="element.width=5" style="cursor:pointer;" ng-class="{active:element.width===5}"><a>5</a></li>
+                                <li ng-click="element.width=6" style="cursor:pointer;" ng-class="{active:element.width===6}"><a>6</a></li>
+                                <li ng-click="element.width=7" style="cursor:pointer;" ng-class="{active:element.width===7}"><a>7</a></li>
+                                <li ng-click="element.width=8" style="cursor:pointer;" ng-class="{active:element.width===8}"><a>8</a></li>
+                                <li ng-click="element.width=9" style="cursor:pointer;" ng-class="{active:element.width===9}"><a>9</a></li>
+                                <li ng-click="element.width=10" style="cursor:pointer;" ng-class="{active:element.width===10}"><a>10</a></li>
+                                <li ng-click="element.width=11" style="cursor:pointer;" ng-class="{active:element.width===11}"><a>11</a></li>
+                                <li ng-click="element.width=12" style="cursor:pointer;" ng-class="{active:element.width===12}"><a>12</a></li>
+                            </ul>
+                        </li>
+                        <li ng-click="cutElement(row, $index)" style="cursor:pointer;"><a>
+                            <span class="glyphicon glyphicon-scissors" aria-hidden="true" ></span>
+                            <span class="sr-only">Cut Column</span>
+                        </a></li>
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <button ng-click="payment()" class="btn btn-default">Payment</button>
     </div>
 </script>

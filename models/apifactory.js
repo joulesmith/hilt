@@ -591,53 +591,55 @@ module.exports = function(server, models) {
         // unsafe methods
         //
 
-        for(var param in api.unsafe) {
+        for(var prop in api.unsafe) {
             // perform a 'post' api call to the resource
-            if (api.authenticate.execute || api.authenticate.write){
-                router.post('/:id/' + param,
-                    bodyParser.json(),
-                    bodyParser.urlencoded({
-                        extended: false
-                    }),
-                    userAuth(),
-                    function(req, res, next) {
-                        try {
-                            Model.findById('' + req.params.id)
-                                .exec()
-                                .then(function(element) {
-                                    permission(req.user, element, 'execute');
-                                    permission(req.user, element, 'write');
-                                    return api.unsafe[param].apply(element, [req, res]);
-                                })
-                                .catch(function(error) {
-                                    next(error);
-                                });
-                        } catch (error) {
-                            next(error);
-                        }
-                    });
-            }else{
-                router.post('/:id/' + param,
-                    bodyParser.json(),
-                    bodyParser.urlencoded({
-                        extended: false
-                    }),
-                    function(req, res, next) {
-                        try {
-                            Model.findById('' + req.params.id)
-                                .exec()
-                                .then(function(element) {
-                                    return api.unsafe[param].apply(element, [req, res]);
-                                })
-                                .catch(function(error) {
-                                    next(error);
-                                });
-                        } catch (error) {
-                            next(error);
-                        }
-                    });
-            }
+            (function(method) {
+                // perform a 'get' api call to the resource
+                if (api.authenticate.execute || api.authenticate.write){
+                    router.post('/:id/' + param + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        userAuth(),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+                                        permission(req.user, element, 'execute');
+                                        permission(req.user, element, 'write');
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }else{
+                    router.post('/:id/' + param + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }
+            })(api.unsafe[prop]);
         }
+
 
         server.express.use('/api/' + model, router);
 

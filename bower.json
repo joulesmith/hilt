@@ -17,6 +17,7 @@
     "lodash": "~3.10.1",
     "angular": "~1.4.8",
     "requirejs": "~2.1.22",
-    "bootstrap": "~3.3.6"
+    "bootstrap": "~3.3.6",
+    "braintree-web": "~2.17.4"
   }
 }
