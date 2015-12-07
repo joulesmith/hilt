@@ -6,7 +6,7 @@
             <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
             <span class="sr-only">Error:</span>
             <span ng-show="show_stack">{{error.status}} {{error.code}}:</span> </span>{{error.message}}</span>
-            <a ng-click="show_stack=!show_stack" style="cursor:pointer; text-decoration:underline;">details</a>
+            <a ng-if="error.stack" ng-click="show_stack=!show_stack" style="cursor:pointer; text-decoration:underline;">details</a>
         </h6>
         <pre ng-show="show_stack">{{error.stack}}</pre>
     </div>

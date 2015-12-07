@@ -19,11 +19,11 @@ define(['angular', 'braintree'], function (angular, braintree){
 
         var api = {};
 
-        api.setup = function(account) {
+        api.setup = function(receipt) {
             var checkout = null;
 
             return $http({
-                    url: '/api/account/clientToken',
+                    url: '/api/receipt/clientToken',
                     method: "GET"
                 })
                 .then(function(res){
@@ -71,8 +71,9 @@ define(['angular', 'braintree'], function (angular, braintree){
                     throw res.data.error;
                 })
                 .then(function(payload){
+                    console.log("sending payment");
                     return $http({
-                            url: '/api/account/' + account._id + '/paymentMethod',
+                            url: '/api/receipt/' + receipt._id + '/payment',
                             method: "POST",
                             data : {paymentMethod : payload}
                         });

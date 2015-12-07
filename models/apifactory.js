@@ -43,27 +43,31 @@ module.exports = function(server, models) {
                 return;
             }
 
+            var user_attribute = 'user_' + user._id;
+
             var one = resource[action].one;
             var all = resource[action].all;
             var none = resource[action].none;
 
-            // user needs at least one of these attributes
-            for(i = 0; i < one.length; i++) {
-                if (_.indexOf(user.attributes, one[i], true) !== -1) {
-                    break;
+            if (one.length > 0 && _.indexOf(one, user_attribute, true) === -1) {
+                // user needs at least one of these attributes if not directly granted access
+                for(i = 0; i < one.length; i++) {
+                    if (_.indexOf(user.attributes, one[i], true) !== -1) {
+                        break;
+                    }
                 }
-            }
 
-            if (i === one.length) {
-                throw new ModelError('unauthorized',
-                    'The user does not possess any of the qualifying attributes.',
-                    [],
-                    403);
+                if (i === one.length) {
+                    throw new ModelError('unauthorized',
+                        'The user does not possess any of the qualifying attributes.',
+                        [],
+                        403);
+                }
             }
 
             // a user must have all of these attributes
             for(i = 0; i < all.length; i++) {
-                if (_.indexOf(user.attributes, all[i], true) === -1) {
+                if (_.indexOf(user.attributes, all[i], true) === -1 && user_attribute !== all[i]) {
                     throw new ModelError('unauthorized',
                         'The user does not possess all of the required attributes.',
                         [],
@@ -73,7 +77,7 @@ module.exports = function(server, models) {
 
             // a user must not have any of these attributes
             for(i = 0; i < none.length; i++) {
-                if (_.indexOf(user.attributes, none[i], true) !== -1) {
+                if (_.indexOf(user.attributes, none[i], true) !== -1 || user_attribute === none[i]) {
                     throw new ModelError('unauthorized',
                         'The user possess a disqualifying attribute.',
                         [],
@@ -110,9 +114,9 @@ module.exports = function(server, models) {
 
         schema.manage = {
             restricted : {type : Boolean, default : true},
-            one : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-            all : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-            none : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }]
+            one : [{ type: String }],
+            all : [{ type: String }],
+            none : [{ type: String }]
         };
 
 
@@ -120,9 +124,9 @@ module.exports = function(server, models) {
         if (api.authenticate.write) {
             schema.write = {
                 restricted : {type : Boolean, default : true},
-                one : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                all : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                none : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }]
+                one : [{ type: String }],
+                all : [{ type: String }],
+                none : [{ type: String }]
             };
         }
 
@@ -130,9 +134,9 @@ module.exports = function(server, models) {
         if (api.authenticate.read) {
             schema.read = {
                 restricted : {type : Boolean, default : true},
-                one : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                all : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                none : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }]
+                one : [{ type: String }],
+                all : [{ type: String }],
+                none : [{ type: String }]
             };
         }
 
@@ -141,9 +145,9 @@ module.exports = function(server, models) {
         if (api.authenticate.execute) {
             schema.execute = {
                 restricted : {type : Boolean, default : true},
-                one : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                all : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                none : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }]
+                one : [{ type: String }],
+                all : [{ type: String }],
+                none : [{ type: String }]
             };
         }
 

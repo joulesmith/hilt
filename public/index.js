@@ -66,6 +66,7 @@ require([
     'user',
     'common',
     'account',
+    'receipt',
     'file',
     'profile',
     'uiBootstrap',
@@ -82,6 +83,7 @@ require([
         'common',
         'user',
         'account',
+        'receipt',
         'profile',
         'file',
         'ngSanitize'
