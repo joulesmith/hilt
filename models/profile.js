@@ -19,11 +19,6 @@ var ProfileError = error('routes.api.profile');
 module.exports = function(server) {
     apimodelfactory(server, {
         profile : {
-            authenticate : {
-                write : true, // require user authorization and permission to do this
-                read : false, // anyone
-                execute : false // anyone
-            },
             state : {
                 independent : {
                     name : {type : String, default : ''},
@@ -34,11 +29,14 @@ module.exports = function(server) {
                 index : { name: 'text', data: 'text'}, // used for text searches
             },
             create : null,
-            update : null,
+            update : {
+                security : true
+            },
             // no restrictions to access, only uses http gets to base url
             static : {
                 search : {
                     route : null,
+                    params : ['words'],
                     handler : function(req, res) {
 
                         return mongoose.model('profile').find(
@@ -55,9 +53,7 @@ module.exports = function(server) {
                                     404);
                             }
 
-                            res.json({
-                                profile : profile
-                            });
+                            return profile;
                         });
                     }
                 }
@@ -67,10 +63,7 @@ module.exports = function(server) {
             // need both execute and write permission, uses http posts to specific resource
             unsafe : {},
             // only accessible on the server
-            internal : {},
-            io : {
-                event : {}
-            }
+            internal : {}
         }
     });
 };

@@ -27,6 +27,8 @@ define(['angular'], function (angular){
                     templateUrl : 'profile.view',
                     controller : 'profile.view'
                 });
+
+
         }]);
 
     // this is to ensure inputs are integers (not strings) when needed
@@ -130,259 +132,295 @@ define(['angular'], function (angular){
     //
 
     // search for profiles
-    module.controller('profile.search', ['$scope', '$state', 'profile.api', function($scope, $state, api){
-        $scope.profiles = [];
-        $scope.words = '';
-        $scope.search = function(){
-            api.search($scope.words)
-            .then(function(profiles){
-                angular.copy(profiles, $scope.profiles);
-                $scope.error = null;
-            }, function(error){
-                $scope.error = error;
-            });
-        };
-    }]);
+    module.controller('profile.search', ['$scope', '$state', '$q', 'apifactory.models', function($scope, $state, $q, models){
+        models('profile')
+        .then(function(api){
+            $scope.profiles = [];
+            $scope.words = '';
 
-    // view a single profile
-    module.controller('profile.view', ['$scope', '$state', 'profile.api', 'user.api', function($scope, $state, api, user){
-        var _id = $state.params.profileId;
+            $scope.search = function(){
+                api.profile.static.search({words : $scope.words})
+                .then(function(profiles){
+                    var requests = [];
 
-        $scope.user = user;
+                    for(var i = 0; i < profiles.length; i++) {
+                        requests.push((function(i){
+                            return api.profile.get(profiles[i]._id)
+                            .then(function(profile){
+                                profiles[i] = profile;
+                            }, function(){
+                                // TODO: just ignore them?
+                            });
+                        })(i));
+                    }
 
-        $scope.profile = {
-            data : ""
-        };
 
-        $scope.element = {
-            rows : []
-        };
-
-        $scope.status = {
-            edit : false
-        };
-
-        $scope.isCollapsed = true;
-
-        $scope.allowed = [
-            {
-                name : 'row',
-                make : function() {
-                    return {
-                        elements : []
-                    };
-                }
-            }
-        ];
-
-        $scope.addRow = function(index) {
-
-            if (typeof index !== 'undefined') {
-                $scope.element.rows.splice(index, 0, {
-                    elements : []
+                    return $q.all(requests).then(function(){
+                        return profiles;
+                    });
                 })
-            }else{
-                $scope.element.rows.push({
-                    elements : []
+                .then(function(profiles){
+                    angular.copy(profiles, $scope.profiles);
+                    $scope.error = null;
+                }, function(error){
+                    $scope.error = error;
                 });
-            }
-        };
-
-        $scope.addRowTo = function(column, index) {
-
-            if (typeof index !== 'undefined') {
-                column.rows.splice(index, 0, {
-                    elements : []
-                })
-            }else{
-                column.rows.push({
-                    elements : []
-                });
-            }
-        };
-
-        $scope.deleteRow = function(index) {
-            $scope.element.rows.splice(index, 1);
-        }
-
-        $scope.moveUp = function(column, index) {
-            if (index > 0) {
-                var tmp = column.rows[index];
-                column.rows[index] = column.rows[index - 1];
-                column.rows[index - 1] = tmp;
-            }
-        };
-
-        $scope.moveDown= function(column, index) {
-            if (index < column.rows.length - 1) {
-                var tmp = column.rows[index];
-                column.rows[index] = column.rows[index + 1];
-                column.rows[index + 1] = tmp;
-            }
-        };
-
-        $scope.moveLeft = function(row, index) {
-            if (row.elements[index].offset > 0) {
-                row.elements[index].offset--;
-                if (index < row.elements.length - 1) {
-                    row.elements[index + 1].offset++;
-                }
-            }else if (index > 0) {
-                var tmp_element = row.elements[index];
-                tmp_element.offset = row.elements[index - 1].offset;
-                row.elements[index - 1].offset = 0;
-                row.elements[index] = row.elements[index - 1];
-                row.elements[index - 1] = tmp_element;
-            }
-        };
-
-        $scope.moveRight= function(row, index) {
-            var offset = 0.0;
-            for(var i = 0; i < index; i++) {
-                offset += row.elements[i].offset + row.elements[i].width;
-            }
-
-            if (index === row.elements.length - 1) {
-                if (row.elements[index].offset < 12 - row.elements[index].width - offset) {
-                    row.elements[index].offset++;
-                }
-            }else if (row.elements[index + 1].offset > 0) {
-                row.elements[index].offset++;
-                row.elements[index + 1].offset--;
-            }else {
-                var tmp_element = row.elements[index];
-
-                row.elements[index] = row.elements[index + 1];
-                row.elements[index].offset = tmp_element.offset;
-                tmp_element.offset = 0;
-                row.elements[index + 1] = tmp_element;
-            }
-        };
-
-        $scope.changeWidth= function(row, index) {
-
-        };
-
-        $scope.addTextTo = function(row) {
-            row.elements.push({
-                type : 'profile.text',
-                text : '',
-                format : 'Default',
-                offset : 0,
-                width : 1
-            });
-        };
-
-        $scope.addImageTo = function(row) {
-            row.elements.push({
-                type : 'profile.image',
-                src : '',
-                alt : '',
-                offset : 0,
-                width : 1
-            });
-        };
-
-        $scope.addTitleTo = function(row) {
-            row.elements.push({
-                type : 'profile.title',
-                offset : 0,
-                width : 1
-            });
-        };
-
-        $scope.addPaymentTo = function(row) {
-            row.elements.push({
-                type : 'profile.payment',
-                offset : 0,
-                width : 1
-            });
-        };
-
-        $scope.addColumnTo = function(row) {
-            row.elements.push({
-                type : 'profile.column',
-                rows : [],
-                offset : 0,
-                width : 1
-            });
-        };
-
-        $scope.clipboard = null;
-        $scope.clipboard_rows = null;
-
-        $scope.cutElement = function(row, index) {
-            if (index < row.elements.length - 1) {
-                row.elements[index + 1].offset += row.elements[index].offset + row.elements[index].width;
-            }
-
-            $scope.clipboard = row.elements[index];
-            row.elements.splice(index, 1);
-        };
-
-        $scope.pasteElement = function(row) {
-            if ($scope.clipboard) {
-                $scope.clipboard.offset = 0;
-                row.elements.push($scope.clipboard);
-                $scope.clipboard = null;
-            }
-        };
-
-        $scope.cutRow = function(column, index) {
-            $scope.clipboard_rows = column.rows[index];
-            column.rows.splice(index, 1);
-        };
-
-        $scope.pasteRow = function(column) {
-            if ($scope.clipboard_rows) {
-                column.rows.push($scope.clipboard_rows);
-                $scope.clipboard_rows = null;
-            }
-        };
-
-        $scope.save = function() {
-            $scope.profile.data = JSON.stringify($scope.element.rows);
-            api.saveProfile($scope.profile._id, $scope.profile)
-            .then(function(profile){
-                $scope.error = null;
-            })
-            .catch(function(error){
-                $scope.error = error;
-            });
-        };
-
-        if (_id && _id !== '') {
-            api.getProfile(_id, $scope.profile)
-            .then(function(profile){
-
-                if (profile.data !== ''){
-                    $scope.element.rows = JSON.parse(profile.data);
-                }
-
-                $scope.error = null;
-            })
-            .catch(function(error){
-                $scope.error = error;
-            });
-        }
-
+            };
+        });
     }]);
 
     // create a new profile
-    module.controller('profile.create', ['$scope', '$state', 'profile.api', function($scope, $state, api){
+    module.controller('profile.create', ['$scope', '$state', 'apifactory.models', function($scope, $state, models){
+        models('profile')
+        .then(function(api){
+            $scope.submit = function() {
+                api.profile.create({name: $scope.name})
+                .then(function(profile){
+                    $scope.error = null;
+                    $state.go('profile.view', {profileId : profile._id});
+                })
+                .catch(function(error){
+                    $scope.error = error;
+                });
+            };
+        });
+
         $scope.name = '';
 
-        $scope.submit = function() {
-            api.createProfile($scope.name)
-            .then(function(profile){
-                $scope.error = null;
-                $state.go('profile.view', {profileId : profile._id});
-            })
-            .catch(function(error){
-                $scope.error = error;
-            });
-        };
+
     }]);
+
+    // view a single profile
+    module.controller('profile.view', ['$scope', '$state', 'apifactory.models', function($scope, $state, models){
+        models(['user', 'profile'])
+        .then(function(api){
+
+            var _id = $state.params.profileId;
+
+            $scope.user = api.user;
+
+            $scope.profile = {
+                data : ""
+            };
+
+            $scope.element = {
+                rows : []
+            };
+
+            $scope.status = {
+                edit : false
+            };
+
+            $scope.isCollapsed = true;
+
+            $scope.allowed = [
+                {
+                    name : 'row',
+                    make : function() {
+                        return {
+                            elements : []
+                        };
+                    }
+                }
+            ];
+
+            $scope.addRow = function(index) {
+
+                if (typeof index !== 'undefined') {
+                    $scope.element.rows.splice(index, 0, {
+                        elements : []
+                    })
+                }else{
+                    $scope.element.rows.push({
+                        elements : []
+                    });
+                }
+            };
+
+            $scope.addRowTo = function(column, index) {
+
+                if (typeof index !== 'undefined') {
+                    column.rows.splice(index, 0, {
+                        elements : []
+                    })
+                }else{
+                    column.rows.push({
+                        elements : []
+                    });
+                }
+            };
+
+            $scope.deleteRow = function(index) {
+                $scope.element.rows.splice(index, 1);
+            }
+
+            $scope.moveUp = function(column, index) {
+                if (index > 0) {
+                    var tmp = column.rows[index];
+                    column.rows[index] = column.rows[index - 1];
+                    column.rows[index - 1] = tmp;
+                }
+            };
+
+            $scope.moveDown= function(column, index) {
+                if (index < column.rows.length - 1) {
+                    var tmp = column.rows[index];
+                    column.rows[index] = column.rows[index + 1];
+                    column.rows[index + 1] = tmp;
+                }
+            };
+
+            $scope.moveLeft = function(row, index) {
+                if (row.elements[index].offset > 0) {
+                    row.elements[index].offset--;
+                    if (index < row.elements.length - 1) {
+                        row.elements[index + 1].offset++;
+                    }
+                }else if (index > 0) {
+                    var tmp_element = row.elements[index];
+                    tmp_element.offset = row.elements[index - 1].offset;
+                    row.elements[index - 1].offset = 0;
+                    row.elements[index] = row.elements[index - 1];
+                    row.elements[index - 1] = tmp_element;
+                }
+            };
+
+            $scope.moveRight= function(row, index) {
+                var offset = 0.0;
+                for(var i = 0; i < index; i++) {
+                    offset += row.elements[i].offset + row.elements[i].width;
+                }
+
+                if (index === row.elements.length - 1) {
+                    if (row.elements[index].offset < 12 - row.elements[index].width - offset) {
+                        row.elements[index].offset++;
+                    }
+                }else if (row.elements[index + 1].offset > 0) {
+                    row.elements[index].offset++;
+                    row.elements[index + 1].offset--;
+                }else {
+                    var tmp_element = row.elements[index];
+
+                    row.elements[index] = row.elements[index + 1];
+                    row.elements[index].offset = tmp_element.offset;
+                    tmp_element.offset = 0;
+                    row.elements[index + 1] = tmp_element;
+                }
+            };
+
+            $scope.changeWidth= function(row, index) {
+
+            };
+
+            $scope.addTextTo = function(row) {
+                row.elements.push({
+                    type : 'profile.text',
+                    text : '',
+                    format : 'Default',
+                    offset : 0,
+                    width : 1
+                });
+            };
+
+            $scope.addImageTo = function(row) {
+                row.elements.push({
+                    type : 'profile.image',
+                    src : '',
+                    alt : '',
+                    offset : 0,
+                    width : 1
+                });
+            };
+
+            $scope.addTitleTo = function(row) {
+                row.elements.push({
+                    type : 'profile.title',
+                    offset : 0,
+                    width : 1
+                });
+            };
+
+            $scope.addPaymentTo = function(row) {
+                row.elements.push({
+                    type : 'profile.payment',
+                    offset : 0,
+                    width : 1
+                });
+            };
+
+            $scope.addColumnTo = function(row) {
+                row.elements.push({
+                    type : 'profile.column',
+                    rows : [],
+                    offset : 0,
+                    width : 1
+                });
+            };
+
+            $scope.clipboard = null;
+            $scope.clipboard_rows = null;
+
+            $scope.cutElement = function(row, index) {
+                if (index < row.elements.length - 1) {
+                    row.elements[index + 1].offset += row.elements[index].offset + row.elements[index].width;
+                }
+
+                $scope.clipboard = row.elements[index];
+                row.elements.splice(index, 1);
+            };
+
+            $scope.pasteElement = function(row) {
+                if ($scope.clipboard) {
+                    $scope.clipboard.offset = 0;
+                    row.elements.push($scope.clipboard);
+                    $scope.clipboard = null;
+                }
+            };
+
+            $scope.cutRow = function(column, index) {
+                $scope.clipboard_rows = column.rows[index];
+                column.rows.splice(index, 1);
+            };
+
+            $scope.pasteRow = function(column) {
+                if ($scope.clipboard_rows) {
+                    column.rows.push($scope.clipboard_rows);
+                    $scope.clipboard_rows = null;
+                }
+            };
+
+            $scope.save = function() {
+                // update profile based on editor contents
+                $scope.profile.data = JSON.stringify($scope.element.rows);
+
+                api.profile.update(_id, $scope.profile)
+                .then(function(profile){
+                    $scope.error = null;
+                })
+                .catch(function(error){
+                    $scope.error = error;
+                });
+            };
+
+            if (_id && _id !== '') {
+                api.profile.get(_id)
+                .then(function(profile){
+                    angular.copy(profile, $scope.profile);
+                    if (profile.data !== ''){
+                        $scope.element.rows = JSON.parse(profile.data);
+                    }
+
+                    $scope.error = null;
+                })
+                .catch(function(error){
+                    $scope.error = error;
+                });
+            }
+        });
+
+    }]);
+
+
 
     module.controller('profile.row', ['$scope', function($scope){
         $scope.isCollapsed = true;
@@ -423,7 +461,7 @@ define(['angular'], function (angular){
 
 
     // example component view controller
-    module.controller('profile.textEdit', ['$scope', 'file.api', '$uibModalInstance', 'textElement', 'user.api', function($scope, file, $uibModalInstance, textElement, user){
+    module.controller('profile.textEdit', ['$scope', 'file.api', '$uibModalInstance', 'textElement', function($scope, file, $uibModalInstance, textElement){
 
         $scope.textElement = textElement;
 

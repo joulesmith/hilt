@@ -14,11 +14,6 @@ var FileError = error('routes.api.file');
 module.exports = function(server) {
     apimodelfactory(server, {
         file : {
-            authenticate : {
-                write : true, // require user authorization and permission to do this
-                read : false, // anyone
-                execute : false // anyone
-            },
             state : {
                 independent : {
 
@@ -72,11 +67,17 @@ module.exports = function(server) {
                 });
 
             },
-            update : function(req) {
-                throw new FileError('methodnotallowed',
-                    'A file cannot be changed once uploaded. Upload to a new file.',
-                    [],
-                    405);
+            get : {
+                security : false
+            },
+            update : {
+                security : true,
+                handler: function(req) {
+                    throw new FileError('methodnotallowed',
+                        'A file cannot be changed once uploaded. Upload to a new file.',
+                        [],
+                        405);
+                },
             },
             // no restrictions to access, only uses http gets to base url
             static : {
@@ -97,6 +98,7 @@ module.exports = function(server) {
             },
             // need execute permission, only uses http gets to specific resource
             safe : {
+                security : false,
                 // GET /api/file/:id/data/:filename
                 filename : {
                     route : '/:filename',

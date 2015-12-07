@@ -19,6 +19,33 @@ var bodyParser = require('body-parser');
 
 module.exports = function(server, models) {
 
+    var formatModel = function(api) {
+        var model = {
+            authenticate : api.authenticate,
+            state : {
+                independent : {},
+                dependent : {}
+            },
+            static : {},
+            safe : {},
+            unsafe : {}
+        };
+
+        for(var prop in api.static) {
+            model.static[prop] = {};
+        }
+
+        for(var prop in api.safe) {
+            model.safe[prop] = {};
+        }
+
+        for(var prop in api.unsafe) {
+            model.unsafe[prop] = {};
+        }
+
+        return JSON.stringify(model);
+    };
+
     for(var model in models) {
 
         var api = models[model];
@@ -28,10 +55,12 @@ module.exports = function(server, models) {
         var permission = function(user, resource, action) {
             var i;
 
-            if (!api.authenticate[action] || !resource[action].restricted) {
-                return null;
+            if (!resource.security[action] || !resource.security[action].restricted) {
+                // if there is no security, let anyone through
+                return;
             }
 
+            // there is security, so a user has to be logged in at least
             if (!user) {
                 throw new ModelError('nouser',
                     'A user must be logged in to [0] this [1].',
@@ -40,14 +69,16 @@ module.exports = function(server, models) {
             }
 
             if (user._id.equals(resource.owner)) {
+                // the owner can do whatever
                 return;
             }
 
+            // implicit attribute that a user has by default
             var user_attribute = 'user_' + user._id;
 
-            var one = resource[action].one;
-            var all = resource[action].all;
-            var none = resource[action].none;
+            var one = resource.security[action].one;
+            var all = resource.security[action].all;
+            var none = resource.security[action].none;
 
             if (one.length > 0 && _.indexOf(one, user_attribute, true) === -1) {
                 // user needs at least one of these attributes if not directly granted access
@@ -103,7 +134,8 @@ module.exports = function(server, models) {
             flagged : {type : Boolean, default : false},
             // no longer can be accessed from public api
             removed : {type : Boolean, default : false},
-            owner : { type: mongoose.Schema.Types.ObjectId, ref: 'user'}
+            owner : { type: mongoose.Schema.Types.ObjectId, ref: 'user'},
+            security : {}
         };
 
         // if a user is not the owner they can still interact with the resource
@@ -111,9 +143,7 @@ module.exports = function(server, models) {
         // a user must satisfy to perform the given class of operation
 
         // able to do anything an owner can do
-
-        schema.manage = {
-            restricted : {type : Boolean, default : true},
+        schema.security.manage = {
             one : [{ type: String }],
             all : [{ type: String }],
             none : [{ type: String }]
@@ -121,8 +151,8 @@ module.exports = function(server, models) {
 
 
         // can change something about the resource
-        if (api.authenticate.write) {
-            schema.write = {
+        if (api.update && api.update.security) {
+            schema.security.update = {
                 restricted : {type : Boolean, default : true},
                 one : [{ type: String }],
                 all : [{ type: String }],
@@ -131,8 +161,8 @@ module.exports = function(server, models) {
         }
 
         // can access information about this resource, but cannot alter it in any way
-        if (api.authenticate.read) {
-            schema.read = {
+        if (api.get && api.get.security) {
+            schema.security.get = {
                 restricted : {type : Boolean, default : true},
                 one : [{ type: String }],
                 all : [{ type: String }],
@@ -140,15 +170,45 @@ module.exports = function(server, models) {
             };
         }
 
-        // can call rest api functions of this resource, but not the underlying data
-        // unless that data is returned by an api call
-        if (api.authenticate.execute) {
-            schema.execute = {
+        if (api.safe && api.safe.security) {
+            schema.security.safe = {
                 restricted : {type : Boolean, default : true},
                 one : [{ type: String }],
                 all : [{ type: String }],
                 none : [{ type: String }]
             };
+        }
+
+        // add method specific security
+        for(var prop in api.safe) {
+            if (api.safe[prop].security) {
+                schema.security['safe.' + prop] = {
+                    restricted : {type : Boolean, default : true},
+                    one : [{ type: String }],
+                    all : [{ type: String }],
+                    none : [{ type: String }]
+                };
+            }
+        }
+
+        if (api.unsafe && api.unsafe.security) {
+            schema.security.unsafe = {
+                restricted : {type : Boolean, default : true},
+                one : [{ type: String }],
+                all : [{ type: String }],
+                none : [{ type: String }]
+            };
+        }
+
+        for(var prop in api.unsafe) {
+            if (api.unsafe[prop].security) {
+                schema.security['unsafe.' + prop] = {
+                    restricted : {type : Boolean, default : true},
+                    one : [{ type: String }],
+                    all : [{ type: String }],
+                    none : [{ type: String }]
+                };
+            }
         }
 
         // add custom shema to the model
@@ -207,24 +267,14 @@ module.exports = function(server, models) {
                                 element.manage = req.body.manage;
                             }
 
-                            if (req.body.write) {
-                                element.write = req.body.write;
-                            }
-
-                            if (req.body.read) {
-                                element.read = req.body.read;
-                            }
-
-                            if (req.body.execute) {
-                                element.execute = req.body.execute;
-                            }
+                            // TODO: have to set the permissions properly
 
                             return element.save();
                         })
                         .then(function(element) {
                             var response = {};
 
-                            response[model] = [element];
+                            response[model] = element;
 
                             res.json(response)
                         })
@@ -286,6 +336,16 @@ module.exports = function(server, models) {
         // static methods
         //
 
+        // api
+        router.get('/model',
+            function(req, res, next) {
+                try {
+                    res.json(formatModel(api));
+                } catch (error) {
+                    next(error);
+                }
+            });
+
         for(var prop in api.static) {
 
             (function(method) {
@@ -296,6 +356,13 @@ module.exports = function(server, models) {
                     function(req, res, next) {
                         try {
                             method.handler.apply(null, [req, res])
+                                .then(function(result){
+                                    if (result) {
+                                        var response = {};
+                                        response[prop] = result;
+                                        res.json(response);
+                                    }
+                                })
                                 .catch(function(error) {
                                     next(error);
                                 });
@@ -347,7 +414,7 @@ module.exports = function(server, models) {
                         .then(function(element) {
                             var response = {};
 
-                            response[model] = [element];
+                            response[model] = element;
 
                             res.json(response);
                         })
@@ -360,7 +427,7 @@ module.exports = function(server, models) {
             });
 
         // full or partial update of the resource state
-        if (api.authenticate.write) {
+        if (api.update && api.update.security) {
             router.post('/:id',
                 bodyParser.json(),
                 bodyParser.urlencoded({
@@ -374,7 +441,7 @@ module.exports = function(server, models) {
                             .exec()
                             .then(function(element) {
                                 // this will blow up the request if there is not proper permission
-                                permission(req.user, element, 'write');
+                                permission(req.user, element, 'update');
 
                                 element.edited = Date.now();
 
@@ -386,8 +453,8 @@ module.exports = function(server, models) {
 
                                 var edit_promise;
 
-                                if (api.update) {
-                                    edit_promise = api.update.apply(element, [req]);
+                                if (api.update.handler) {
+                                    edit_promise = api.update.handler.apply(element, [req]);
                                 } else {
                                     edit_promise = element.save();
                                 }
@@ -395,11 +462,12 @@ module.exports = function(server, models) {
                                 return edit_promise;
                             })
                             .then(function(element) {
+                                // broadcast that the resource has changed to anyone in the channel
                                 element.event('changed', element.edited);
 
                                 var response = {};
 
-                                response[model] = [element];
+                                response[model] = element;
 
                                 res.json(response);
                             })
@@ -433,8 +501,8 @@ module.exports = function(server, models) {
 
                                 var edit_promise;
 
-                                if (api.update) {
-                                    edit_promise = api.update.apply(element, [req]);
+                                if (api.update && api.update.handler) {
+                                    edit_promise = api.update.handler.apply(element, [req]);
                                 } else {
                                     edit_promise = element.save();
                                 }
@@ -446,7 +514,7 @@ module.exports = function(server, models) {
 
                                 var response = {};
 
-                                response[model] = [element];
+                                response[model] = element;
 
                                 res.json(response);
                             })
@@ -462,7 +530,7 @@ module.exports = function(server, models) {
 
 
         // retrieve the resource
-        if (api.authenticate.read) {
+        if (api.get && api.get.security) {
             router.get('/:id',
                 bodyParser.json(),
                 bodyParser.urlencoded({
@@ -488,10 +556,10 @@ module.exports = function(server, models) {
                                         503);
                                 }
 
-                                permission(req.user, element, 'read');
+                                permission(req.user, element, 'get');
 
                                 var response = {};
-                                response[model] = [element];
+                                response[model] = element;
 
                                 res.json(response);
                             })
@@ -525,7 +593,7 @@ module.exports = function(server, models) {
                                 }
 
                                 var response = {};
-                                response[model] = [element];
+                                response[model] = element;
 
                                 res.json(response);
                             })
@@ -544,11 +612,15 @@ module.exports = function(server, models) {
         // Add exposed api safe methods
         //
 
-        for(var param in api.safe) {
+        for(var prop in api.safe) {
+            if (prop === 'security') {
+                continue;
+            }
+
             (function(method) {
                 // perform a 'get' api call to the resource
-                if (api.authenticate.execute){
-                    router.get('/:id/' + param + (method.route ? method.route : ''),
+                if (api.safe.security || api.safe[prop].security){
+                    router.get('/:id/' + prop + (method.route ? method.route : ''),
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -558,8 +630,16 @@ module.exports = function(server, models) {
                                 Model.findById('' + req.params.id)
                                     .exec()
                                     .then(function(element) {
-                                        permission(req.user, element, 'execute');
+                                        permission(req.user, element, 'safe');
+                                        permission(req.user, element, 'safe.' + prop);
                                         return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
                                     })
                                     .catch(function(error) {
                                         next(error);
@@ -569,7 +649,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }else{
-                    router.get('/:id/' + param + (method.route ? method.route : ''),
+                    router.get('/:id/' + prop + (method.route ? method.route : ''),
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -579,6 +659,13 @@ module.exports = function(server, models) {
                                     .exec()
                                     .then(function(element) {
                                         return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
                                     })
                                     .catch(function(error) {
                                         next(error);
@@ -588,7 +675,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }
-            })(api.safe[param]);
+            })(api.safe[prop]);
         }
 
         //
@@ -596,11 +683,15 @@ module.exports = function(server, models) {
         //
 
         for(var prop in api.unsafe) {
+            if (prop === 'security') {
+                continue;
+            }
+
             // perform a 'post' api call to the resource
             (function(method) {
                 // perform a 'get' api call to the resource
-                if (api.authenticate.execute || api.authenticate.write){
-                    router.post('/:id/' + param + (method.route ? method.route : ''),
+                if (api.unsafe.security || api.unsafe[prop].security){
+                    router.post('/:id/' + prop + (method.route ? method.route : ''),
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -610,9 +701,16 @@ module.exports = function(server, models) {
                                 Model.findById('' + req.params.id)
                                     .exec()
                                     .then(function(element) {
-                                        permission(req.user, element, 'execute');
-                                        permission(req.user, element, 'write');
+                                        permission(req.user, element, 'unsafe');
+                                        permission(req.user, element, 'unsafe.' + prop);
                                         return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
                                     })
                                     .catch(function(error) {
                                         next(error);
@@ -622,7 +720,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }else{
-                    router.post('/:id/' + param + (method.route ? method.route : ''),
+                    router.post('/:id/' + prop + (method.route ? method.route : ''),
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -632,6 +730,13 @@ module.exports = function(server, models) {
                                     .exec()
                                     .then(function(element) {
                                         return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
                                     })
                                     .catch(function(error) {
                                         next(error);
@@ -663,7 +768,7 @@ module.exports = function(server, models) {
                     Model.findById('' + data._id)
                         .exec()
                         .then(function(element) {
-                            permission(socket.user, element, 'read');
+                            permission(socket.user, element, 'get');
                             socket.join(model + "_" + element._id);
                         })
                         .catch(function(error) {

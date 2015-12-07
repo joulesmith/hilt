@@ -20,11 +20,6 @@ var ModelError = error('routes.api.receipt');
 module.exports = function(server) {
     apimodelfactory(server, {
         receipt : {
-            authenticate : {
-                write : true, // require user authorization and permission to do this
-                read : true, //
-                execute : true //
-            },
             state : {
                 independent : {
                     amount : {type: Number, : default: 0, required : true},
@@ -69,13 +64,16 @@ module.exports = function(server) {
                         return receipt.save();
                     });
             },
-            update : function(req) {
-                var receipt = this;
+            update : {
+                security : true,
+                handler : function(req) {
+                    var receipt = this;
 
-                throw new ModelError('methodnotallowed',
-                    'A receipt cannot be changed once started.',
-                    [],
-                    405);
+                    throw new ModelError('methodnotallowed',
+                        'A receipt cannot be changed once started.',
+                        [],
+                        405);
+                }
             },
             // no restrictions to access, only uses http gets to base url
             static : {
@@ -117,8 +115,8 @@ module.exports = function(server) {
                     }
                 }
             },
-            // need execute permission, only uses http gets to specific resource
             safe : {
+                security : true,
                 paymentStatus : {
                     route: null,
                     handler : function(req, res) {
@@ -132,8 +130,8 @@ module.exports = function(server) {
                     }
                 }
             },
-            // need both execute and write permission, uses http posts to specific resource
             unsafe : {
+                security : true,
                 approve : {
                     route : null,
                     handler : function(req, res) {
@@ -308,6 +306,7 @@ module.exports = function(server) {
                                 400));
                         }
 
+                        // only submit payments that are authorized
                         return Promise.reduce(status.authorized.payments, function(accumulator, payment) {
                             return (new Promise(function(resolve) {
                                 gateway.transaction.submitForSettlement(payment, function(error, result) {
