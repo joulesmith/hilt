@@ -4,13 +4,17 @@ require.config({
     // set base to where most modules will be located
     baseUrl : './modules',
     paths : {
-        'angular' : '../lib/angular.min',
-        'ngRoute' : '../lib/angular-route.min',
+        'angular' : '../angular/angular.min',
+        'ngRoute' : '../angular-route/angular-route.min',
+        'ngSanitize' : '../angular-sanitize/angular-sanitize.min',
         'domReady': '../lib/domReady',
-        'lodash' : '../lib/lodash.min',
+        'lodash' : '../lodash/lodash.min',
         'restangular' : '../lib/restangular',
         'uiRouter' : '../lib/angular-ui-router.min',
-        'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min'
+        'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min',
+        "marked" : "../marked/lib/marked",
+        "MathJax" : "../MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML&amp;delayStartupUntil=configured",
+        "braintree" : "../braintree-web/dist/braintree"
     },
     shim: {
         'angular' : {
@@ -19,6 +23,10 @@ require.config({
         'ngRoute' : {
             deps: ['angular'],
             exports : 'ngRoute'
+        },
+        'ngSanitize' : {
+            deps: ['angular'],
+            exports : 'ngSanitize'
         },
         'uiRouter' : {
             deps: ['angular']
@@ -32,6 +40,19 @@ require.config({
         'restangular' : {
             deps: ['angular', 'lodash'],
             exports : 'restangular'
+        },
+        'marked' : {
+            exports : 'marked'
+        },
+        'MathJax' : {
+            exports : 'MathJax',
+            init: function () {
+                MathJax.Hub.Config({
+                    skipStartupTypeset: true
+                });
+                MathJax.Hub.Startup.onload();
+                return MathJax;
+            }
         }
     }
 });
@@ -41,8 +62,11 @@ require([
     'angular',
     'domReady',
     'ngRoute',
+    'ngSanitize',
     'user',
     'common',
+    'account',
+    'receipt',
     'file',
     'profile',
     'uiBootstrap',
@@ -58,8 +82,11 @@ require([
         'ui.router',
         'common',
         'user',
+        'account',
+        'receipt',
         'profile',
-        'file'
+        'file',
+        'ngSanitize'
     ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
         $urlRouterProvider.otherwise('/');
 
@@ -68,6 +95,7 @@ require([
                 url : '/',
                 template : 'home'
             });
+
     }]);
 
     app.controller('MainCtrl', ['$scope', function ($scope) {
@@ -78,6 +106,8 @@ require([
         }
 
         $scope.title = "Hello World.";
+        $scope.loadingClass = "hide";
+        $scope.mainClass = "show";
     }]);
 
     // wait for the entire dom to be loaded before trying to run angular modules

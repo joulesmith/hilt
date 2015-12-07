@@ -8,6 +8,8 @@
 var express = require('express');
 var mongoose = require('mongoose');
 var userAuth = require('../middleware/user');
+var user_ioAuth = require('../middleware/user_io');
+
 var error = require('../error');
 var _ = require('lodash');
 
@@ -15,7 +17,7 @@ var User = mongoose.model('user');
 var bodyParser = require('body-parser');
 
 
-module.exports = function(app, models) {
+module.exports = function(server, models) {
 
     for(var model in models) {
 
@@ -37,31 +39,35 @@ module.exports = function(app, models) {
                     401);
             }
 
-            if (user === resource.owner) {
+            if (user._id.equals(resource.owner)) {
                 return;
             }
+
+            var user_attribute = 'user_' + user._id;
 
             var one = resource[action].one;
             var all = resource[action].all;
             var none = resource[action].none;
 
-            // user needs at least one of these attributes
-            for(i = 0; i < one.length; i++) {
-                if (_.indexOf(user.attributes, one[i], true) !== -1) {
-                    break;
+            if (one.length > 0 && _.indexOf(one, user_attribute, true) === -1) {
+                // user needs at least one of these attributes if not directly granted access
+                for(i = 0; i < one.length; i++) {
+                    if (_.indexOf(user.attributes, one[i], true) !== -1) {
+                        break;
+                    }
                 }
-            }
 
-            if (i === one.length) {
-                throw new ModelError('unauthorized',
-                    'The user does not possess any of the qualifying attributes.',
-                    [],
-                    403);
+                if (i === one.length) {
+                    throw new ModelError('unauthorized',
+                        'The user does not possess any of the qualifying attributes.',
+                        [],
+                        403);
+                }
             }
 
             // a user must have all of these attributes
             for(i = 0; i < all.length; i++) {
-                if (_.indexOf(user.attributes, all[i], true) === -1) {
+                if (_.indexOf(user.attributes, all[i], true) === -1 && user_attribute !== all[i]) {
                     throw new ModelError('unauthorized',
                         'The user does not possess all of the required attributes.',
                         [],
@@ -71,7 +77,7 @@ module.exports = function(app, models) {
 
             // a user must not have any of these attributes
             for(i = 0; i < none.length; i++) {
-                if (_.indexOf(user.attributes, none[i], true) !== -1) {
+                if (_.indexOf(user.attributes, none[i], true) !== -1 || user_attribute === none[i]) {
                     throw new ModelError('unauthorized',
                         'The user possess a disqualifying attribute.',
                         [],
@@ -88,7 +94,7 @@ module.exports = function(app, models) {
 
         // boilerplate schema for all resource models
         var schema = {
-            owner : { type: mongoose.Schema.Types.ObjectId, ref: 'user', index : true},
+
             // time created in unix time [milliseconds]
             created : {type : Number, default: 0},
             // time last edited in unix time [milliseconds]
@@ -96,7 +102,8 @@ module.exports = function(app, models) {
             // unavailable until this resource can be reviewed for content
             flagged : {type : Boolean, default : false},
             // no longer can be accessed from public api
-            removed : {type : Boolean, default : false}
+            removed : {type : Boolean, default : false},
+            owner : { type: mongoose.Schema.Types.ObjectId, ref: 'user'}
         };
 
         // if a user is not the owner they can still interact with the resource
@@ -107,9 +114,9 @@ module.exports = function(app, models) {
 
         schema.manage = {
             restricted : {type : Boolean, default : true},
-            one : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-            all : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-            none : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }]
+            one : [{ type: String }],
+            all : [{ type: String }],
+            none : [{ type: String }]
         };
 
 
@@ -117,9 +124,9 @@ module.exports = function(app, models) {
         if (api.authenticate.write) {
             schema.write = {
                 restricted : {type : Boolean, default : true},
-                one : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                all : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                none : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }]
+                one : [{ type: String }],
+                all : [{ type: String }],
+                none : [{ type: String }]
             };
         }
 
@@ -127,9 +134,9 @@ module.exports = function(app, models) {
         if (api.authenticate.read) {
             schema.read = {
                 restricted : {type : Boolean, default : true},
-                one : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                all : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                none : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }]
+                one : [{ type: String }],
+                all : [{ type: String }],
+                none : [{ type: String }]
             };
         }
 
@@ -138,19 +145,19 @@ module.exports = function(app, models) {
         if (api.authenticate.execute) {
             schema.execute = {
                 restricted : {type : Boolean, default : true},
-                one : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                all : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-                none : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }]
+                one : [{ type: String }],
+                all : [{ type: String }],
+                none : [{ type: String }]
             };
         }
 
         // add custom shema to the model
-        for(var param in api.state.internal) {
-            schema[param] = api.state.internal[param];
+        for(var param in api.state.independent) {
+            schema[param] = api.state.independent[param];
         }
 
-        for(var param in api.state.internal) {
-            schema[param] = api.state.internal[param];
+        for(var param in api.state.dependent) {
+            schema[param] = api.state.dependent[param];
         }
 
         var Schema = new mongoose.Schema(schema);
@@ -163,6 +170,10 @@ module.exports = function(app, models) {
         // these are not exposed in the api, but can be used on database results
         for(var param in api.internal) {
             Schema.methods[param] = api.internal[param];
+        }
+
+        Schema.methods.event = function(name, data) {
+            server.io.to(model + "_" + this._id).emit(name, data);
         }
 
         var Model = mongoose.model(model, Schema);
@@ -271,6 +282,31 @@ module.exports = function(app, models) {
                 }
             });
 
+        //
+        // static methods
+        //
+
+        for(var prop in api.static) {
+
+            (function(method) {
+                router.get('/' + prop + (method.route ? method.route : ''),
+                    bodyParser.urlencoded({
+                        extended: false
+                    }),
+                    function(req, res, next) {
+                        try {
+                            method.handler.apply(null, [req, res])
+                                .catch(function(error) {
+                                    next(error);
+                                });
+                        } catch (error) {
+                            next(error);
+                        }
+                    });
+            })(api.static[prop]);
+
+        }
+
         // add a new resource
         router.post('/',
             bodyParser.json(),
@@ -280,7 +316,7 @@ module.exports = function(app, models) {
             userAuth(),
             function(req, res, next) {
                 try {
-                    console.log(req.user);
+
                     if (!req.user) {
                         throw new ModelError('nouser',
                             'A user must be logged in to add a [0].', [model],
@@ -293,7 +329,7 @@ module.exports = function(app, models) {
                     new_element.created = Date.now();
                     new_element.edited = Date.now();
 
-                    for (var param in api.state.settable) {
+                    for (var param in api.state.independent) {
                         if (req.body[param]) {
                             new_element[param] = req.body[param];
                         }
@@ -342,7 +378,7 @@ module.exports = function(app, models) {
 
                                 element.edited = Date.now();
 
-                                for (var param in api.state.settable) {
+                                for (var param in api.state.independent) {
                                     if (req.body[param]) {
                                         element[param] = req.body[param];
                                     }
@@ -359,6 +395,8 @@ module.exports = function(app, models) {
                                 return edit_promise;
                             })
                             .then(function(element) {
+                                element.event('changed', element.edited);
+
                                 var response = {};
 
                                 response[model] = [element];
@@ -387,7 +425,7 @@ module.exports = function(app, models) {
 
                                 element.edited = Date.now();
 
-                                for (var param in api.state.settable) {
+                                for (var param in api.state.independent) {
                                     if (req.body[param]) {
                                         element[param] = req.body[param];
                                     }
@@ -404,6 +442,8 @@ module.exports = function(app, models) {
                                 return edit_promise;
                             })
                             .then(function(element) {
+                                element.event('changed', element.edited);
+
                                 var response = {};
 
                                 response[model] = [element];
@@ -418,6 +458,7 @@ module.exports = function(app, models) {
                     }
                 });
         }
+
 
 
         // retrieve the resource
@@ -497,130 +538,148 @@ module.exports = function(app, models) {
                 });
         }
 
-        //
-        // static methods
-        //
 
-        for(var param in api.static) {
-
-            router.get('/' + param,
-                bodyParser.urlencoded({
-                    extended: false
-                }),
-                function(req, res, next) {
-                    try {
-                        api.static[param].apply(null, [req, res])
-                            .catch(function(error) {
-                                next(error);
-                            });
-                    } catch (error) {
-                        next(error);
-                    }
-                });
-        }
 
         //
         // Add exposed api safe methods
         //
 
         for(var param in api.safe) {
-            // perform a 'get' api call to the resource
-            if (api.authenticate.execute){
-                router.get('/:id/' + param,
-                    bodyParser.json(),
-                    bodyParser.urlencoded({
-                        extended: false
-                    }),
-                    userAuth(),
-                    function(req, res, next) {
-                        try {
-                            Model.findById('' + req.params.id)
-                                .exec()
-                                .then(function(element) {
-                                    permission(req.user, element, 'execute');
-                                    return api.safe[param].apply(element, [req, res]);
-                                })
-                                .catch(function(error) {
-                                    next(error);
-                                });
-                        } catch (error) {
-                            next(error);
-                        }
-                    });
-            }else{
-                router.get('/:id/' + param,
-                    bodyParser.urlencoded({
-                        extended: false
-                    }),
-                    function(req, res, next) {
-                        try {
-                            Model.findById('' + req.params.id)
-                                .exec()
-                                .then(function(element) {
-                                    return api.safe[param].apply(element, [req, res]);
-                                })
-                                .catch(function(error) {
-                                    next(error);
-                                });
-                        } catch (error) {
-                            next(error);
-                        }
-                    });
-            }
+            (function(method) {
+                // perform a 'get' api call to the resource
+                if (api.authenticate.execute){
+                    router.get('/:id/' + param + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        userAuth(),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+                                        permission(req.user, element, 'execute');
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }else{
+                    router.get('/:id/' + param + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }
+            })(api.safe[param]);
         }
 
         //
         // unsafe methods
         //
 
-        for(var param in api.unsafe) {
+        for(var prop in api.unsafe) {
             // perform a 'post' api call to the resource
-            if (api.authenticate.execute || api.authenticate.write){
-                router.post('/:id/' + param,
-                    bodyParser.json(),
-                    bodyParser.urlencoded({
-                        extended: false
-                    }),
-                    userAuth(),
-                    function(req, res, next) {
-                        try {
-                            Model.findById('' + req.params.id)
-                                .exec()
-                                .then(function(element) {
-                                    permission(req.user, element, 'execute');
-                                    permission(req.user, element, 'write');
-                                    return api.unsafe[param].apply(element, [req, res]);
-                                })
-                                .catch(function(error) {
-                                    next(error);
-                                });
-                        } catch (error) {
-                            next(error);
-                        }
-                    });
-            }else{
-                router.post('/:id/' + param,
-                    bodyParser.json(),
-                    bodyParser.urlencoded({
-                        extended: false
-                    }),
-                    function(req, res, next) {
-                        try {
-                            Model.findById('' + req.params.id)
-                                .exec()
-                                .then(function(element) {
-                                    return api.unsafe[param].apply(element, [req, res]);
-                                })
-                                .catch(function(error) {
-                                    next(error);
-                                });
-                        } catch (error) {
-                            next(error);
-                        }
-                    });
-            }
+            (function(method) {
+                // perform a 'get' api call to the resource
+                if (api.authenticate.execute || api.authenticate.write){
+                    router.post('/:id/' + param + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        userAuth(),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+                                        permission(req.user, element, 'execute');
+                                        permission(req.user, element, 'write');
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }else{
+                    router.post('/:id/' + param + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }
+            })(api.unsafe[prop]);
         }
 
-        app.use('/api/' + model, router);
+
+        server.express.use('/api/' + model, router);
+
+        //
+        // Create the necessary route/event handlers for websocket connections
+        // to this resource.
+        //
+
+        var ioroute = server.io.of('/' + model);
+
+        ioroute.on('connect', function(socket){
+            try{
+                user_ioAuth(socket);
+
+                // listen for changes to a particular resource.
+                socket.on('listen', function(data){
+                    Model.findById('' + data._id)
+                        .exec()
+                        .then(function(element) {
+                            permission(socket.user, element, 'read');
+                            socket.join(model + "_" + element._id);
+                        })
+                        .catch(function(error) {
+                            socket.emit('error', error);
+                        });
+                });
+
+                socket.on('leave', function(data){
+                    socket.leave(model + "_" + data._id);
+                });
+
+            }catch(error) {
+                socket.emit('error', error);
+            }
+
+        });
+
     }
 };

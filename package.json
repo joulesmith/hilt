@@ -28,6 +28,7 @@
     "express": "~4.12.2",
     "formidable": "^1.0.17",
     "lodash": "^3.10.1",
+    "marked": "^0.3.5",
     "mongoose": "^4.2.7",
     "morgan": "~1.5.1",
     "nodemailer": "0.3.29",
@@ -39,7 +40,10 @@
     "zxcvbn": "^4.2.0"
   },
   "devDependencies": {
+    "bower": "^1.6.8",
+    "bower-requirejs": "^1.2.0",
     "grunt": "~0.4.5",
+    "grunt-bower-requirejs": "^2.0.0",
     "grunt-contrib-jshint": "~0.10.0",
     "grunt-contrib-nodeunit": "~0.4.1",
     "grunt-contrib-requirejs": "^0.4.4",

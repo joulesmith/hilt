@@ -28,6 +28,8 @@ define(['angular'], function (angular){
         };
     }]);
 
+
+
     //
     // factory to the example model api
     //
@@ -54,6 +56,15 @@ define(['angular'], function (angular){
                 });
         };
 
+        api.ownedfiles = function(userid) {
+            return $http.get('api/file/ownedfiles/' + userid)
+                .then(function(res){
+                    console.log(res);
+                    return res.data.file;
+                }, function (res){
+                    throw res.data.error
+                });
+        };
 
         return api;
     }]);
@@ -69,19 +80,40 @@ define(['angular'], function (angular){
     //
 
     // example component view controller
-    module.controller('file.upload', ['$scope', 'file.api', '$uibModalInstance', function($scope, api, $uibModalInstance){
-        $scope.submit = function() {
-            api.upload($scope.localFile)
-                .then(function(file){
-                    $scope.remoteFile = file;
+    module.controller('file.select', ['$scope', 'file.api', '$uibModalInstance', 'currentURL', 'user.api', function($scope, file, $uibModalInstance, currentURL, user){
+
+        $scope.newURL = currentURL;
+
+        $scope.updateFiles = function() {
+            file.ownedfiles(user.isLoggedIn())
+                .then(function(remoteFiles){
+                    $scope.files = remoteFiles;
+
                 })
                 .catch(function(err){
                     $scope.error = err;
                 });
         };
 
+        $scope.updateFiles();
+
+        $scope.upload = function() {
+            file.upload($scope.localFile)
+                .then(function(remoteFile){
+                    $scope.newURL = '/api/file/' + remoteFile._id + '/filename/' + remoteFile.name;
+                    $scope.updateFiles();
+                })
+                .catch(function(err){
+                    $scope.error = err;
+                });
+        };
+
+        $scope.selected = function(remoteFile) {
+            $scope.newURL = '/api/file/' + remoteFile._id + '/filename/' + remoteFile.name;
+        };
+
         $scope.ok = function () {
-          $uibModalInstance.close($scope.remoteFile);
+          $uibModalInstance.close($scope.newURL);
         };
 
         $scope.cancel = function () {

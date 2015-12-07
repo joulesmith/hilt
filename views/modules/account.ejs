@@ -1,0 +1,25 @@
+<script type="text/ng-template" id="account.braintree">
+
+    <div class="modal-header">
+        <h3 class="modal-title">Payment Method</h3>
+    </div>
+    <div class="modal-body">
+        <form action="/" id="my-sample-form">
+            <label for="card-number">Card Number</label>
+            <div id="card-number" class="form-control"></div>
+
+            <label for="cvv">CVV / CID</label>
+            <div id="cvv" class="form-control" style="width:5em;"></div>
+
+            <label for="expiration-date">Expiration Date</label>
+            <div id="expiration-date" class="form-control" style="width:8em;"></div>
+
+            <input type="submit" value="Pay" class="btn btn-primary"/>
+        </form>
+        <div ng-if="error" ng-include="'common.error'" ng-controller="common.error"></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-primary" type="button" ng-click="ok()">OK</button>
+        <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
+    </div>
+</script>

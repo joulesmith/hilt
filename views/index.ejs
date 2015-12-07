@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'">-->
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>Hi</title>
@@ -11,23 +12,24 @@
         <link href="./css/bootstrap.css" rel="stylesheet">
 
         <!-- load modules and initialization script -->
-        <script data-main="index" src="lib/require.js"></script>
+        <script data-main="index" src="requirejs/require.js"></script>
 
         <!-- load needed angular template files -->
         <% include modules/common.ejs %>
         <% include modules/user.ejs %>
+        <% include modules/account.ejs %>
+        <% include modules/receipt.ejs %>
         <% include modules/profile.ejs %>
         <% include modules/file.ejs %>
     </head>
     <body ng-controller="MainCtrl">
-
+        <div id="progressbar" class="" ng-class="loadingClass">Loading...</div>
         <!-- Top level of page layout and logic -->
 
-        <div class="container-fluid">
+        <div class="container-fluid hide" ng-class="mainClass">
 
             <div class="row">
-                <div ng-include="'user.welcome'" ng-controller="user.welcome"></div>
-                <a href="/#/profile/search">Profiles</a>
+                <div ng-include="'user.navbar'" ng-controller="user.welcome"></div>
             </div>
             <div class="row">
               <div ui-view></div>

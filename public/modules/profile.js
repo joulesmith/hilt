@@ -44,7 +44,7 @@ define(['angular'], function (angular){
     //
     // factory to the profile model api
     //
-    module.factory('profile.api', ['$window', '$http', function($window, $http){
+    module.factory('profile.api', ['$window', '$http', '$q', function($window, $http, $q){
 
         var api = {};
 
@@ -53,9 +53,8 @@ define(['angular'], function (angular){
             return $http.get('/api/profile/' + _id)
                 .then(function(res){
 
-
-                    if (res.data) {
-                        angular.copy(res.data, profile);
+                    if (res.data.profile) {
+                        angular.copy(res.data.profile[0], profile);
                     }
 
                     return profile;
@@ -80,7 +79,7 @@ define(['angular'], function (angular){
         api.createProfile = function(name) {
             return $http.post('/api/profile/', {name : name})
                 .then(function(res){
-                    return res.data;
+                    return res.data.profile[0];
                 })
                 .catch(function(res){
                     // TODO: this doesn't seem right, maybe use Error somehow?
@@ -90,14 +89,33 @@ define(['angular'], function (angular){
 
         api.search = function(words) {
             return $http({
-                    url: '/api/profile/',
+                    url: '/api/profile/search',
                     method: "GET",
                     params: {
                         words: words
                     }
                 })
                 .then(function(res) {
-                    return res.data;
+                    var profiles = [];
+                    var requests = [];
+
+                    for(var i = 0; i < res.data.profile.length; i++) {
+                        requests.push((function(i){
+                            return $http({
+                                url: '/api/profile/' + res.data.profile[i]._id,
+                                method: "GET"
+                            }).then(function(res){
+                                profiles[i] = res.data.profile[0];
+                            }, function(){
+                                // TODO: just ignore them?
+                            });
+                        })(i));
+                    }
+
+
+                    return $q.all(requests).then(function(){
+                        return profiles;
+                    });
                 })
                 .catch(function(res) {
                     throw res.data.error;
@@ -127,10 +145,16 @@ define(['angular'], function (angular){
     }]);
 
     // view a single profile
-    module.controller('profile.view', ['$scope', '$state', 'profile.api', function($scope, $state, api){
+    module.controller('profile.view', ['$scope', '$state', 'profile.api', 'user.api', function($scope, $state, api, user){
         var _id = $state.params.profileId;
 
+        $scope.user = user;
+
         $scope.profile = {
+            data : ""
+        };
+
+        $scope.element = {
             rows : []
         };
 
@@ -154,33 +178,46 @@ define(['angular'], function (angular){
         $scope.addRow = function(index) {
 
             if (typeof index !== 'undefined') {
-                $scope.profile.rows.splice(index, 0, {
+                $scope.element.rows.splice(index, 0, {
                     elements : []
                 })
             }else{
-                $scope.profile.rows.push({
+                $scope.element.rows.push({
+                    elements : []
+                });
+            }
+        };
+
+        $scope.addRowTo = function(column, index) {
+
+            if (typeof index !== 'undefined') {
+                column.rows.splice(index, 0, {
+                    elements : []
+                })
+            }else{
+                column.rows.push({
                     elements : []
                 });
             }
         };
 
         $scope.deleteRow = function(index) {
-            $scope.profile.rows.splice(index, 1);
+            $scope.element.rows.splice(index, 1);
         }
 
-        $scope.moveUp = function(index) {
+        $scope.moveUp = function(column, index) {
             if (index > 0) {
-                var tmp = $scope.profile.rows[index];
-                $scope.profile.rows[index] = $scope.profile.rows[index - 1];
-                $scope.profile.rows[index - 1] = tmp;
+                var tmp = column.rows[index];
+                column.rows[index] = column.rows[index - 1];
+                column.rows[index - 1] = tmp;
             }
         };
 
-        $scope.moveDown= function(index) {
-            if (index < $scope.profile.rows.length - 1) {
-                var tmp = $scope.profile.rows[index];
-                $scope.profile.rows[index] = $scope.profile.rows[index + 1];
-                $scope.profile.rows[index + 1] = tmp;
+        $scope.moveDown= function(column, index) {
+            if (index < column.rows.length - 1) {
+                var tmp = column.rows[index];
+                column.rows[index] = column.rows[index + 1];
+                column.rows[index + 1] = tmp;
             }
         };
 
@@ -230,6 +267,7 @@ define(['angular'], function (angular){
             row.elements.push({
                 type : 'profile.text',
                 text : '',
+                format : 'Default',
                 offset : 0,
                 width : 1
             });
@@ -239,12 +277,39 @@ define(['angular'], function (angular){
             row.elements.push({
                 type : 'profile.image',
                 src : '',
+                alt : '',
+                offset : 0,
+                width : 1
+            });
+        };
+
+        $scope.addTitleTo = function(row) {
+            row.elements.push({
+                type : 'profile.title',
+                offset : 0,
+                width : 1
+            });
+        };
+
+        $scope.addPaymentTo = function(row) {
+            row.elements.push({
+                type : 'profile.payment',
+                offset : 0,
+                width : 1
+            });
+        };
+
+        $scope.addColumnTo = function(row) {
+            row.elements.push({
+                type : 'profile.column',
+                rows : [],
                 offset : 0,
                 width : 1
             });
         };
 
         $scope.clipboard = null;
+        $scope.clipboard_rows = null;
 
         $scope.cutElement = function(row, index) {
             if (index < row.elements.length - 1) {
@@ -263,8 +328,20 @@ define(['angular'], function (angular){
             }
         };
 
+        $scope.cutRow = function(column, index) {
+            $scope.clipboard_rows = column.rows[index];
+            column.rows.splice(index, 1);
+        };
+
+        $scope.pasteRow = function(column) {
+            if ($scope.clipboard_rows) {
+                column.rows.push($scope.clipboard_rows);
+                $scope.clipboard_rows = null;
+            }
+        };
+
         $scope.save = function() {
-            $scope.profile.data = JSON.stringify($scope.profile.rows);
+            $scope.profile.data = JSON.stringify($scope.element.rows);
             api.saveProfile($scope.profile._id, $scope.profile)
             .then(function(profile){
                 $scope.error = null;
@@ -278,10 +355,8 @@ define(['angular'], function (angular){
             api.getProfile(_id, $scope.profile)
             .then(function(profile){
 
-                if ($scope.profile.data !== ''){
-                    $scope.profile.rows = JSON.parse($scope.profile.data);
-                }else{
-                    $scope.profile.rows = [];
+                if (profile.data !== ''){
+                    $scope.element.rows = JSON.parse(profile.data);
                 }
 
                 $scope.error = null;
@@ -318,30 +393,100 @@ define(['angular'], function (angular){
     // Controllers for stand-alone components used for viewing profile information
     //
 
-    module.controller('profile.text', ['$scope', function($scope){
+    module.controller('profile.column', ['$scope', function($scope){
 
 
 
     }]);
 
-    module.controller('profile.image', ['$scope', '$uibModal', function($scope, $uibModal){
+    module.controller('profile.text', ['$scope', '$uibModal', function($scope, $uibModal){
 
-        $scope.upload = function() {
+        $scope.edit = function() {
             var modalInstance = $uibModal.open({
                 animation: true,
-                templateUrl: 'file.upload',
-                controller: 'file.upload',
-                size: null,
+                templateUrl: 'profile.textEdit',
+                controller: 'profile.textEdit',
+                size: 'lg',
                 resolve: {
-                    remoteFile: function() {
-                        return $scope.remoteFile;
+                    textElement: function() {
+                        return $scope.element;
                     }
                 }
             });
 
             modalInstance.result
-            .then(function(remoteFile) {
-                $scope.element.src = '/api/file/' + remoteFile._id + '/data';
+            .then(function(element) {
+                $scope.element = element;
+            });
+        };
+    }]);
+
+
+    // example component view controller
+    module.controller('profile.textEdit', ['$scope', 'file.api', '$uibModalInstance', 'textElement', 'user.api', function($scope, file, $uibModalInstance, textElement, user){
+
+        $scope.textElement = textElement;
+
+        $scope.formats = {
+            Default : "Default",
+            MathJaxMarkdown : "Markdown + LaTeX",
+            Markdown : "Markdown",
+            MathJax : "LaTeX",
+            Preformatted : "Code",
+            HTML : "HTML"
+        };
+
+        $scope.ok = function () {
+          $uibModalInstance.close($scope.textElement);
+        };
+
+        $scope.cancel = function () {
+          $uibModalInstance.dismiss('cancel');
+        };
+    }]);
+
+    module.controller('profile.image', ['$scope', '$uibModal', function($scope, $uibModal){
+
+        $scope.select = function() {
+            var modalInstance = $uibModal.open({
+                animation: true,
+                templateUrl: 'file.select',
+                controller: 'file.select',
+                size: null,
+                resolve: {
+                    currentURL: function() {
+                        return $scope.element.src;
+                    }
+                }
+            });
+
+            modalInstance.result
+            .then(function(newURL) {
+                $scope.element.src = newURL;
+            });
+        };
+
+    }]);
+
+    module.controller('profile.title', ['$scope', '$uibModal', function($scope, $uibModal){
+
+    }]);
+
+    module.controller('profile.payment', ['$scope', '$uibModal', function($scope, $uibModal){
+
+        $scope.payment = function() {
+            console.log('trying to pay');
+            var modalInstance = $uibModal.open({
+                animation: true,
+                templateUrl: 'account.braintree',
+                controller: 'account.braintree',
+                size: null,
+                resolve: {
+                }
+            });
+
+            modalInstance.result
+            .then(function() {
             });
         };
 

@@ -137,7 +137,11 @@ UserSchema.methods.verifyToken = function(token, cb) {
 
     return crypto_pbkdf2(token.secret, user.tokenSalt, 1000, 64, 'sha256')
         .then(function(tokenHash){
-            return tokenHash.toString('hex') === user.tokenHash;
+            if (tokenHash.toString('hex') === user.tokenHash) {
+                return user;
+            }
+
+            return null;
         });
 
 }

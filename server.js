@@ -1,19 +1,23 @@
 
 /**
- * Module dependencies.
+ * dependencies.
  */
+var config = require('./config');
 
-var app = require('./app');
+var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
+
+var express = require('express');
+var app = express();
 var debug = require('debug')('broadsword:server');
 var http = require('http');
-// add websockets module
 var socketio = require('socket.io');
 
 /**
  * Get port from environment and store in Express.
  */
-// TODO use config file to set this
-var port = normalizePort(process.env.PORT || '3000');
+
+var port = normalizePort(config.http.port);
 app.set('port', port);
 
 /**
@@ -25,7 +29,8 @@ var server = http.createServer(app);
 /**
  * Add socket.io to server
  */
-//require('../server').set_io(socketio(server));
+
+var io = socketio(server);
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -94,3 +99,14 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+
+/**
+ * Connect to database
+ */
+mongoose.connect("mongodb://" + config.db.host + ":" + config.db.port + "/" + config.db.database);
+
+module.exports = {
+    config : config,
+    express : app,
+    io : io
+};

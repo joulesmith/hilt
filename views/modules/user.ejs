@@ -317,30 +317,52 @@
 </script>
 
 <script type="text/ng-template" id="user.navbar">
-    <nav class="navbar navbar-default">
+    <nav class="navbar navbar-default" ng-init="isCollapsed=true">
         <div class="container-fluid">
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                <button type="button" class="navbar-toggle" ng-click="isCollapsed = !isCollapsed">
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
+                <a class="navbar-brand" href="#">Brand</a>
             </div>
-            <div class="collapse navbar-collapse" id="myNavbar">
+            <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
                 <ul class="nav navbar-nav">
-                    <li ng-click="moveUp($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-up" aria-hidden="true" ></span></a></li>
-                    <li ng-click="addRow($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-plus" aria-hidden="true" ></span></a></li>
-                    <li ng-click="moveDown($index)" style="cursor:pointer;"><a><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></a></li>
-                    <li ng-click="addElementTo(row)" style="cursor:pointer;"><a>add element</a></li>
+                    <li><a href="/#/profile/search">Profiles</a></li>
                 </ul>
-                <ul class="nav navbar-nav navbar-right">
-                    <li>
-                        <a href="#">
-                            <span class="glyphicon glyphicon-user"></span> Sign Up</a>
+                <ul ng-if='api.user._id' class="nav navbar-nav navbar-right">
+                    <li  uib-dropdown class="dropdown">
+                        <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+                            <span class="glyphicon glyphicon-user" aria-hidden="true" ></span>
+                            <span class="sr-only">User Controls</span><span class="caret">
+                        </span></a>
+                        <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+                            <li>
+                                <a ng-click="logout()" style="cursor:pointer;">
+                                    <span class="glyphicon glyphicon-log-out"></span> Logout
+                                </a>
+                            </li>
+                        </ul>
                     </li>
-                    <li>
-                        <a href="#">
-                            <span class="glyphicon glyphicon-log-in"></span> Login</a>
+                </ul>
+                <ul ng-if='!api.user._id' class="nav navbar-nav navbar-right">
+                    <li  uib-dropdown class="dropdown">
+                        <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+                            <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" ></span>
+                            <span class="sr-only">User Controls</span><span class="caret">
+                        </span></a>
+                        <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+                            <li>
+                                <a ui-sref="user.login">
+                                    <span class="glyphicon glyphicon-log-in"></span> Login
+                                </a>
+                            </li>
+                            <li>
+                                <a ui-sref="user.register">
+                                    +<span class="glyphicon glyphicon-user"></span> Register</a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </div>
