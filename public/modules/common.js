@@ -79,7 +79,10 @@ define(['angular', 'marked', 'MathJax'], function (angular, marked, MathJax){
     });
 
     module.controller('common.error', ['$scope', function($scope){
-
+        $scope.show_stack = false;
+        $scope.toggleStack = function() {
+            $scope.show_stack = !$scope.show_stack;
+        };
     }]);
 
 

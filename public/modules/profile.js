@@ -1,6 +1,6 @@
 "use strict";
 
-define(['angular'], function (angular){
+define(['angular', 'lodash'], function (angular, lodash){
 
     //
     // module for common interactions with the profile model
@@ -224,6 +224,8 @@ define(['angular'], function (angular){
                 }
             ];
 
+            $scope.isOwner = false;
+
             $scope.addRow = function(index) {
 
                 if (typeof index !== 'undefined') {
@@ -409,6 +411,10 @@ define(['angular'], function (angular){
                     if (profile.data !== ''){
                         $scope.element.rows = JSON.parse(profile.data);
                     }
+                    console.log($scope.profile);
+                    console.log(api.profile);
+                    console.log(api.user._id);
+                    $scope.canEdit = api.user.testAccess('profile', $scope.profile, 'update');
 
                     $scope.error = null;
                 })

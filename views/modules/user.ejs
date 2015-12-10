@@ -331,7 +331,7 @@
                 <ul class="nav navbar-nav">
                     <li><a href="/#/profile/search">Profiles</a></li>
                 </ul>
-                <ul ng-if='api.user._id' class="nav navbar-nav navbar-right">
+                <ul ng-if='api.user._id && !api.user.guest' class="nav navbar-nav navbar-right">
                     <li  uib-dropdown class="dropdown">
                         <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
                             <span class="glyphicon glyphicon-user" aria-hidden="true" ></span>
@@ -346,7 +346,7 @@
                         </ul>
                     </li>
                 </ul>
-                <ul ng-if='!api.user._id' class="nav navbar-nav navbar-right">
+                <ul ng-if='!api.user._id || api.user.guest' class="nav navbar-nav navbar-right">
                     <li  uib-dropdown class="dropdown">
                         <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
                             <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" ></span>

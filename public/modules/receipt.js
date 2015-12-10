@@ -31,8 +31,39 @@ define(['angular'], function (angular){
 
     module.controller('receipt.create', ['$scope', '$state', '$uibModal', 'apifactory.models', function($scope, $state, $uibModal, models){
         models(['receipt'])
-        .then(funcion(api){
+        .then(function(api){
+            $scope.receipt = {};
 
+            $scope.validReceipt = function(receipt){
+                if (receipt.amount !== 0) {
+                    return false;
+                }
+
+                return true;
+            };
+
+            $scope.create = function(receipt){
+                api.receipt.create(receipt)
+                .then(function(receipt){
+                    $state.go('receipt.view', {receiptId : receipt._id});
+                });
+            };
+
+            $scope.selectAccount = function() {
+                $uibModal.open({
+                    animation: true,
+                    templateUrl: 'account.search.modal',
+                    controller: 'account.search.modal',
+                    size: null,
+                    resolve: {
+
+                    }
+                })
+                .result
+                .then(function(accountId) {
+                    $scope.receipt.to = accountId;
+                });
+            };
         });
 
         $scope.formatCurrency = formatCurrency;
@@ -42,7 +73,7 @@ define(['angular'], function (angular){
     module.controller('receipt.view', ['$scope', '$state', '$uibModal', 'apifactory.models', function($scope, $state, $uibModal, models){
 
         models(['receipt'])
-        .then(funcion(api){
+        .then(function(api){
 
             var _id = $state.params.receiptId;
             $scope.receipt = {};
@@ -102,10 +133,13 @@ define(['angular'], function (angular){
 
                 var modalInstance = $uibModal.open({
                     animation: true,
-                    templateUrl: 'account.braintree',
-                    controller: 'account.braintree',
+                    templateUrl: 'receipt.payment.modal',
+                    controller: 'receipt.payment.modal',
                     size: null,
                     resolve: {
+                        receipt_id : function(){
+                            return _id;
+                        }
                     }
                 });
 
@@ -117,5 +151,78 @@ define(['angular'], function (angular){
 
     }]);
 
+    module.controller('receipt.payment.modal', ['$scope', '$uibModalInstance', 'apifactory.models', 'receipt_id', function($scope, $uibModalInstance, models, receipt_id){
+        models(['receipt'])
+        .then(function(api){
+            var checkout = null;
+            $scope.receipt = {};
+
+            api.receipt.get(receipt_id)
+            .then(function(receipt){
+                angular.copy(receipt, $scope.receipt);
+            })
+            .return(api.receipt.static.clientToken())
+            .then(function(clientToken){
+                return $q(function(resolve, reject){
+                    // no way to primisfy this so just have to make promise manually
+                    braintree.setup(clientToken, "custom", {
+                        onReady: function(integration) {
+                            // really ought to happen before anything else.
+                            checkout = integration;
+                        },
+                        onPaymentMethodReceived: function(payload) {
+                            resolve(payload);
+                        },
+                        onError: function(error) {
+                            // will have to restart braintree automatically
+                            // otherwise they will have to close and re-open
+                            // modal
+                            reject(error);
+                        },
+                        id: "my-sample-form",
+                        hostedFields: {
+                            number: {
+                                selector: "#card-number",
+                                placeholder: 'Card Number'
+                            },
+                            cvv: {
+                                selector: "#cvv",
+                                placeholder: 'cvv'
+                            },
+                            expirationDate: {
+                                selector: "#expiration-date",
+                                placeholder: 'mm/yyyy'
+                            },
+                            styles: {
+                                // Style all elements
+                                "input": {
+                                    "font-size": "14px",
+                                    "color": "#555"
+                                },
+                            }
+                        }
+                    });
+                });
+
+            })
+            .then(function(payload){
+                console.log("sending payment");
+                return api.receipt.unsafe.payment(receipt_id, {paymentMethod : payload})
+            })
+            .catch(function(error){
+                $scope.error = error;
+            })
+        });
+
+        $scope.formatCurrency = formatCurrency;
+
+        $scope.ok = function () {
+          $uibModalInstance.close();
+        };
+
+        $scope.cancel = function () {
+          $uibModalInstance.dismiss('cancel');
+        };
+    }]);
 
 });

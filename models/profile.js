@@ -13,7 +13,7 @@ var Promise = require('bluebird');
 var config = require('../config');
 var mongoose = require('mongoose');
 
-var ProfileError = error('routes.api.profile');
+var ModelError = error('routes.api.profile');
 
 
 module.exports = function(server) {
@@ -47,7 +47,7 @@ module.exports = function(server) {
                         .exec()
                         .then(function(profile){
                             if (!profile) {
-                                throw new ProfileError('noresults',
+                                throw new ModelError('noresults',
                                     'No profiles found matching search words.',
                                     [],
                                     404);

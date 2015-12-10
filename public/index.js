@@ -68,6 +68,8 @@ require([
     'user',
     'file',
     'profile',
+    'account',
+    'receipt',
     'uiBootstrap',
     'uiRouter'
 ], function(
@@ -83,6 +85,8 @@ require([
         'common',
         'user',
         'profile',
+        'account',
+        'receipt',
         'file',
         'ngSanitize'
     ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){

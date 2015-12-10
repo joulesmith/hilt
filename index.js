@@ -42,9 +42,10 @@ server.express.use('/', require('./routes/index'));
 server.express.use('/api/util', require('./routes/api/util'));
 server.express.use('/api/user', require('./routes/api/user'));
 
-require('./models/account')(server);
-require('./models/profile')(server);
 require('./models/file')(server);
+require('./models/account')(server);
+require('./models/receipt')(server);
+require('./models/profile')(server);
 
 // catch 404 and forward to error handler
 server.express.use(function(req, res, next) {

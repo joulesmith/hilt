@@ -22,8 +22,11 @@ var UserSchema = new mongoose.Schema({
     google : {
         email : {type : String, default : ''},
         accessToken : {type : String, default : ''}
-    }
+    },
+    accessRecords : mongoose.Schema.Types.Mixed
 });
+
+
 
 /**
  * Set a password
@@ -132,7 +135,31 @@ UserSchema.methods.generateToken = function(password, cb) {
 
 };
 
-UserSchema.methods.verifyToken = function(token, cb) {
+UserSchema.methods.generateGuestToken = function() {
+    var guest = this;
+    guest.tokenSalt = crypto.randomBytes(16).toString('hex');
+    var secret = crypto.randomBytes(16).toString('hex');
+
+    return crypto_pbkdf2(secret, guest.tokenSalt, 1000, 64, 'sha256')
+        .then(function(tokenHash){
+            guest.tokenHash = tokenHash.toString('hex');
+
+            return guest.save();
+        })
+        .then(function(guest){
+            var token = {
+                _id : guest._id,
+                secret : secret
+            };
+
+            // this enocding is for use in header authorization.
+            token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
+
+            return token;
+        });
+};
+
+UserSchema.methods.verifyToken = function(token) {
     var user = this;
 
     return crypto_pbkdf2(token.secret, user.tokenSalt, 1000, 64, 'sha256')
@@ -143,7 +170,6 @@ UserSchema.methods.verifyToken = function(token, cb) {
 
             return null;
         });
-
 }
 
 mongoose.model('user', UserSchema);

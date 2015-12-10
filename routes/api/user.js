@@ -4,6 +4,8 @@ var router = express.Router();
 module.exports = router;
 var mongoose = require('mongoose');
 var userAuth = require('../../middleware/user');
+var _ = require('lodash');
+var Promise = require('bluebird');
 
 var UsersError = require('../../error')('routes.api.users');
 
@@ -87,6 +89,133 @@ router.post('/', function(req, res, next) {
             next(error);
         });
 
+    }catch(error) {
+        next(error);
+    }
+});
+
+
+// creates a new guest user
+router.post('/guest', function(req, res, next) {
+    try {
+
+        var new_user = new User();
+
+        new_user.generateGuestToken()
+        .then(function(token){
+            res.json({token: token});
+        })
+        .catch(function(error){
+            next(error);
+        });
+
+    }catch(error) {
+        next(error);
+    }
+});
+
+router.post('/merge', userAuth(), function(req, res, next) {
+    try {
+        var fromUser = null;
+        var toUser = null;
+
+        User.findById(req.body.fromToken._id).exec()
+        .then(function(user){
+            if (!user) {
+                throw new UsersError('nouser',
+                    'From user not found.',
+                    [],
+                    404);
+            }
+
+            if (user.passwordHash !== '') {
+                throw new UsersError('notguest',
+                    'Only a guest account may be merged with another account.',
+                    [],
+                    403);
+            }
+
+            return user.verifyToken(req.body.fromToken);
+        }).then(function(user){
+            fromUser = user;
+            return User.findById(req.body.toToken._id).exec()
+        })
+        .then(function(user){
+            if (!user) {
+                throw new UsersError('nouser',
+                    'To user not found.',
+                    [],
+                    404);
+            }
+
+            return user.verifyToken(req.body.toToken);
+        }).then(function(user){
+            toUser = user;
+
+            if (!fromUser || !toUser) {
+                throw new UsersError('unauthorized',
+                    'Merge failed because it is not authorized.',
+                    [],
+                    401);
+            }
+
+            // merge by changing all ownerships and/or references?
+            //
+            if (fromUser.accessRecords) {
+
+                var promises = [];
+
+                if (!toUser.accessRecords) {
+                    toUser.accessRecords = {
+                        records : [],
+                        actions: []
+                    };
+                }
+
+                fromUser.accessRecords.records.forEach(function(record, fromIndex) {
+                    // add the record to the to user
+                    var toIndex = _.sortedIndex(toUser.accessRecords.records, record);
+                    toUser.accessRecords.records.splice(toIndex, 0, record);
+                    toUser.accessRecords.actions.splice(toIndex, 0, fromUser.accessRecords.actions[fromIndex]);
+
+                    // change the record
+                    var part = record.split('/');
+
+                    promises.push(mongoose.model(part[0]).findById(part[1]).exec()
+                    .then(function(element){
+
+                        for(var action in fromUser.accessRecords.actions[fromIndex]) {
+                            if (fromUser.accessRecords.actions[fromIndex][action]) {
+                                var security = element.security[action];
+                                security.users.splice(_.indexOf(security.users, '' + fromUser._id, true), 1)
+                                security.users.splice(_.sortedIndex(security.users, '' + toUser._id), 0, '' + toUser._id);
+                            }
+                        }
+
+                        element.markModified('security');
+                        return element.save();
+                    }));
+                });
+
+
+                return Promise.all(promises)
+                .then(function(element){
+                    toUser.markModified('accessRecords');
+                    return toUser.save();
+                })
+                .then(function(toUser){
+                    return fromUser.remove();
+                })
+            }else{
+                return fromUser.remove();
+            }
+        })
+        .then(function(){
+            res.json({});
+        })
+        .catch(function(error){
+            next(error);
+        });
     }catch(error) {
         next(error);
     }

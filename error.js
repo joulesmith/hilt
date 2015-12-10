@@ -13,16 +13,16 @@ module.exports = function(namespace){
         this.message = '';
 
         if (parameters && parameters.length > 0) {
-            this.message += template.replace(/\{\d+\}/g, function(match) {
+            this.message += template.replace(/\[\d+\]/g, function(match) {
 
                 // + apparently converts string to number.
-              var index = +match.slice(1, -1);
+                var index = +match.slice(1, -1);
 
-              if (index < parameters.length) {
-                return parameters[index];
-              }
+                if (index < parameters.length) {
+                    return parameters[index];
+                }
 
-              return match;
+                return match;
             });
         }else{
             this.message += template;

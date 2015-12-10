@@ -20,24 +20,21 @@ var ModelError = error('routes.api.receipt');
 module.exports = function(server) {
     apimodelfactory(server, {
         receipt : {
-            state : {
-                independent : {
-                    amount : {type: Number, : default: 0, required : true},
-                    to : { type: mongoose.Schema.Types.ObjectId, ref: 'account', required : true},
-                    items : [{
-                        id : { type: mongoose.Schema.Types.ObjectId, ref: 'item', required : true},
-                        amount : {type: Number, : default: 0, required : true},
-                    }]
+            state : { // this is what will be stored in the database specific to each resource
+                independent : { // what can be set directly
+                    amount : {type: Number, default: 0, required : true},
+                    to : { type: mongoose.Schema.Types.ObjectId, ref: 'account'},
+                    order : { type: mongoose.Schema.Types.ObjectId, ref: 'order'}
                 },
-                dependent : {
-                    fromApproved : {type: Boolean, default: false},
-                    toApproved : {type: Boolean, default: false},
-                    payments : [{type : String}]
+                dependent : { // what is set indirectly according to the api
+                    payment : {type : String}
                 },
                 index : null, // used for text searches
             },
             create : function(req) {
                 var receipt = this;
+
+                // TODO: this can be more sophisticated by defining interactions with the account
 
                 return mongoose.model('account').findById('' + receipt.to)
                     .exec()
@@ -49,20 +46,17 @@ module.exports = function(server) {
                                 404);
                         }
 
-
-                        if (account.autoApprovePayments) {
-                            receipt.toApproved = true;
-                        }
-
-                        // give acceess to the account so they can approve the
-                        // payment if they wanted it
-
-                        receipt.read.one.push('user_' + account.owner);
-                        receipt.write.one.push('user_' + account.owner);
-                        receipt.execute.one.push('user_' + account.owner);
+                        // give acceess to the account
+                        // TODO: it should really have the same permissions as the account, but how?
+                        receipt.security.get.one.push('user_' + account.owner);
+                        receipt.security.safe.paymentStatus.one.push('user_' + account.owner);
+                        receipt.security.unsafe.approve.one.push('user_' + account.owner);
 
                         return receipt.save();
                     });
+            },
+            get : {
+                security : true
             },
             update : {
                 security : true,
@@ -104,8 +98,7 @@ module.exports = function(server) {
                                             500));
                                     }
 
-                                    res.json({clientToken : response.clientToken});
-                                    resolve();
+                                    resolve(response.clientToken);
                                 });
                             }catch(error) {
                                 reject(error);
@@ -178,9 +171,6 @@ module.exports = function(server) {
                             }else{
                                 return receipt;
                             }
-                        })
-                        .then(function(receipt){
-                            res.json({receipt: receipt});
                         });
 
                     }
@@ -303,7 +293,7 @@ module.exports = function(server) {
                             throw new ModelError('noapproval',
                                 'payment cannot be settled until both parties approve.',
                                 [],
-                                400));
+                                400);
                         }
 
                         // only submit payments that are authorized

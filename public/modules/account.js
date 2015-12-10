@@ -11,87 +11,6 @@ define(['angular', 'braintree'], function (angular, braintree){
 
         }]);
 
-
-    //
-    // factory to the example model api
-    //
-    module.factory('account.api', ['$window', '$http', '$q', function($window, $http, $q){
-
-        var api = {};
-
-        api.setup = function(receipt) {
-            var checkout = null;
-
-            return $http({
-                    url: '/api/receipt/clientToken',
-                    method: "GET"
-                })
-                .then(function(res){
-                    return $q(function(resolve, reject){
-                        // no way to primisfy this so just have to make promise manually
-                        braintree.setup(res.data.clientToken, "custom", {
-                            onReady: function(integration) {
-                                // really ought to happen before anything else.
-                                checkout = integration;
-                            },
-                            onPaymentMethodReceived: function(payload) {
-                                resolve(payload);
-                            },
-                            onError: function(error) {
-                                // will have to restart braintree automatically
-                                // otherwise they will have to close and re-open
-                                // modal
-                                reject(error);
-                            },
-                            id: "my-sample-form",
-                            hostedFields: {
-                                number: {
-                                    selector: "#card-number",
-                                    placeholder: 'Card Number'
-                                },
-                                cvv: {
-                                    selector: "#cvv",
-                                    placeholder: 'cvv'
-                                },
-                                expirationDate: {
-                                    selector: "#expiration-date",
-                                    placeholder: 'mm/yyyy'
-                                },
-                                styles: {
-                                    // Style all elements
-                                    "input": {
-                                        "font-size": "14px",
-                                        "color": "#555"
-                                    },
-                                }
-                            }
-                        });
-                    })
-                }, function(res){
-                    throw res.data.error;
-                })
-                .then(function(payload){
-                    console.log("sending payment");
-                    return $http({
-                            url: '/api/receipt/' + receipt._id + '/payment',
-                            method: "POST",
-                            data : {paymentMethod : payload}
-                        });
-                })
-                .then(function(res){
-                    checkout.teardown(function () {
-                      checkout = null;
-                      // braintree.setup can safely be run again!
-                      // hopefully it will finish before? Or should I really wait?
-                      // would need to make a promis to do that.
-                      // will angular destroy all this anyway?
-                    });
-                });
-        };
-
-        return api;
-    }]);
-
     //
     // Controllers for the views of the sub-states
     //
@@ -102,24 +21,50 @@ define(['angular', 'braintree'], function (angular, braintree){
     // Controllers for stand-alone components
     //
 
-    // example component view controller
-    module.controller('account.braintree', ['$scope', 'account.api', '$uibModalInstance', function($scope, account, $uibModalInstance){
 
-        account.setup()
-            .then(function(){
+    module.controller('account.search.modal', ['$scope', '$uibModalInstance', '$q', 'apifactory.models', function($scope, $uibModalInstance, $q, models){
+        models('account')
+        .then(function(api){
+            $scope.accounts = [];
+            $scope.words = '';
 
-            })
-            .catch(function(error){
-                $scope.error = error;
-            })
+            $scope.search = function(){
+                api.account.static.search({words : $scope.words})
+                .then(function(accounts){
+                    var requests = [];
 
-        $scope.ok = function () {
-          $uibModalInstance.close($scope.newURL);
-        };
+                    for(var i = 0; i < profiles.length; i++) {
+                        requests.push((function(i){
+                            return api.account.get(accounts[i]._id)
+                            .then(function(account){
+                                // replace with full account data
+                                accounts[i] = profile;
+                            }, function(){
+                                // TODO: just ignore them?
+                            });
+                        })(i));
+                    }
 
-        $scope.cancel = function () {
-          $uibModalInstance.dismiss('cancel');
-        };
+
+                    return $q.all(requests).then(function(){
+                        return accounts;
+                    });
+                })
+                .then(function(accounts){
+                    angular.copy(accounts, $scope.accounts);
+                    $scope.error = null;
+                }, function(error){
+                    $scope.error = error;
+                });
+            };
+
+            $scope.ok = function (accountId) {
+              $uibModalInstance.close(accountId);
+            };
+
+            $scope.cancel = function () {
+              $uibModalInstance.dismiss('cancel');
+            };
+        });
     }]);
-
 });

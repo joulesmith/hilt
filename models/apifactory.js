@@ -16,34 +16,31 @@ var _ = require('lodash');
 var User = mongoose.model('user');
 var bodyParser = require('body-parser');
 
+// Returns true on the first occurence of a commone element between two
+// sorted arrays. False if there are no common elements
+var hasCommonElement = function(sortedArray1, sortedArray2) {
+    var i, j;
+
+    i = 0;
+    j = 0;
+
+    while(i < sortedArray1.length && j < sortedArray2.length) {
+        if (sortedArray1[i] === sortedArray2[j]) {
+            return true;
+        }else if (sortedArray1[i] < sortedArray2[j]) {
+            i++;
+        }else{
+            j++;
+        }
+    }
+
+    return false;
+};
 
 module.exports = function(server, models) {
-
+    // creates a pure json formatted string represenation of this model
     var formatModel = function(api) {
-        var model = {
-            authenticate : api.authenticate,
-            state : {
-                independent : {},
-                dependent : {}
-            },
-            static : {},
-            safe : {},
-            unsafe : {}
-        };
 
-        for(var prop in api.static) {
-            model.static[prop] = {};
-        }
-
-        for(var prop in api.safe) {
-            model.safe[prop] = {};
-        }
-
-        for(var prop in api.unsafe) {
-            model.unsafe[prop] = {};
-        }
-
-        return JSON.stringify(model);
     };
 
     for(var model in models) {
@@ -52,80 +49,12 @@ module.exports = function(server, models) {
 
         var ModelError = error('routes.api.' + model);
 
-        var permission = function(user, resource, action) {
-            var i;
-
-            if (!resource.security[action] || !resource.security[action].restricted) {
-                // if there is no security, let anyone through
-                return;
-            }
-
-            // there is security, so a user has to be logged in at least
-            if (!user) {
-                throw new ModelError('nouser',
-                    'A user must be logged in to [0] this [1].',
-                    [action, model],
-                    401);
-            }
-
-            if (user._id.equals(resource.owner)) {
-                // the owner can do whatever
-                return;
-            }
-
-            // implicit attribute that a user has by default
-            var user_attribute = 'user_' + user._id;
-
-            var one = resource.security[action].one;
-            var all = resource.security[action].all;
-            var none = resource.security[action].none;
-
-            if (one.length > 0 && _.indexOf(one, user_attribute, true) === -1) {
-                // user needs at least one of these attributes if not directly granted access
-                for(i = 0; i < one.length; i++) {
-                    if (_.indexOf(user.attributes, one[i], true) !== -1) {
-                        break;
-                    }
-                }
-
-                if (i === one.length) {
-                    throw new ModelError('unauthorized',
-                        'The user does not possess any of the qualifying attributes.',
-                        [],
-                        403);
-                }
-            }
-
-            // a user must have all of these attributes
-            for(i = 0; i < all.length; i++) {
-                if (_.indexOf(user.attributes, all[i], true) === -1 && user_attribute !== all[i]) {
-                    throw new ModelError('unauthorized',
-                        'The user does not possess all of the required attributes.',
-                        [],
-                        403);
-                }
-            }
-
-            // a user must not have any of these attributes
-            for(i = 0; i < none.length; i++) {
-                if (_.indexOf(user.attributes, none[i], true) !== -1 || user_attribute === none[i]) {
-                    throw new ModelError('unauthorized',
-                        'The user possess a disqualifying attribute.',
-                        [],
-                        403);
-                }
-            }
-
-            return true;
-        };
-
         //
         // Build the database model using mongoose
         //
 
         // boilerplate schema for all resource models
         var schema = {
-
             // time created in unix time [milliseconds]
             created : {type : Number, default: 0},
             // time last edited in unix time [milliseconds]
@@ -134,80 +63,52 @@ module.exports = function(server, models) {
             flagged : {type : Boolean, default : false},
             // no longer can be accessed from public api
             removed : {type : Boolean, default : false},
-            owner : { type: mongoose.Schema.Types.ObjectId, ref: 'user'},
-            security : {}
+            security : {type: mongoose.Schema.Types.Mixed, default: {manage: {}}}
         };
 
         // if a user is not the owner they can still interact with the resource
         // these are a list of qualifying, required, and forbidden attributes
         // a user must satisfy to perform the given class of operation
-
-        // able to do anything an owner can do
-        schema.security.manage = {
-            one : [{ type: String }],
-            all : [{ type: String }],
-            none : [{ type: String }]
+        //
+        var secure = {
         };
-
 
         // can change something about the resource
         if (api.update && api.update.security) {
-            schema.security.update = {
-                restricted : {type : Boolean, default : true},
-                one : [{ type: String }],
-                all : [{ type: String }],
-                none : [{ type: String }]
-            };
+            secure.update = true;
         }
 
         // can access information about this resource, but cannot alter it in any way
         if (api.get && api.get.security) {
-            schema.security.get = {
-                restricted : {type : Boolean, default : true},
-                one : [{ type: String }],
-                all : [{ type: String }],
-                none : [{ type: String }]
-            };
+            secure.get = true;
         }
 
         if (api.safe && api.safe.security) {
-            schema.security.safe = {
-                restricted : {type : Boolean, default : true},
-                one : [{ type: String }],
-                all : [{ type: String }],
-                none : [{ type: String }]
-            };
+            secure.safe = true;
         }
 
         // add method specific security
         for(var prop in api.safe) {
             if (api.safe[prop].security) {
-                schema.security['safe.' + prop] = {
-                    restricted : {type : Boolean, default : true},
-                    one : [{ type: String }],
-                    all : [{ type: String }],
-                    none : [{ type: String }]
-                };
+                if (secure.safe) {
+                    throw new Error('Security cannot be applied at two different levels.');
+                }
+
+                secure['safe.' + prop] = true;
             }
         }
 
         if (api.unsafe && api.unsafe.security) {
-            schema.security.unsafe = {
-                restricted : {type : Boolean, default : true},
-                one : [{ type: String }],
-                all : [{ type: String }],
-                none : [{ type: String }]
-            };
+            secure.unsafe = true;
         }
 
         for(var prop in api.unsafe) {
             if (api.unsafe[prop].security) {
-                schema.security['unsafe.' + prop] = {
-                    restricted : {type : Boolean, default : true},
-                    one : [{ type: String }],
-                    all : [{ type: String }],
-                    none : [{ type: String }]
-                };
+                if (secure.unsafe) {
+                    throw new Error('Security cannot be applied at two different levels.');
+                }
+
+                secure['unsafe.' + prop] = true;
             }
         }
 
@@ -234,9 +135,180 @@ module.exports = function(server, models) {
 
         Schema.methods.event = function(name, data) {
             server.io.to(model + "_" + this._id).emit(name, data);
-        }
+        };
+
+        Schema.methods.testAccess = function(action, user) {
+
+            var security = this.security[action];
+            var user_id = '' + user._id;
+
+            if (action !== 'root' && (!secure[action] || (security && security.unrestricted))) {
+                // if there is no security, let anyone through (root is always secure)
+                return true;
+            }
+
+
+
+            // there is security, so a user has to be logged in at least
+            if (!user) {
+                return false;
+            }
+
+            if (security) {
+
+                // try finding the user directly
+                if (security.users && _.indexOf(security.users, user_id, true) !== -1) {
+
+                    return true;
+                }
+
+                // see if the user belongs to a group that has access
+                if (user.groups && security.groups && hasCommonElement(user.groups, security.groups)){
+                    return true;
+                }
+            }
+
+            if (action === 'root') {
+                return false;
+            }else{
+                // as a last resort, any user able to be root can do also anything else
+                return this.testAccess('root', user);
+            }
+
+        };
+
+        Schema.methods.grantUserAccess = function(actions, user) {
+            var element = this;
+            var user_id = '' + user._id;
+
+            if (!user.accessRecords) {
+                user.accessRecords = {
+                    records : [],
+                    actions: []
+                };
+            }
+
+            var record = model + '/' + element._id;
+
+            var recordIndex = _.sortedIndex(user.accessRecords.records, record);
+
+            if (user.accessRecords.records[recordIndex] !== record) {
+                user.accessRecords.records.splice(recordIndex, 0, record);
+                user.accessRecords.actions.splice(recordIndex, 0, {});
+            }
+
+            actions.forEach(function(action){
+                var security = element.security[action] || (element.security[action] = {});
+                user.accessRecords.actions[recordIndex][action] = true;
+
+                if (!security.users) {
+                    security.users = [];
+                }
+
+                var index = _.sortedIndex(security.users, user_id);
+
+                if (security.users[index] !== user_id) {
+                    security.users.splice(index, 0, user_id);
+                }
+
+            });
+
+            this.markModified('security');
+            user.markModified('accessRecords');
+
+            return user.save().return(this.save());
+        };
+
+        Schema.methods.revokeUserAccess = function(actions, user) {
+            var element = this;
+            var user_id = '' + user._id;
+
+            var record = model + '/' + element._id;
+            var recordIndex = _.indexOf(user.accessRecords.records, record, true);
+
+            actions.forEach(function(action){
+                var security = element.security[action];
+                user.accessRecords.actions[recordIndex][action] = false;
+
+                var index = _.indexOf(security.users, user_id, true);
+
+                if (index !== -1) {
+                    security.users.splice(index, 1);
+                }
+            });
+
+            this.markModified('security');
+            user.markModified('accessRecords');
+
+            return user.save().return(this.save());
+        };
+
+        Schema.methods.grantGroupAccess = function(actions, group_id) {
+            var resource = this;
+
+            actions.forEach(function(action){
+                var security = resource.security[action] || (resource.security[action] = {});
+
+                if (!security.groups) {
+                    security.groups = [];
+                }
+
+                var index = _.sortedIndex(security.groups, group_id);
+
+                if (security.groups[index] !== group_id) {
+                    security.groups.splice(index, 0, group_id);
+                }
+            });
+
+            this.markModified('security');
+
+            return this.save();
+        };
+
+        Schema.methods.revokeGroupAccess = function(actions, group_id) {
+            var resource = this;
+
+            actions.forEach(function(action){
+                var security = resource.security[action];
+
+                var index = _.indexOf(security.groups, group_id);
+
+                if (index !== -1) {
+                    security.groups.splice(index, 1);
+                }
+            });
+
+            this.markModified('security');
+            return this.save();
+        };
 
         var Model = mongoose.model(model, Schema);
+
+        //
+        // Make a pure json format string of Model
+        //
+        var jsonModel = {
+            state : {
+                independent : {},
+                dependent : {}
+            },
+            static : {},
+            safe : {},
+            unsafe : {},
+            secure : secure
+        };
+
+        for(var prop in api.static) {
+            jsonModel.static[prop] = {};
+        }
+
+        for(var prop in api.safe) {
+            jsonModel.safe[prop] = {};
+        }
+
+        for(var prop in api.unsafe) {
+            jsonModel.unsafe[prop] = {};
+        }
 
         //
         // Create the necessary routes to use the modeled resource using express.
@@ -259,12 +331,11 @@ module.exports = function(server, models) {
                         .exec()
                         .then(function(element) {
                             // this will blow up the request if there is not proper permission
-                            permission(req.user, element, 'manage');
-
-                            element.edited = Date.now();
-
-                            if (req.body.manage) {
-                                element.manage = req.body.manage;
+                            if (!element.testAccess('root', req.user)){
+                                throw new ModelError('noaccess',
+                                    'User does not have permission to alter the permissions of this [1].',
+                                    ['root', model],
+                                    403);
                             }
 
                             // TODO: have to set the permissions properly
@@ -286,65 +357,18 @@ module.exports = function(server, models) {
                 }
             });
 
-        // change the owner
-        router.post('/:id/owner',
-            bodyParser.json(),
-            bodyParser.urlencoded({
-                extended: false
-            }),
-            userAuth(),
-            function(req, res, next) {
-                try {
-
-                    // make sure the user exists
-                    User.findById('' + req.body.user)
-                        .exec()
-                        .then(function(user) {
-                            if (!user) {
-                                throw new ModelError('notfound',
-                                    'User [0] could not be found to replace the current user.', [req.body.user],
-                                    404);
-                            }
-
-                            return Model.findById('' + req.params.id).exec()
-                        })
-                        .then(function(element) {
-                            // this will blow up the request if there is not proper permission
-                            permission(req.user, element, 'manage');
-
-                            element.edited = Date.now();
-                            element.owner = '' + req.body.user;
-
-                            return element.save();
-                        })
-                        .then(function(element) {
-                            var response = {};
-
-                            response[model] = element;
-
-                            res.json(response);
-                        })
-                        .catch(function(error) {
-                            next(error);
-                        });
-                } catch (error) {
-                    next(error);
-                }
-            });
-
         //
         // static methods
         //
 
         // api
-        router.get('/model',
-            function(req, res, next) {
-                try {
-                    res.json(formatModel(api));
-                } catch (error) {
-                    next(error);
-                }
-            });
+        router.get('/model', function(req, res, next) {
+            try {
+                res.json(jsonModel);
+            } catch (error) {
+                next(error);
+            }
+        });
 
         for(var prop in api.static) {
 
@@ -392,7 +416,6 @@ module.exports = function(server, models) {
 
                     var new_element = new Model();
 
-                    new_element.owner = req.user._id;
                     new_element.created = Date.now();
                     new_element.edited = Date.now();
 
@@ -402,15 +425,15 @@ module.exports = function(server, models) {
                         }
                     }
 
-                    var creation_promise;
-
-                    if (api.create) {
-                        creation_promise = api.create.apply(new_element, [req]);
-                    } else {
-                        creation_promise = new_element.save();
-                    }
-
-                    creation_promise
+                    // TODO: assign default root user/group (if any) based on model definition
+                    new_element.grantUserAccess(['root'], req.user)
+                        .then(function(element){
+                            if (api.create) {
+                                return api.create.apply(new_element, [req]);
+                            }else{
+                                return element;
+                            }
+                        })
                         .then(function(element) {
                             var response = {};
 
@@ -427,7 +450,7 @@ module.exports = function(server, models) {
             });
 
         // full or partial update of the resource state
-        if (api.update && api.update.security) {
+        if (secure['update']) {
             router.post('/:id',
                 bodyParser.json(),
                 bodyParser.urlencoded({
@@ -441,7 +464,12 @@ module.exports = function(server, models) {
                             .exec()
                             .then(function(element) {
                                 // this will blow up the request if there is not proper permission
-                                permission(req.user, element, 'update');
+                                if (!element.testAccess('update', req.user)){
+                                    throw new ModelError('noaccess',
+                                        'User does not have permission to [0] this [1].',
+                                        ['update', model],
+                                        403);
+                                }
 
                                 element.edited = Date.now();
 
@@ -530,7 +558,7 @@ module.exports = function(server, models) {
 
 
         // retrieve the resource
-        if (api.get && api.get.security) {
+        if (secure['get']) {
             router.get('/:id',
                 bodyParser.json(),
                 bodyParser.urlencoded({
@@ -556,7 +584,12 @@ module.exports = function(server, models) {
                                         503);
                                 }
 
-                                permission(req.user, element, 'get');
+                                if (!element.testAccess('get', req.user)){
+                                    throw new ModelError('noaccess',
+                                        'User does not have permission to [0] this [1].',
+                                        ['get', model],
+                                        403);
+                                }
 
                                 var response = {};
                                 response[model] = element;
@@ -617,9 +650,9 @@ module.exports = function(server, models) {
                 continue;
             }
 
-            (function(method) {
+            (function(prop, method) {
                 // perform a 'get' api call to the resource
-                if (api.safe.security || api.safe[prop].security){
+                if (secure['safe']){
                     router.get('/:id/' + prop + (method.route ? method.route : ''),
                         bodyParser.urlencoded({
                             extended: false
@@ -630,8 +663,49 @@ module.exports = function(server, models) {
                                 Model.findById('' + req.params.id)
                                     .exec()
                                     .then(function(element) {
-                                        permission(req.user, element, 'safe');
-                                        permission(req.user, element, 'safe.' + prop);
+
+                                        if (!element.testAccess('safe', req.user)){
+                                            throw new ModelError('noaccess',
+                                                'User does not have permission to [0] this [1].',
+                                                ['safe.' + prop, model],
+                                                403);
+                                        }
+
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }else if (secure['safe.' + prop]){
+                    router.get('/:id/' + prop + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        userAuth(),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+
+                                        if (!element.testAccess('safe.' + prop, req.user)){
+                                            throw new ModelError('noaccess',
+                                                'User does not have permission to [0] this [1].',
+                                                ['safe.' + prop, model],
+                                                403);
+                                        }
+
                                         return method.handler.apply(element, [req, res]);
                                     })
                                     .then(function(result){
@@ -675,7 +749,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }
-            })(api.safe[prop]);
+            })(prop, api.safe[prop]);
         }
 
         //
@@ -688,9 +762,9 @@ module.exports = function(server, models) {
             }
 
             // perform a 'post' api call to the resource
-            (function(method) {
+            (function(prop, method) {
                 // perform a 'get' api call to the resource
-                if (api.unsafe.security || api.unsafe[prop].security){
+                if (secure['unsafe']){
                     router.post('/:id/' + prop + (method.route ? method.route : ''),
                         bodyParser.urlencoded({
                             extended: false
@@ -701,8 +775,48 @@ module.exports = function(server, models) {
                                 Model.findById('' + req.params.id)
                                     .exec()
                                     .then(function(element) {
-                                        permission(req.user, element, 'unsafe');
-                                        permission(req.user, element, 'unsafe.' + prop);
+                                        if (!element.testAccess('unsafe', req.user)){
+                                            throw new ModelError('noaccess',
+                                                'User does not have permission to [0] this [1].',
+                                                ['unsafe.' + prop, model],
+                                                403);
+                                        }
+
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }else if(secure['unsafe.' + prop]){
+                    router.post('/:id/' + prop + (method.route ? method.route : ''),
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        userAuth(),
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+
+                                        if (!element.testAccess('unsafe.' + prop, req.user)){
+                                            throw new ModelError('noaccess',
+                                                'User does not have permission to [0] this [1].',
+                                                ['unsafe.' + prop, model],
+                                                403);
+                                        }
+
                                         return method.handler.apply(element, [req, res]);
                                     })
                                     .then(function(result){
@@ -746,7 +860,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }
-            })(api.unsafe[prop]);
+            })(prop, api.unsafe[prop]);
         }
 
 
@@ -768,7 +882,13 @@ module.exports = function(server, models) {
                     Model.findById('' + data._id)
                         .exec()
                         .then(function(element) {
-                            permission(socket.user, element, 'get');
+                            if (!element.testAccess('get', req.user)){
+                                throw new ModelError('noaccess',
+                                    'User does not have permission to [0] this [1].',
+                                    ['get', model],
+                                    403);
+                            }
+
                             socket.join(model + "_" + element._id);
                         })
                         .catch(function(error) {

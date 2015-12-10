@@ -206,10 +206,9 @@ define(['angular'], function (angular){
         models('user')
         .then(function(api){
             $scope.api = api;
-
+            //TODO: add login modal
             $scope.logout = function() {
                 api.user.logout();
-                $state.go('home');
             };
         });
     }]);
