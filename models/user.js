@@ -174,26 +174,28 @@ UserSchema.methods.verifyToken = function(token) {
 
 UserSchema.methods.accessGranted = function(model, actions, resource) {
     var user = this;
+    var resource_id = '' + resource._id;
 
     if (!user.accessRecords){
-        user.accessRecords = {
-            records : [],
+        user.accessRecords = {};
+    }
+
+    if (!user.accessRecords[model]){
+        user.accessRecords[model] = {
+            id : [],
             actions : []
         };
     }
 
-    var record = model + '/' + resource._id;
+    var recordIndex = _.sortedIndex(user.accessRecords[model].id, resource_id);
 
-    var recordIndex = _.sortedIndex(user.accessRecords.records, record);
 
-    if (user.accessRecords.records[recordIndex] !== record) {
-        user.accessRecords.records.splice(recordIndex, 0, record);
-        user.accessRecords.actions.splice(recordIndex, 0, {});
+    if (user.accessRecords[model].id[recordIndex] !== resource_id) {
+        user.accessRecords[model].id.splice(recordIndex, 0, resource_id);
+        user.accessRecords[model].actions.splice(recordIndex, 0, []);
     }
 
-    actions.forEach(function(action){
-        user.accessRecords.actions[recordIndex][action] = true;
-    });
+    user.accessRecords[model].actions[recordIndex] = _.union(user.accessRecords[model].actions[recordIndex], actions);
 
     user.markModified('accessRecords');
 
@@ -202,13 +204,27 @@ UserSchema.methods.accessGranted = function(model, actions, resource) {
 
 UserSchema.methods.accessRevoked = function(model, actions, resource) {
     var user = this;
+    var resource_id = '' + resource._id;
 
-    var record = model + '/' + element._id;
-    var recordIndex = _.indexOf(user.accessRecords.records, record, true);
+    if (user.accessRecords[model]){
+        var recordIndex = _.sortedIndex(user.accessRecords[model].id, resource_id);
 
-    actions.forEach(function(action){
-        user.accessRecords.actions[recordIndex][action] = false;
-    });
+        if (recordIndex !== -1) {
+
+            user.accessRecords[model].actions[recordIndex] = _.without(user.accessRecords[model].actions[recordIndex], actions);
+
+            if (user.accessRecords[model].actions[recordIndex].length === 0) {
+                // if no actions can be be performed, remove resource
+                user.accessRecords[model].id.splice(recordIndex, 1);
+                user.accessRecords[model].actions.splice(recordIndex, 1);
+
+                if (user.accessRecords[model].id.length === 0) {
+                    // if there are no more resources of this type, then remove Model
+                    delete user.accessRecords[model];
+                }
+            }
+        }
+    }
 
     user.markModified('accessRecords');
 

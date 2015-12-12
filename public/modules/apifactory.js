@@ -187,6 +187,17 @@ define(['angular'], function (angular){
                 });
         };
 
+        api.user.records = function(model){
+
+            return $http.get('/api/user/records' + (model ? '/' + model : ''))
+                .then(function(res){
+                    return res.data;
+                }, function(res){
+                    throw (res.data && res.data.error) || res;
+                });
+
+        };
+
         api.user.testAccess = function(model, element, action) {
             // say there is no access if the model or security is undefined, which just means it hasn't been loaded
             if (!api[model] || !element.security){

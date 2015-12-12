@@ -639,13 +639,13 @@ module.exports = function(server, models) {
         //
 
         for(var prop in api.safe) {
-            if (prop === 'security') {
+            if (prop === 'secure') {
                 continue;
             }
 
             (function(prop, method) {
                 // perform a 'get' api call to the resource
-                var route = '/:id/' + prop + (method.parameter ? method.parameter : '');
+                var route = '/:id/' + prop + (method.parameter ? '/' + method.parameter : '');
 
                 if (secure['safe']){
                     router.get(route,
@@ -727,7 +727,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }else{
-                    router.get('/:id/' + prop + (method.route ? method.route : ''),
+                    router.get(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -764,7 +764,7 @@ module.exports = function(server, models) {
         //
 
         for(var prop in api.unsafe) {
-            if (prop === 'security') {
+            if (prop === 'secure') {
                 continue;
             }
 

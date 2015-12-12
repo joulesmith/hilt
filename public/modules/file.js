@@ -80,15 +80,23 @@ define(['angular'], function (angular){
     //
 
     // example component view controller
-    module.controller('file.select', ['$scope', 'file.api', '$uibModalInstance', 'currentURL', 'apifactory.models', function($scope, file, $uibModalInstance, currentURL, models){
+    module.controller('file.select', ['$scope', 'file.api', '$uibModalInstance', 'currentURL', 'apifactory.models', '$q', function($scope, file, $uibModalInstance, currentURL, models, $q){
         models(['user', 'file'])
         .then(function(api){
 
             $scope.updateFiles = function() {
-                file.ownedfiles(api.user.isLoggedIn())
-                    .then(function(remoteFiles){
-                        $scope.files = remoteFiles;
+                $scope.files = [];
 
+                api.user.records('file')
+                    .then(function(fileRecords){
+                        if (fileRecords) {
+                            fileRecords.id.forEach(function(file_id){
+                                api.file.get(file_id)
+                                .then(function(remoteFile){
+                                    $scope.files.push(remoteFile);
+                                });
+                            });
+                        }
                     })
                     .catch(function(err){
                         $scope.error = err;

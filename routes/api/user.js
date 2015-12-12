@@ -165,45 +165,19 @@ router.post('/merge', userAuth(), function(req, res, next) {
 
                 var promises = [];
 
-                if (!toUser.accessRecords) {
-                    toUser.accessRecords = {
-                        records : [],
-                        actions: []
-                    };
+                for(var model in fromUser.accessRecords){
+                    fromUser.accessRecords[model].id.forEach(function(_id, fromIndex){
+                        var actions = fromUser.accessRecords[model].actions[fromIndex];
+
+                        promises.push(mongoose.model(model).findById(_id).exec()
+                        .then(function(element){
+                            return element.revokeUserAccess(actions, fromUser).return(element.grantUserAccess(actions, toUser));
+                        }));
+                    });
                 }
 
-                fromUser.accessRecords.records.forEach(function(record, fromIndex) {
-                    // add the record to the to user
-                    var toIndex = _.sortedIndex(toUser.accessRecords.records, record);
-                    toUser.accessRecords.records.splice(toIndex, 0, record);
-                    toUser.accessRecords.actions.splice(toIndex, 0, fromUser.accessRecords.actions[fromIndex]);
-
-                    // change the record
-                    var part = record.split('/');
-
-                    promises.push(mongoose.model(part[0]).findById(part[1]).exec()
-                    .then(function(element){
-
-                        for(var action in fromUser.accessRecords.actions[fromIndex]) {
-                            if (fromUser.accessRecords.actions[fromIndex][action]) {
-                                var security = element.security[action];
-                                security.users.splice(_.indexOf(security.users, '' + fromUser._id, true), 1)
-                                security.users.splice(_.sortedIndex(security.users, '' + toUser._id), 0, '' + toUser._id);
-                            }
-                        }
-
-                        element.markModified('security');
-                        return element.save();
-                    }));
-                });
-
-
                 return Promise.all(promises)
-                .then(function(element){
-                    toUser.markModified('accessRecords');
-                    return toUser.save();
-                })
-                .then(function(toUser){
+                .then(function(){
                     return fromUser.remove();
                 })
             }else{
@@ -288,6 +262,38 @@ router.post('/token/reset', userAuth(),  function(req, res, next){
         }, function(error){
             next(error);
         });
+    }catch(error){
+        next(error);
+    }
+});
+
+router.get('/records/', userAuth(),  function(req, res, next){
+    try{
+        if (!req.user) {
+            throw new UsersError('nouser',
+                'A user must be logged in to see their records.',
+                [],
+                401);
+        }
+
+
+        res.send(req.user.accessRecords);
+    }catch(error){
+        next(error);
+    }
+});
+
+router.get('/records/:model', userAuth(),  function(req, res, next){
+    try{
+        if (!req.user) {
+            throw new UsersError('nouser',
+                'A user must be logged in to see their records.',
+                [],
+                401);
+        }
+
+
+        res.send(req.user.accessRecords[req.params.model]);
     }catch(error){
         next(error);
     }

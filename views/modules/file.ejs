@@ -10,7 +10,7 @@
                 <label for="selectFile" class="col-sm-3 control-label">Your Files</label>
                 <div class="col-sm-9">
                     <select multiple class="form-control" id="selectFile">
-                        <option ng-repeat="file in files" ng-click="selected(file)">{{file.name}}</option>
+                        <option ng-repeat="file in files | orderBy: 'name'" ng-click="selected(file)">{{file.name}}</option>
                     </select>
                 </div>
             </div>
