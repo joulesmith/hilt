@@ -106,8 +106,8 @@ module.exports = function(server) {
                 }
             },
             safe : {
-                secure : true,
                 paymentStatus : {
+                    secure : true,
                     handler : function(req, res) {
                         var receipt = this;
                         return receipt.paymentStatus()
@@ -120,8 +120,8 @@ module.exports = function(server) {
                 }
             },
             unsafe : {
-                secure : true,
                 approveFrom : {
+                    secure : true,
                     handler : function(req, res) {
                         var receipt = this;
 
@@ -141,6 +141,7 @@ module.exports = function(server) {
                     }
                 },
                 approveTo : {
+                    secure : true,
                     handler : function(req, res) {
                         var receipt = this;
 
@@ -160,6 +161,7 @@ module.exports = function(server) {
                     }
                 },
                 payment : {
+                    secure : true,
                     handler : function(req, res) {
                         var receipt = this;
 

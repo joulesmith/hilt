@@ -68,6 +68,7 @@ router.post('/', function(req, res, next) {
         })
         .then(function(){
             var newuser = new User({
+                created : Date.now(),
                 email : email
             });
 
@@ -99,7 +100,9 @@ router.post('/', function(req, res, next) {
 router.post('/guest', function(req, res, next) {
     try {
 
-        var new_user = new User();
+        var new_user = new User({
+            created : Date.now()
+        });
 
         new_user.generateGuestToken()
         .then(function(token){
@@ -128,7 +131,7 @@ router.post('/merge', userAuth(), function(req, res, next) {
                     404);
             }
 
-            if (user.passwordHash !== '') {
+            if (!user.isGuest()) {
                 throw new UsersError('notguest',
                     'Only a guest account may be merged with another account.',
                     [],

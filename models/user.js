@@ -10,6 +10,7 @@ var bcrypt_compare = Promise.promisify(bcrypt.compare);
 var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 var UserSchema = new mongoose.Schema({
+    created: Number,
     email : String,
     groups : [{ type: mongoose.Schema.Types.ObjectId, ref: 'group' }],
 
@@ -26,7 +27,10 @@ var UserSchema = new mongoose.Schema({
     accessRecords : mongoose.Schema.Types.Mixed
 });
 
-
+UserSchema.methods.isGuest = function() {
+    // there is no password so this is a guest account.
+    return this.passwordHash === '';
+};
 
 /**
  * Set a password
