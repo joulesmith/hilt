@@ -2,6 +2,7 @@ var mongoose = require('mongoose');
 var bcrypt = require('bcrypt');
 var crypto = require('crypto');
 var Promise = require('bluebird');
+var _ = require('lodash');
 
 var bcrypt_hash = Promise.promisify(bcrypt.hash);
 var bcrypt_genSalt = Promise.promisify(bcrypt.genSalt);
@@ -11,7 +12,6 @@ var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 var UserSchema = new mongoose.Schema({
     email : String,
     groups : [{ type: mongoose.Schema.Types.ObjectId, ref: 'group' }],
-    attributes : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
 
     passwordHash: {type : String, default : ''},
     secretSalt : {type : String, default : ''},
@@ -171,5 +171,49 @@ UserSchema.methods.verifyToken = function(token) {
             return null;
         });
 }
+
+UserSchema.methods.accessGranted = function(model, actions, resource) {
+    var user = this;
+
+    if (!user.accessRecords){
+        user.accessRecords = {
+            records : [],
+            actions : []
+        };
+    }
+
+    var record = model + '/' + resource._id;
+
+    var recordIndex = _.sortedIndex(user.accessRecords.records, record);
+
+    if (user.accessRecords.records[recordIndex] !== record) {
+        user.accessRecords.records.splice(recordIndex, 0, record);
+        user.accessRecords.actions.splice(recordIndex, 0, {});
+    }
+
+    actions.forEach(function(action){
+        user.accessRecords.actions[recordIndex][action] = true;
+    });
+
+    user.markModified('accessRecords');
+
+    return user.save();
+}
+
+UserSchema.methods.accessRevoked = function(model, actions, resource) {
+    var user = this;
+
+    var record = model + '/' + element._id;
+    var recordIndex = _.indexOf(user.accessRecords.records, record, true);
+
+    actions.forEach(function(action){
+        user.accessRecords.actions[recordIndex][action] = false;
+    });
+
+    user.markModified('accessRecords');
+
+    return user.save();
+}
+
 
 mongoose.model('user', UserSchema);

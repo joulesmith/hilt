@@ -26,52 +26,57 @@ module.exports = function(server) {
                 },
                 index : {owner: 1, name: 1}, //
             },
-            create : function(req){
-                var file = this;
+            create : {
+                creatorAccess: ['root'],
+                // also create the physical file on the server and compute hash
+                handler : function(req){
+                    var file = this;
 
-                var form = new formidable.IncomingForm();
+                    var form = new formidable.IncomingForm();
 
-                form.hash = 'sha1';
+                    form.hash = 'sha1';
 
-                return (new Promise(function (resolve, reject) {
-                    try {
-                        // TODO: check to see if user has already uploaded this file using file hash
-                        // TODO: use promisify somehow to convert to promise directly?
-                        form.parse(req, function(err, fields, files) {
+                    return (new Promise(function (resolve, reject) {
+                        try {
+                            // TODO: check to see if user has already uploaded this file using file hash
+                            // TODO: use promisify somehow to convert to promise directly?
+                            form.parse(req, function(err, fields, files) {
 
-                            if (err) {return reject(err);}
+                                if (err) {return reject(err);}
 
-                            if (!files.file || !files.file.path) {
-                                return reject(new FileError('nofile',
-                                    'No file to upload.',
-                                    [],
-                                    400));
-                            }
+                                if (!files.file || !files.file.path) {
+                                    return reject(new FileError('nofile',
+                                        'No file to upload.',
+                                        [],
+                                        400));
+                                }
 
-                            // move the file to the output folder
-                            fs.renameSync(files.file.path, path.join(config.uploadPath, '' + file._id) );
+                                // move the file to the output folder
+                                fs.renameSync(files.file.path, path.join(config.uploadPath, '' + file._id) );
 
-                            file.name = files.file.name;
-                            file.type = files.file.type;
-                            file.size = files.file.size;
-                            file.hash = files.file.hash;
-                            resolve(file);
-                        });
+                                file.name = files.file.name;
+                                file.type = files.file.type;
+                                file.size = files.file.size;
+                                file.hash = files.file.hash;
+                                resolve(file);
+                            });
 
-                    }catch(err) {
-                        reject(err);
-                    }
-                }))
-                .then(function(file){
-                    return file.save();
-                });
-
+                        }catch(err) {
+                            reject(err);
+                        }
+                    }))
+                    .then(function(file){
+                        return file.save();
+                    });
+                }
             },
             get : {
-                security : false
+                // anyone can access files uploaded through this model
+                secure : false
             },
             update : {
-                security : true,
+                // files cannot be changed
+                secure : true,
                 handler: function(req) {
                     throw new FileError('methodnotallowed',
                         'A file cannot be changed once uploaded. Upload to a new file.',
@@ -81,27 +86,14 @@ module.exports = function(server) {
             },
             // no restrictions to access, only uses http gets to base url
             static : {
-                ownedfiles : {
-                    route : '/:userid',
-                    handler : function(req, res) {
-
-                        return mongoose.model('file').find({
-                            owner : '' + req.params.userid
-                        }).then(function(files){
-
-                            res.json({
-                                file : files
-                            });
-                        });
-                    }
-                }
             },
             // need execute permission, only uses http gets to specific resource
             safe : {
-                security : false,
-                // GET /api/file/:id/data/:filename
+                secure : false,
+                // anyone can get the physical file
+                // GET /api/file/:id/filename/:filename (e.g. /api/file/12345/filename/hello.jpg)
                 filename : {
-                    route : '/:filename',
+                    parameter : ':filename', // TODO: actually do anything with this? Just for the sake of route matching atm
                     handler :  function(req, res) {
                         var file = this;
 
@@ -117,6 +109,7 @@ module.exports = function(server) {
 
                         return (new Promise(function (resolve, reject) {
                             res.setHeader("Content-Type", file.type);
+                            // thye filename on the server is the same as the _id, without extensions
                             res.sendFile(file._id, options, function(err){
                                 if (err){
                                     reject(err);

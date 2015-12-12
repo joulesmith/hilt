@@ -63,7 +63,8 @@ module.exports = function(server, models) {
             flagged : {type : Boolean, default : false},
             // no longer can be accessed from public api
             removed : {type : Boolean, default : false},
-            security : {type: mongoose.Schema.Types.Mixed, default: {manage: {}}}
+            // store access permissions here
+            security : {type: mongoose.Schema.Types.Mixed}
         };
 
         // if a user is not the owner they can still interact with the resource
@@ -74,22 +75,22 @@ module.exports = function(server, models) {
         };
 
         // can change something about the resource
-        if (api.update && api.update.security) {
+        if (api.update && api.update.secure) {
             secure.update = true;
         }
 
         // can access information about this resource, but cannot alter it in any way
-        if (api.get && api.get.security) {
+        if (api.get && api.get.secure) {
             secure.get = true;
         }
 
-        if (api.safe && api.safe.security) {
+        if (api.safe && api.safe.secure) {
             secure.safe = true;
         }
 
         // add method specific security
         for(var prop in api.safe) {
-            if (api.safe[prop].security) {
+            if (api.safe[prop].secure) {
                 if (secure.safe) {
                     throw new Error('Security cannot be applied at two different levels.');
                 }
@@ -98,12 +99,12 @@ module.exports = function(server, models) {
             }
         }
 
-        if (api.unsafe && api.unsafe.security) {
+        if (api.unsafe && api.unsafe.secure) {
             secure.unsafe = true;
         }
 
         for(var prop in api.unsafe) {
-            if (api.unsafe[prop].security) {
+            if (api.unsafe[prop].secure) {
                 if (secure.unsafe) {
                     throw new Error('Security cannot be applied at two different levels.');
                 }
@@ -181,25 +182,12 @@ module.exports = function(server, models) {
             var element = this;
             var user_id = '' + user._id;
 
-            if (!user.accessRecords) {
-                user.accessRecords = {
-                    records : [],
-                    actions: []
-                };
-            }
-
-            var record = model + '/' + element._id;
-
-            var recordIndex = _.sortedIndex(user.accessRecords.records, record);
-
-            if (user.accessRecords.records[recordIndex] !== record) {
-                user.accessRecords.records.splice(recordIndex, 0, record);
-                user.accessRecords.actions.splice(recordIndex, 0, {});
+            if (!element.security) {
+                element.security = {};
             }
 
             actions.forEach(function(action){
                 var security = element.security[action] || (element.security[action] = {});
-                user.accessRecords.actions[recordIndex][action] = true;
 
                 if (!security.users) {
                     security.users = [];
@@ -213,22 +201,17 @@ module.exports = function(server, models) {
 
             });
 
-            this.markModified('security');
-            user.markModified('accessRecords');
+            element.markModified('security');
 
-            return user.save().return(this.save());
+            return user.accessGranted(model, actions, element).return(element.save());
         };
 
         Schema.methods.revokeUserAccess = function(actions, user) {
             var element = this;
             var user_id = '' + user._id;
 
-            var record = model + '/' + element._id;
-            var recordIndex = _.indexOf(user.accessRecords.records, record, true);
-
             actions.forEach(function(action){
                 var security = element.security[action];
-                user.accessRecords.actions[recordIndex][action] = false;
 
                 var index = _.indexOf(security.users, user_id, true);
 
@@ -237,17 +220,21 @@ module.exports = function(server, models) {
                 }
             });
 
-            this.markModified('security');
-            user.markModified('accessRecords');
+            element.markModified('security');
 
-            return user.save().return(this.save());
+            return user.accessRevoked(model, actions, element).return(element.save());
         };
 
-        Schema.methods.grantGroupAccess = function(actions, group_id) {
-            var resource = this;
+        Schema.methods.grantGroupAccess = function(actions, group) {
+            var element = this;
+            var group_id = '' + group._id;
+
+            if (!element.security) {
+                element.security = {};
+            }
 
             actions.forEach(function(action){
-                var security = resource.security[action] || (resource.security[action] = {});
+                var security = element.security[action] || (element.security[action] = {});
 
                 if (!security.groups) {
                     security.groups = [];
@@ -258,28 +245,32 @@ module.exports = function(server, models) {
                 if (security.groups[index] !== group_id) {
                     security.groups.splice(index, 0, group_id);
                 }
+
             });
 
-            this.markModified('security');
+            element.markModified('security');
 
-            return this.save();
+            return group.accessGranted(model, actions, element).return(element.save());
         };
 
-        Schema.methods.revokeGroupAccess = function(actions, group_id) {
-            var resource = this;
+        Schema.methods.revokeGroupAccess = function(actions, group) {
+            var element = this;
+            var group_id = '' + group._id;
 
             actions.forEach(function(action){
-                var security = resource.security[action];
+                var security = element.security[action];
 
-                var index = _.indexOf(security.groups, group_id);
+                var index = _.indexOf(security.groups, group_id, true);
 
                 if (index !== -1) {
                     security.groups.splice(index, 1);
                 }
             });
 
-            this.markModified('security');
-            return this.save();
+            element.markModified('security');
+
+            return group.accessRevoked(model, actions, element).return(element.save());
+
         };
 
         var Model = mongoose.model(model, Schema);
@@ -425,11 +416,10 @@ module.exports = function(server, models) {
                         }
                     }
 
-                    // TODO: assign default root user/group (if any) based on model definition
-                    new_element.grantUserAccess(['root'], req.user)
+                    new_element.grantUserAccess((api.create && api.create.creatorAccess) || ['root'], req.user)
                         .then(function(element){
-                            if (api.create) {
-                                return api.create.apply(new_element, [req]);
+                            if (api.create && api.create.handler) {
+                                return api.create.handler.apply(element, [req]);
                             }else{
                                 return element;
                             }
@@ -481,7 +471,7 @@ module.exports = function(server, models) {
 
                                 var edit_promise;
 
-                                if (api.update.handler) {
+                                if (api.update && api.update.handler) {
                                     edit_promise = api.update.handler.apply(element, [req]);
                                 } else {
                                     edit_promise = element.save();
@@ -491,6 +481,7 @@ module.exports = function(server, models) {
                             })
                             .then(function(element) {
                                 // broadcast that the resource has changed to anyone in the channel
+                                // and the time that the edit happened
                                 element.event('changed', element.edited);
 
                                 var response = {};
@@ -571,14 +562,14 @@ module.exports = function(server, models) {
                             .exec()
                             .then(function(element) {
                                 if (element.deleted) {
-                                    throw new ModelError('notfound',
+                                    throw new ModelError('removed',
                                         'This [0] has been peranently removed.',
                                         [model],
                                         410);
                                 }
 
                                 if (element.flagged) {
-                                    throw new ModelError('notfound',
+                                    throw new ModelError('flagged',
                                         'This [0] has been flagged for review and is temporarily unavailable.',
                                         [model],
                                         503);
@@ -614,14 +605,16 @@ module.exports = function(server, models) {
                             .exec()
                             .then(function(element) {
                                 if (element.deleted) {
-                                    throw new ModelError('notfound',
-                                        'This [0] has been peranently removed.', [model],
+                                    throw new ModelError('removed',
+                                        'This [0] has been peranently removed.',
+                                        [model],
                                         410);
                                 }
 
                                 if (element.flagged) {
-                                    throw new ModelError('notfound',
-                                        'This [0] has been flagged for review and is temporarily unavailable.', [model],
+                                    throw new ModelError('flagged',
+                                        'This [0] has been flagged for review and is temporarily unavailable.',
+                                        [model],
                                         503);
                                 }
 
@@ -652,8 +645,10 @@ module.exports = function(server, models) {
 
             (function(prop, method) {
                 // perform a 'get' api call to the resource
+                var route = '/:id/' + prop + (method.parameter ? method.parameter : '');
+
                 if (secure['safe']){
-                    router.get('/:id/' + prop + (method.route ? method.route : ''),
+                    router.get(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -674,11 +669,17 @@ module.exports = function(server, models) {
                                         return method.handler.apply(element, [req, res]);
                                     })
                                     .then(function(result){
+
                                         if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
                                             var response = {};
                                             response[prop] = result;
                                             res.json(response);
                                         }
+
+
                                     })
                                     .catch(function(error) {
                                         next(error);
@@ -688,7 +689,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }else if (secure['safe.' + prop]){
-                    router.get('/:id/' + prop + (method.route ? method.route : ''),
+                    router.get(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -710,6 +711,9 @@ module.exports = function(server, models) {
                                     })
                                     .then(function(result){
                                         if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
                                             var response = {};
                                             response[prop] = result;
                                             res.json(response);
@@ -736,6 +740,9 @@ module.exports = function(server, models) {
                                     })
                                     .then(function(result){
                                         if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
                                             var response = {};
                                             response[prop] = result;
                                             res.json(response);
@@ -763,9 +770,11 @@ module.exports = function(server, models) {
 
             // perform a 'post' api call to the resource
             (function(prop, method) {
+                var route = '/:id/' + prop + (method.parameter ? method.parameter : '');
+
                 // perform a 'get' api call to the resource
                 if (secure['unsafe']){
-                    router.post('/:id/' + prop + (method.route ? method.route : ''),
+                    router.post(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -786,6 +795,9 @@ module.exports = function(server, models) {
                                     })
                                     .then(function(result){
                                         if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
                                             var response = {};
                                             response[prop] = result;
                                             res.json(response);
@@ -799,7 +811,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }else if(secure['unsafe.' + prop]){
-                    router.post('/:id/' + prop + (method.route ? method.route : ''),
+                    router.post(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -821,6 +833,9 @@ module.exports = function(server, models) {
                                     })
                                     .then(function(result){
                                         if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
                                             var response = {};
                                             response[prop] = result;
                                             res.json(response);
@@ -834,7 +849,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }else{
-                    router.post('/:id/' + prop + (method.route ? method.route : ''),
+                    router.post(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
@@ -847,6 +862,9 @@ module.exports = function(server, models) {
                                     })
                                     .then(function(result){
                                         if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
                                             var response = {};
                                             response[prop] = result;
                                             res.json(response);

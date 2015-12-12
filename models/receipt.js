@@ -31,35 +31,33 @@ module.exports = function(server) {
                 },
                 index : null, // used for text searches
             },
-            create : function(req) {
-                var receipt = this;
+            create: {
+                creatorAccess: ['get', 'safe.paymentStatus', 'unsafe.approveFrom', 'unsafe.payment'],
+                handler: function(req) {
+                    var receipt = this;
 
-                // TODO: this can be more sophisticated by defining interactions with the account
+                    // TODO: this can be more sophisticated by defining interactions with the account
+                    // such as what to do automatiically (if anything) when receipts are generated to them?
+                    //
+                    return mongoose.model('account').findById('' + receipt.to)
+                        .exec()
+                        .then(function(account) {
+                            if (!account) {
+                                throw new ModelError('noaccount',
+                                    'The deposit account could not be found.', [],
+                                    404);
+                            }
 
-                return mongoose.model('account').findById('' + receipt.to)
-                    .exec()
-                    .then(function(account){
-                        if (!account) {
-                            throw new ModelError('noaccount',
-                                'The deposit account could not be found.',
-                                [],
-                                404);
-                        }
-
-                        // give acceess to the account
-                        // TODO: it should really have the same permissions as the account, but how?
-                        receipt.security.get.one.push('user_' + account.owner);
-                        receipt.security.safe.paymentStatus.one.push('user_' + account.owner);
-                        receipt.security.unsafe.approve.one.push('user_' + account.owner);
-
-                        return receipt.save();
-                    });
+                            // give acceess to the account managers
+                            return receipt.grantGroupAccess(['get', 'safe.paymentStatus', 'unsafe.approveTo'], account.managers);
+                        });
+                }
             },
             get : {
-                security : true
+                secure : true
             },
             update : {
-                security : true,
+                secure : true,
                 handler : function(req) {
                     var receipt = this;
 
@@ -72,7 +70,6 @@ module.exports = function(server) {
             // no restrictions to access, only uses http gets to base url
             static : {
                 clientToken : {
-                    route : null,
                     handler : function(req, res) {
                         var receipt = this;
 
@@ -109,9 +106,8 @@ module.exports = function(server) {
                 }
             },
             safe : {
-                security : true,
+                secure : true,
                 paymentStatus : {
-                    route: null,
                     handler : function(req, res) {
                         var receipt = this;
                         return receipt.paymentStatus()
@@ -124,47 +120,35 @@ module.exports = function(server) {
                 }
             },
             unsafe : {
-                security : true,
-                approve : {
-                    route : null,
+                secure : true,
+                approveFrom : {
                     handler : function(req, res) {
                         var receipt = this;
 
-                        return (new Promise(function(resolve, reject){
-                            try {
+                        if (receipt.fromApproved !== true){
+                            receipt.fromApproved = true;
+                        }
 
-                                if (receipt.fromApproved !== true && req.user._id === receipt.owner) {
-                                    receipt.fromApproved = true;
-                                    resolve(receipt);
-                                }else if (receipt.toApproved !== true){
-
-                                    mongoose.model('account').findById(receipt.to)
-                                        .exec()
-                                        .then(function(account){
-                                            if (!account || account.owner !== req.user._id) {
-                                                throw new Error('noaccount',
-                                                    'Your account could not be found.',
-                                                    [],
-                                                    404);
-                                            }
-
-                                            receipt.toApproved = true;
-
-                                            resolve(receipt);
-                                        }, function(error){
-                                            reject(error);
-                                        });
-                                }else{
-                                    resolve(receipt);
-                                }
-
-                            }catch(error) {
-                                reject(error);
-                            }
-                        }))
+                        return receipt.save()
                         .then(function(receipt){
-                            return receipt.save();
-                        })
+                            if (receipt.toApproved && receipt.fromApproved){
+                                return receipt.submitForSettlement().return(receipt);
+                            }else{
+                                return receipt;
+                            }
+                        });
+
+                    }
+                },
+                approveTo : {
+                    handler : function(req, res) {
+                        var receipt = this;
+
+                        if (receipt.toApproved !== true){
+                            receipt.toApproved = true;
+                        }
+
+                        return receipt.save()
                         .then(function(receipt){
                             if (receipt.toApproved && receipt.fromApproved){
                                 return receipt.submitForSettlement().return(receipt);
@@ -176,7 +160,6 @@ module.exports = function(server) {
                     }
                 },
                 payment : {
-                    route : null,
                     handler : function(req, res) {
                         var receipt = this;
 

@@ -30,13 +30,11 @@ module.exports = function(server) {
             },
             create : null,
             update : {
-                security : true
+                secure : true
             },
             // no restrictions to access, only uses http gets to base url
             static : {
                 search : {
-                    route : null,
-                    params : ['words'],
                     handler : function(req, res) {
 
                         return mongoose.model('profile').find(

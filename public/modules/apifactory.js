@@ -108,7 +108,7 @@ define(['angular'], function (angular){
 
                     return res.data;
                 }, function(res){
-                    throw res.data.error;
+                    throw (res.data && res.data.error) || res;
                 });
 
         };
@@ -158,7 +158,7 @@ define(['angular'], function (angular){
                     throw res.data.error;
                 })
                 .catch(function(res){
-                    throw res.data.error;
+                    throw (res.data && res.data.error) || res;
                 });
         };
 
@@ -183,7 +183,7 @@ define(['angular'], function (angular){
                 .then(function(res){
                     return res.data;
                 }, function(res){
-                    throw res.data.error;
+                    throw (res.data && res.data.error) || res;
                 });
         };
 
@@ -248,7 +248,7 @@ define(['angular'], function (angular){
                                 return res.data[model];
                             })
                             .catch(function(res){
-                                throw res.data.error
+                                throw (res.data && res.data.error) || res;
                             });
                         };
 
@@ -258,7 +258,7 @@ define(['angular'], function (angular){
                                 return res.data[model];
                             })
                             .catch(function(res){
-                                throw res.data.error;
+                                throw (res.data && res.data.error) || res;
                             });
                         }
 
@@ -268,7 +268,7 @@ define(['angular'], function (angular){
                                 return res.data[model];
                             })
                             .catch(function(res){
-                                throw res.data.error;
+                                throw (res.data && res.data.error) || res;
                             });
                         };
 
@@ -284,7 +284,7 @@ define(['angular'], function (angular){
                                     return res.data[prop];
                                 })
                                 .catch(function(res){
-                                    throw res.data.error;
+                                    throw (res.data && res.data.error) || res;
                                 });
                             }
                         }
@@ -300,7 +300,7 @@ define(['angular'], function (angular){
                                     return res.data[prop];
                                 })
                                 .catch(function(res){
-                                    throw res.data.error;
+                                    throw (res.data && res.data.error) || res;
                                 });
                             }
                         }
@@ -312,7 +312,7 @@ define(['angular'], function (angular){
                                     return res.data[prop];
                                 })
                                 .catch(function(res){
-                                    throw res.data.error;
+                                    throw (res.data && res.data.error) || res;
                                 });
                             }
                         }

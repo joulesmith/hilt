@@ -29,7 +29,8 @@ module.exports = function(server) {
                     braintree : {
                         customerId: {type : String, default : ''},
                         paymentMethods : [{type : String, default : ''}],
-                        transactions : [mongoose.Schema.Types.Mixed]
+                        transactions : [mongoose.Schema.Types.Mixed],
+                        managers : { type: mongoose.Schema.Types.ObjectId, ref: 'group'},
                     }
 
                 },
@@ -37,10 +38,10 @@ module.exports = function(server) {
             },
             create : null,
             get : {
-                security : true
+                secure : true
             },
             update : {
-                security : true
+                secure : true
             },
             // no restrictions to access, only uses http gets to base url
             static : {
@@ -68,10 +69,9 @@ module.exports = function(server) {
                     }
                 }
             },
-
             safe : {
                 name : {
-                    security: false,
+                    secure: false,
                     handler : function(req, res) {
 
                     }
