@@ -30,13 +30,16 @@ module.exports = function(server) {
                         customerId: {type : String, default : ''},
                         paymentMethods : [{type : String, default : ''}],
                         transactions : [mongoose.Schema.Types.Mixed],
-                        managers : { type: mongoose.Schema.Types.ObjectId, ref: 'group'},
-                    }
-
+                    },
+                    products : [{ type: mongoose.Schema.Types.ObjectId, ref: 'product'}],
+                    services : [{ type: mongoose.Schema.Types.ObjectId, ref: 'service'}],
+                    managers : { type: mongoose.Schema.Types.ObjectId, ref: 'group'},
                 },
                 index : {acctName : 'text'}, // used for text searches
             },
-            create : null,
+            create : {
+
+            },
             get : {
                 secure : true
             },

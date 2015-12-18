@@ -18,7 +18,8 @@ define(['angular'], function (angular){
 
         api.user = {
             guest : false,
-            _id : null
+            _id : null,
+            username : ''
         };
         var user_token = null;
         var guest_token = null;
@@ -46,6 +47,7 @@ define(['angular'], function (angular){
             if (user_token && user_token.base64) {
                 $http.defaults.headers.common.Authorization = user_token.base64;
                 api.user._id = user_token._id;
+                api.user.username = user_token.username;
                 api.user.guest = false;
                 return true;
             }
@@ -56,6 +58,7 @@ define(['angular'], function (angular){
             if (user_token && user_token.base64) {
                 $http.defaults.headers.common.Authorization = user_token.base64;
                 api.user._id = user_token._id;
+                api.user.username = user_token.username;
                 api.user.guest = false;
                 return true;
             }
@@ -66,6 +69,7 @@ define(['angular'], function (angular){
             if (guest_token && guest_token.base64) {
                 $http.defaults.headers.common.Authorization = guest_token.base64;
                 api.user._id = guest_token._id;
+                api.user.username = 'guest';
                 api.user.guest = true;
                 return false;
             }
@@ -80,6 +84,7 @@ define(['angular'], function (angular){
                         guest_token = res.data.token;
                         api.user.guest = true;
                         api.user._id = guest_token._id;
+                        api.user.username = 'guest';
 
                         $http.defaults.headers.common.Authorization = guest_token.base64;
 
@@ -133,6 +138,7 @@ define(['angular'], function (angular){
                         api.user.guest = false;
 
                         api.user._id = user_token._id;
+                        api.user.username = user_token.username;
 
                         $http.defaults.headers.common.Authorization = user_token.base64;
 
@@ -192,6 +198,17 @@ define(['angular'], function (angular){
             return $http.get('/api/user/records' + (model ? '/' + model : ''))
                 .then(function(res){
                     return res.data;
+                }, function(res){
+                    throw (res.data && res.data.error) || res;
+                });
+
+        };
+
+        api.user.registered = function(username){
+
+            return $http.get('/api/user/registered/' + username)
+                .then(function(res){
+                    return res.data.registered;
                 }, function(res){
                     throw (res.data && res.data.error) || res;
                 });
@@ -264,7 +281,7 @@ define(['angular'], function (angular){
                         };
 
                         api[model].update = function(_id, data) {
-                            return $http.post('/api/' + model + '/' + _id, data)
+                            return $http.patch('/api/' + model + '/' + _id, data)
                             .then(function(res){
                                 return res.data[model];
                             })
@@ -318,7 +335,7 @@ define(['angular'], function (angular){
 
                         for(var prop in api[model].unsafe) {
                             api[model].unsafe[prop] = function(_id, data) {
-                                return $http.post('/api/' + model + '/' + _id + '/' + prop, data)
+                                return $http.patch('/api/' + model + '/' + _id + '/' + prop, data)
                                 .then(function(res){
                                     return res.data[prop];
                                 })

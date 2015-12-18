@@ -6,6 +6,7 @@ var mongoose = require('mongoose');
 var userAuth = require('../../middleware/user');
 var _ = require('lodash');
 var Promise = require('bluebird');
+var sanitize = require('mongo-sanitize');
 
 var UsersError = require('../../error')('routes.api.users');
 
@@ -19,22 +20,17 @@ var User = mongoose.model("user");
 
 var email_regex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[A-Z]{2}|com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|museum)\b/;
 
+// see if a username is already taken
+
 
 // creates a new user
 router.post('/', function(req, res, next) {
     try {
 
-        if (!req.body.email || req.body.email === '') {
-            throw new UsersError('noemail',
-                'An email address must be supplied to register a new user.',
+        if (!req.body.username || req.body.username === '') {
+            throw new UsersError('nousername',
+                'A username must be supplied to register a new user.',
                 [],
-                400);
-        }
-
-        if (!email_regex.test(req.body.email)) {
-            throw new UsersError('invalidemail',
-                'The email address {0} is not recognized as a valid address.',
-                [req.body.email],
                 400);
         }
 
@@ -54,22 +50,22 @@ router.post('/', function(req, res, next) {
                 400);
         }
 
-        var email = '' + req.body.email;
+        var username = '' + req.body.username;
         var password = '' + req.body.password;
 
-        User.findOne({email : email})
+        User.findOne({username : username})
         .then(function(user){
             if (user) {
-                throw new UsersError('emailinuse',
-                    'The email address {0} is already in use by another user.',
-                    [email],
+                throw new UsersError('inuse',
+                    'The username {0} is already in use by another user.',
+                    [username],
                     400);
             }
         })
         .then(function(){
             var newuser = new User({
                 created : Date.now(),
-                email : email
+                username : username
             });
 
             return newuser.setPassword(password);
@@ -85,7 +81,12 @@ router.post('/', function(req, res, next) {
             return user;
         })
         .then(function(user){
-            return res.status(201).json({_id : user._id});
+            return res.status(201).json({
+                user: {
+                    _id : user._id,
+                    username : user.username
+                }
+            });
         }, function(error){
             next(error);
         });
@@ -228,9 +229,9 @@ router.post('/token', userAuth(),  function(req, res, next){
 
     try{
         if (!req.user || !req.body.password) {
-
+            // TODO: this message doesn't seem right here. it shouldn't know why user is not authenticated
             throw new UsersError('nouser',
-                'The email and password combination provided are not valid.',
+                'The username and password combination provided are not valid.',
                 [],
                 401);
         }
@@ -265,6 +266,28 @@ router.post('/token/reset', userAuth(),  function(req, res, next){
         }, function(error){
             next(error);
         });
+    }catch(error){
+        next(error);
+    }
+});
+
+router.get('/registered/:username',  function(req, res, next){
+    try{
+
+
+        User.findOne({
+            username : '' + req.params.username
+        }).exec()
+        .then(function(user){
+            if(!user){
+                res.status(200).json({registered : false});
+            }else{
+                res.status(200).json({registered : true});
+            }
+        })
+        .catch(function(error){
+            next(error);
+        })
     }catch(error){
         next(error);
     }

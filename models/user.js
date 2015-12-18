@@ -11,9 +11,7 @@ var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 var UserSchema = new mongoose.Schema({
     created: Number,
-    email : String,
-    groups : [{ type: mongoose.Schema.Types.ObjectId, ref: 'group' }],
-
+    username : String,
     passwordHash: {type : String, default : ''},
     secretSalt : {type : String, default : ''},
     tokenSalt : {type : String, default : ''},
@@ -24,6 +22,7 @@ var UserSchema = new mongoose.Schema({
         email : {type : String, default : ''},
         accessToken : {type : String, default : ''}
     },
+    groups : [String],
     accessRecords : mongoose.Schema.Types.Mixed
 });
 
@@ -127,6 +126,7 @@ UserSchema.methods.generateToken = function(password, cb) {
     return bcrypt_hash(password, user.secretSalt)
         .then(function(secret){
             var token = {
+                username : user.username,
                 _id : user._id,
                 secret : secret
             };
@@ -235,5 +235,26 @@ UserSchema.methods.accessRevoked = function(model, actions, resource) {
     return user.save();
 }
 
+UserSchema.methods.addGroup = function(group) {
+    var user = this;
+    var group_id = group._id.toString();
+
+    var index = _.sortedIndex(user.groups, group_id);
+
+    user.groups.slice(index, 0, group_id);
+
+    return user.save();
+};
+
+UserSchema.methods.removeGroup = function(group) {
+    var user = this;
+    var group_id = group._id.toString();
+
+    var index = _.indexOf(user.groups, group_id, true);
+
+    user.groups.slice(index, 1);
+
+    return user.save();
+};
 
 mongoose.model('user', UserSchema);

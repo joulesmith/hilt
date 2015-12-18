@@ -14,6 +14,8 @@ var error = require('../error');
 var _ = require('lodash');
 
 var User = mongoose.model('user');
+var Settings = mongoose.model('settings');
+
 var bodyParser = require('body-parser');
 
 // Returns true on the first occurence of a commone element between two
@@ -275,6 +277,32 @@ module.exports = function(server, models) {
 
         var Model = mongoose.model(model, Schema);
 
+
+        var apiHandle = {
+            settings : {}
+        };
+
+        // load settings
+        Settings.find({
+            model : model
+        }).exec()
+        .then(function(settings){
+
+            if (api.settings) {
+                apiHandle.settings = api.settings(settings) || {};
+            }else{
+                apiHandle.settings = settings || {};
+            }
+
+        }).catch(function(error){
+            // TODO: ?
+        });
+
+        var apiMiddleware = function(req, res, next){
+            req.api = apiHandle;
+            next();
+        };
+
         //
         // Make a pure json format string of Model
         //
@@ -315,6 +343,7 @@ module.exports = function(server, models) {
                 extended: false
             }),
             userAuth(),
+            apiMiddleware,
             function(req, res, next) {
                 try {
 
@@ -364,10 +393,11 @@ module.exports = function(server, models) {
         for(var prop in api.static) {
 
             (function(method) {
-                router.get('/' + prop + (method.route ? method.route : ''),
+                router.get('/' + prop + (method.parameter ? '/' + method.parameter : ''),
                     bodyParser.urlencoded({
                         extended: false
                     }),
+                    apiMiddleware,
                     function(req, res, next) {
                         try {
                             method.handler.apply(null, [req, res])
@@ -396,6 +426,7 @@ module.exports = function(server, models) {
                 extended: false
             }),
             userAuth(),
+            apiMiddleware,
             function(req, res, next) {
                 try {
 
@@ -441,12 +472,13 @@ module.exports = function(server, models) {
 
         // full or partial update of the resource state
         if (secure['update']) {
-            router.post('/:id',
+            router.patch('/:id',
                 bodyParser.json(),
                 bodyParser.urlencoded({
                     extended: false
                 }),
                 userAuth(),
+                apiMiddleware,
                 function(req, res, next) {
                     try {
 
@@ -503,6 +535,7 @@ module.exports = function(server, models) {
                 bodyParser.urlencoded({
                     extended: false
                 }),
+                apiMiddleware,
                 function(req, res, next) {
                     try {
 
@@ -556,6 +589,7 @@ module.exports = function(server, models) {
                     extended: false
                 }),
                 userAuth(),
+                apiMiddleware,
                 function(req, res, next) {
                     try {
                         Model.findById('' + req.params.id)
@@ -599,6 +633,7 @@ module.exports = function(server, models) {
                 bodyParser.urlencoded({
                     extended: false
                 }),
+                apiMiddleware,
                 function(req, res, next) {
                     try {
                         Model.findById('' + req.params.id)
@@ -653,6 +688,7 @@ module.exports = function(server, models) {
                             extended: false
                         }),
                         userAuth(),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)
@@ -694,6 +730,7 @@ module.exports = function(server, models) {
                             extended: false
                         }),
                         userAuth(),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)
@@ -731,6 +768,7 @@ module.exports = function(server, models) {
                         bodyParser.urlencoded({
                             extended: false
                         }),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)
@@ -770,15 +808,16 @@ module.exports = function(server, models) {
 
             // perform a 'post' api call to the resource
             (function(prop, method) {
-                var route = '/:id/' + prop + (method.parameter ? method.parameter : '');
+                var route = '/:id/' + prop + (method.parameter ? '/' + method.parameter : '');
 
                 // perform a 'get' api call to the resource
                 if (secure['unsafe']){
-                    router.post(route,
+                    router.patch(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
                         userAuth(),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)
@@ -811,11 +850,12 @@ module.exports = function(server, models) {
                             }
                         });
                 }else if(secure['unsafe.' + prop]){
-                    router.post(route,
+                    router.patch(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
                         userAuth(),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)
@@ -849,10 +889,11 @@ module.exports = function(server, models) {
                             }
                         });
                 }else{
-                    router.post(route,
+                    router.patch(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)

@@ -22,19 +22,22 @@ module.exports = function(server) {
         receipt : {
             state : { // this is what will be stored in the database specific to each resource
                 independent : { // what can be set directly
+                    // total amount, should be calculated from order
                     amount : {type: Number, default: 0, required : true},
                     to : { type: mongoose.Schema.Types.ObjectId, ref: 'account'},
                     order : { type: mongoose.Schema.Types.ObjectId, ref: 'order'}
                 },
                 dependent : { // what is set indirectly according to the api
-                    payment : {type : String}
+                    payment_id : {type : String, default: ''}
                 },
                 index : null, // used for text searches
             },
             create: {
-                creatorAccess: ['get', 'safe.paymentStatus', 'unsafe.approveFrom', 'unsafe.payment'],
+                creatorAccess: ['get', 'safe.paymentStatus', 'unsafe.submit', 'unsafe.payment'],
                 handler: function(req) {
                     var receipt = this;
+
+
 
                     // TODO: this can be more sophisticated by defining interactions with the account
                     // such as what to do automatiically (if anything) when receipts are generated to them?
@@ -49,7 +52,7 @@ module.exports = function(server) {
                             }
 
                             // give acceess to the account managers
-                            return receipt.grantGroupAccess(['get', 'safe.paymentStatus', 'unsafe.approveTo'], account.managers);
+                            return receipt.grantGroupAccess(['get', 'safe.paymentStatus'], account.managers);
                         });
                 }
             },
@@ -61,8 +64,9 @@ module.exports = function(server) {
                 handler : function(req) {
                     var receipt = this;
 
+                    // TODO: is this too strong? or just use security?
                     throw new ModelError('methodnotallowed',
-                        'A receipt cannot be changed once started.',
+                        'A receipt cannot be directly changed once started.',
                         [],
                         405);
                 }
@@ -71,19 +75,11 @@ module.exports = function(server) {
             static : {
                 clientToken : {
                     handler : function(req, res) {
-                        var receipt = this;
 
                         return (new Promise(function(resolve, reject){
                             try {
 
-                                var gateway = braintree.connect({
-                                  environment: braintree.Environment.Sandbox,
-                                  merchantId: "49xn27bktj5zht87",
-                                  publicKey: "ctxdfnbcqsw27w2m",
-                                  privateKey: "c79cb1dc8abf3a29eb420b41e2e5b423"
-                                });
-
-                                gateway.clientToken.generate({}, function (err, response) {
+                                req.api.settings.gateway.clientToken.generate({}, function (err, response) {
                                     if (err) {
                                         return reject(err);
                                     }
@@ -110,200 +106,100 @@ module.exports = function(server) {
                     secure : true,
                     handler : function(req, res) {
                         var receipt = this;
-                        return receipt.paymentStatus()
-                        .then(function(status){
-                            res.json({
-                                paymentStatus : status
+                        return (new Promise(function(resolve, reject){
+                            req.api.settings.gateway.transaction.find(receipt.payment_id, function(error, result){
+                                if (error) {
+                                    return reject(error);
+                                }
+
+                                resolve(result.transaction.status);
                             });
-                        })
+                        }));
                     }
                 }
             },
             unsafe : {
-                approveFrom : {
-                    secure : true,
-                    handler : function(req, res) {
-                        var receipt = this;
-
-                        if (receipt.fromApproved !== true){
-                            receipt.fromApproved = true;
-                        }
-
-                        return receipt.save()
-                        .then(function(receipt){
-                            if (receipt.toApproved && receipt.fromApproved){
-                                return receipt.submitForSettlement().return(receipt);
-                            }else{
-                                return receipt;
-                            }
-                        });
-
-                    }
-                },
-                approveTo : {
-                    secure : true,
-                    handler : function(req, res) {
-                        var receipt = this;
-
-                        if (receipt.toApproved !== true){
-                            receipt.toApproved = true;
-                        }
-
-                        return receipt.save()
-                        .then(function(receipt){
-                            if (receipt.toApproved && receipt.fromApproved){
-                                return receipt.submitForSettlement().return(receipt);
-                            }else{
-                                return receipt;
-                            }
-                        });
-
-                    }
-                },
                 payment : {
                     secure : true,
                     handler : function(req, res) {
                         var receipt = this;
 
-                        return receipt.paymentStatus()
-                        .then(function(status) {
-                            // amount left needed to be authorized
-                            var requiredAmount = receipt.amount
-                                - status.authoried.total
-                                - status.submitted_for_settlement.total
-                                - status.settling.total
-                                - status.settled.total
-                                - status.settlement_pending.total;
+                        return (new Promise(function(resolve, reject) {
+                            try {
+                                if (receipt.payment_id !== ''){
+                                    throw new ModelError('paymentmade',
+                                        'Payment has already been made.', [],
+                                        400);
+                                }
 
-                            return (new Promise(function(resolve, reject) {
-                                try {
-                                    if (!req.body.amount) {
-                                        throw new ModelError('noamount',
-                                            'An amount to pay must be specified.', [],
-                                            400);
+                                if (!req.body.amount) {
+                                    throw new ModelError('noamount',
+                                        'An amount to pay must be specified.', [],
+                                        400);
+                                }
+
+                                req.api.settings.gateway.transaction.sale({
+                                    amount: Math.min(new Number(req.body.amount), receipt.amount),
+                                    paymentMethodNonce: req.body.paymentMethod,
+                                }, function(err, result) {
+                                    if (err) {
+                                        return reject(err);
                                     }
 
-                                    var gateway = braintree.connect({
-                                        environment: braintree.Environment.Sandbox,
-                                        merchantId: "49xn27bktj5zht87",
-                                        publicKey: "ctxdfnbcqsw27w2m",
-                                        privateKey: "c79cb1dc8abf3a29eb420b41e2e5b423"
-                                    });
-
-                                    gateway.transaction.sale({
-                                        amount: Math.min(new Number(req.body.amount), requiredAmount),
-                                        paymentMethodNonce: req.body.paymentMethod,
-                                    }, function(err, result) {
-                                        if (err) {
-                                            return reject(err);
-                                        }
-
-                                        resolve(result);
-                                    });
-                                } catch (error) {
-                                    reject(error);
-                                }
-                            }))
-                        })
+                                    resolve(result);
+                                });
+                            } catch (error) {
+                                reject(error);
+                            }
+                        }))
                         .then(function(result){
 
-                            receipt.payments.push(result.transaction.id);
+                            receipt.payment_id = result.transaction.id;
 
                             return receipt.save();
                         });
 
                     }
+                },
+                submit : {
+                    secure: true,
+                    handler : function(req, res) {
+                        var receipt = this;
+
+                        if (receipt.payment_id === ''){
+                            throw new ModelError('nopayment',
+                                'Payment has not been made to be submitted.', [],
+                                400);
+                        }
+
+                        return (new Promise(function(resolve, reject) {
+                            req.api.settings.gateway.transaction.submitForSettlement(receipt.payment_id, function(error, result) {
+                                if (error){
+                                    return reject(
+                                        new ModelError('braintree',
+                                            'payment [0] could not be submitted for settlement.',
+                                            [receipt.payment_id],
+                                            500));
+                                }
+
+                                return resolve();
+                            });
+                        }));
+                    }
                 }
             },
             // only accessible on the server
             internal : {
-                paymentStatus : function() {
-
-                    var accumulator = {
-                        authorizedAmount : 0,
-                        submittedAmount : 0,
-
-                    };
-
-                    return Promise.reduce(receipt.payments, function(accumulator, payment) {
-                        return (new Promise(function(resolve, reject) {
-                            gateway.transaction.find(payment, function(error, result){
-                                if (error) {
-                                    return reject(error);
-                                }
-
-                                try{
-                                    if (!accumulator[result.transaction.status])
-                                    {
-                                        accumulator[result.transaction.status] = {
-                                            payments : [],
-                                            total : 0
-                                        };
-                                    }
-
-                                    accumulator[result.transaction.status].payments.push({
-                                        id : payment,
-                                        created : result.transaction.createdAt,
-                                        amount : result.transaction.amount
-                                    });
-
-                                    accumulator[result.transaction.status].total += result.transaction.amount;
-
-                                    resolve(accumulator);
-                                }catch(error) {
-                                    reject(error);
-                                }
-
-                            });
-                        }));
-                    }, accumulator);
-                },
-                submitForSettlement : function() {
-                    var receipt = this;
-
-                    var accumulator = {
-                        submitted : 0
-                    };
-
-                    return receipt.paymentStatus()
-                    .then(function(status){
-                        // amount left needed to be submitted
-                        var requiredAmount = receipt.amount
-                            - status.submitted_for_settlement.total
-                            - status.settling.total
-                            - status.settled.total
-                            - status.settlement_pending.total;
-
-                        if (!receipt.fromApproved || !receipt.toApproved) {
-                            throw new ModelError('noapproval',
-                                'payment cannot be settled until both parties approve.',
-                                [],
-                                400);
-                        }
-
-                        // only submit payments that are authorized
-                        return Promise.reduce(status.authorized.payments, function(accumulator, payment) {
-                            return (new Promise(function(resolve) {
-                                gateway.transaction.submitForSettlement(payment, function(error, result) {
-                                    if (error){
-                                        return reject(
-                                            new ModelError('braintree',
-                                                'payment [0] could not be submitted for settlement.',
-                                                [payment],
-                                                500));
-                                    }
-
-                                    if (result.status === 'submitted_for_settlement') {
-                                        accumulator.submitted += new Number(result.transaction.amount);
-                                    }
-
-                                    return resolve(accumulator);
-                                });
-                            }));
-                        }, accumulator);
-                    });
-
-                }
+            },
+            settings : function(settings){
+                return {
+                    gateway : braintree.connect({
+                      environment: braintree.Environment.Sandbox,
+                      merchantId: "49xn27bktj5zht87",
+                      publicKey: "ctxdfnbcqsw27w2m",
+                      privateKey: "c79cb1dc8abf3a29eb420b41e2e5b423"
+                  })
+                };
             }
         }
     });

@@ -27,9 +27,10 @@ define(['angular'], function (angular){
         models('user')
         .then(function(api){
             $scope.user = {
-                email : {
+                username : {
                     value : "",
                     success : false,
+                    registered : false,
                     classes : {
                         group : {
                             "has-success" : false,
@@ -80,12 +81,19 @@ define(['angular'], function (angular){
             var email_regex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[A-Z]{2}|com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|museum)\b/;
 
             $scope.validate = {
-                email : function() {
-                    var valid = email_regex.test($scope.user.email.value);
+                username : function() {
+                    if ($scope.user.username.value === ''){
+                        $scope.user.username.registered = true;
+                        return;
+                    }
 
-                    $scope.user.email.success = valid;
-                    $scope.user.email.classes.group["has-success"] = valid;
-                    $scope.user.email.classes.group["has-feedback"] = valid;
+                    api.user.registered($scope.user.username.value)
+                    .then(function(registered){
+                        $scope.user.username.registered = registered;
+                    })
+                    .catch(function(error){
+                        $scope.error = error;
+                    });
                 },
                 emailConfirmation : function() {
 
@@ -124,8 +132,10 @@ define(['angular'], function (angular){
                 },
             };
 
+            $scope.validate.username();
+
             $scope.allowRegister = function() {
-                if ($scope.user.email.success && (!$scope.requireEmailConfirmation || user.emailConfirmation.success)) {
+                if (!$scope.user.username.registered && (!$scope.requireEmailConfirmation || user.emailConfirmation.success)) {
                     if ($scope.user.password.success && $scope.user.passwordConfirm.success) {
                         if (!$scope.admin.requireAgreement || $scope.user.agreeToTaC) {
                             return true;
@@ -137,52 +147,39 @@ define(['angular'], function (angular){
             };
 
             $scope.submit = function () {
-                api.user.register({
-                    email : $scope.user.email.value,
-                    emailConfirmation : $scope.user.emailConfirmation.value,
-                    password : $scope.user.password.value,
-                    agreeToTaC : $scope.user.agreeToTaC,
-                    enablePasswordReset : $scope.user.enablePasswordReset
-                })
-                .then(function(user){
-                    return api.user.login({
-                        email : $scope.user.email.value,
-                        password : $scope.user.password.value
+                if (!$scope.user.username.registered){
+
+                    api.user.register({
+                        username : $scope.user.username.value,
+                        emailConfirmation : $scope.user.emailConfirmation.value,
+                        password : $scope.user.password.value,
+                        agreeToTaC : $scope.user.agreeToTaC,
+                        enablePasswordReset : $scope.user.enablePasswordReset
+                    })
+                    .then(function(user){
+                        return api.user.login({
+                            username : $scope.user.username.value,
+                            password : $scope.user.password.value
+                        });
+                    })
+                    .then(function(){
+                        $state.go('home');
+                    })
+                    .catch(function(error){
+                        $scope.error = error;
                     });
-                })
-                .then(function(){
-                    $state.go('home');
-                })
-                .catch(function(error){
-                    $scope.error = error;
-                });
-            };
-        });
-
-    }]);
-
-    //
-    // These are controllers for the views of sub-states of the same name
-    //
-
-    // user login
-    module.controller('user.login', ['$scope', '$state', 'apifactory.models', function($scope, $state, models){
-        models('user')
-        .then(function(api){
-            $scope.user = {
-                email : "",
-                password : "",
-                rememberLogin : false
-            };
-
-            $scope.submit = function () {
-                api.user.login($scope.user)
-                .then(function(res){
-                    $state.go('home');
-                })
-                .catch(function(error){
-                    $scope.error = error;
-                });
+                }else{
+                    api.user.login({
+                        username : $scope.user.username.value,
+                        password : $scope.user.password.value
+                    })
+                    .then(function(res){
+                        $state.go('home');
+                    })
+                    .catch(function(error){
+                        $scope.error = error;
+                    });
+                }
             };
         });
 

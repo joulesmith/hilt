@@ -1,5 +1,6 @@
 "use strict";
 
+
 var apimodelfactory = require('./apifactory');
 var fs = require('fs');
 var path = require('path');
@@ -9,51 +10,46 @@ var Promise = require('bluebird');
 var config = require('../config');
 var mongoose = require('mongoose');
 
-var ModelError = error('routes.api.product');
+var ModelError = error('routes.api.service');
 
 
 module.exports = function(server) {
     apimodelfactory(server, {
-        product : {
+        service : {
             state : {
                 independent : {
+                    // payable to for service
                     account : { type: mongoose.Schema.Types.ObjectId, ref: 'account', required : true},
+                    // short name of service
                     name : {type: String, default: '', required: true},
-                    details : {
-                        manufacturer : String,
-                        partNumber : String,
-                        specification : mongoose.Schema.Types.Mixed,
-                        package: {
-                            length : Number,
-                            width : Number,
-                            height: Number,
-                            weight: Number
-                        }
-                    },
+                    // base price of the service
                     price : Number, // USD
+                    duration : Number, // millisecond duration the service typically takes to perform
+                    // choices that adjust the price and/or duration of the service
                     choice : [{
-                        required : Boolean,
+                        required : Boolean, // is making this choice required to complete service?
                         name : String,
+                        default : Number, // index of the default option, or -1 if no default
                         option : [{
-                            name : String
-                            priceAdjustment : Number
+                            name : String,
+                            priceAdjustment : Number, // USD
+                            durationAdjustment : Number, // (ms)
                         }]
+                    }],
+                    // subscription details if this service is recurring
+                    subscription : {
+                    },
+                    // times at which this service will be available
+                    schedule : [{
+                        start : Number, // unix time code in milliseconds of when service can be started
+                        end : Number // last millisecond when the service must be finished
                     }]
-
                 },
                 dependent : {
-                    forSale : {type: Boolean: default: false},
-                    introduced : {type: Number: default: 0}, // time at which it is made available
-                    discontinued : {type: Number: default: 0}, // time at which it was discontinued
-                    // only if physical is false
-                    inventory : {
-                        quantity : {type: Number, default: 0},
-                        serialNumbers : [String],
-                        // where are the items to be shipped from?
-                        address :  { type: mongoose.Schema.Types.ObjectId, ref: 'address'}
-                    },
-                    shippingServices : [String],
-                    orders : [{ type: mongoose.Schema.Types.ObjectId, ref: 'order'}]
+                    // all past orders that have been made of this service
+                    order : [{ type: mongoose.Schema.Types.ObjectId, ref: 'order'}],
+                    // appointments made for the service at a future date
+                    appointments : [{ type: mongoose.Schema.Types.ObjectId, ref: 'order'}]
                 },
                 index : null, // used for text searches
             },

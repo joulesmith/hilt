@@ -1,9 +1,5 @@
 "use strict";
 
-/**
- * 1715, "to represent in profile," from profile (n.) or Italian profilare. Meaning "to summarize a person in writing" is from 1948
- */
-
 var apimodelfactory = require('./apifactory');
 var fs = require('fs');
 var path = require('path');
@@ -14,27 +10,33 @@ var config = require('../config');
 var mongoose = require('mongoose');
 var _ = require('lodash');
 
-var ModelError = error('routes.api.cart');
-
+var ModelError = error('routes.api.group');
+var User = mongoose.model('user');
 
 module.exports = function(server) {
     apimodelfactory(server, {
         group : {
             state : {
                 independent : {
-                    groups : [{type: mongoose.Schema.Types.ObjectId, ref : 'group'}],
+                    name : {type: String, default: ''},
                 },
                 dependent : {
+                    users : [String],
                     accessRecords : mongoose.Schema.Types.Mixed
                 },
                 index : null, // used for text searches
             },
-            create : null,
+            create : {
+                handler : function(req, res){
+                }
+            },
             get : {
                 secure : true
             }
             update : {
-                secure : true
+                secure : true,
+                handler : function(req, res){
+                }
             },
             // no restrictions to access, only uses http gets to base url
             static : {
@@ -42,31 +44,77 @@ module.exports = function(server) {
             // need execute permission, only uses http gets to specific resource
             safe : {},
             // need both execute and write permission, uses http posts to specific resource
-            unsafe : {},
+            unsafe : {
+                secure : true,
+                add : {
+                    handler : function(req, res) {
+                        var group = this;
+                        var user_id = '' + req.body.userId;
+
+                        return User.findById(user_id).exec()
+                        .then(function(user){
+                            if (!user) {
+                                throw new ModelError('nouser',
+                                    'The user could not be found.', [],
+                                    404);
+                            }
+
+                            var index = _.sortedIndex(group.users, user_id);
+
+                            group.users.slice(index, 0, user_id);
+
+                            return user.addGroup(group).return(group.save());
+                        });
+                    }
+                },
+                remove : {
+                    handler : function(req, res) {
+                        var group = this;
+                        var user_id = '' + req.body.userId;
+
+                        return User.findById(user_id).exec()
+                        .then(function(user){
+                            if (!user) {
+                                throw new ModelError('nouser',
+                                    'The user could not be found.', [],
+                                    404);
+                            }
+
+                            var index = _.indexOf(group.users, user_id, true);
+
+                            group.users.slice(index, 1);
+
+                            return user.removeGroup(group).return(group.save());
+                        });
+                    }
+                }
+            },
             // only accessible on the server
             internal : {
                 accessGranted : function(model, actions, resource) {
                     var group = this;
+                    var resource_id = '' + resource._id;
 
                     if (!group.accessRecords){
-                        group.accessRecords = {
-                            records : [],
+                        group.accessRecords = {};
+                    }
+
+                    if (!group.accessRecords[model]){
+                        group.accessRecords[model] = {
+                            id : [],
                             actions : []
                         };
                     }
 
-                    var record = model + '/' + resource._id;
+                    var recordIndex = _.sortedIndex(group.accessRecords[model].id, resource_id);
 
-                    var recordIndex = _.sortedIndex(group.accessRecords.records, record);
 
-                    if (group.accessRecords.records[recordIndex] !== record) {
-                        group.accessRecords.records.splice(recordIndex, 0, record);
-                        group.accessRecords.actions.splice(recordIndex, 0, {});
+                    if (group.accessRecords[model].id[recordIndex] !== resource_id) {
+                        group.accessRecords[model].id.splice(recordIndex, 0, resource_id);
+                        group.accessRecords[model].actions.splice(recordIndex, 0, []);
                     }
 
-                    actions.forEach(function(action){
-                        group.accessRecords.actions[recordIndex][action] = true;
-                    });
+                    group.accessRecords[model].actions[recordIndex] = _.union(group.accessRecords[model].actions[recordIndex], actions);
 
                     group.markModified('accessRecords');
 
@@ -74,13 +122,27 @@ module.exports = function(server) {
                 },
                 accessRevoked : function(model, actions, resource) {
                     var group = this;
+                    var resource_id = '' + resource._id;
 
-                    var record = model + '/' + element._id;
-                    var recordIndex = _.indexOf(group.accessRecords.records, record, true);
+                    if (group.accessRecords[model]){
+                        var recordIndex = _.sortedIndex(group.accessRecords[model].id, resource_id);
 
-                    actions.forEach(function(action){
-                        group.accessRecords.actions[recordIndex][action] = false;
-                    });
+                        if (recordIndex !== -1) {
+
+                            group.accessRecords[model].actions[recordIndex] = _.without(group.accessRecords[model].actions[recordIndex], actions);
+
+                            if (group.accessRecords[model].actions[recordIndex].length === 0) {
+                                // if no actions can be be performed, remove resource
+                                group.accessRecords[model].id.splice(recordIndex, 1);
+                                group.accessRecords[model].actions.splice(recordIndex, 1);
+
+                                if (group.accessRecords[model].id.length === 0) {
+                                    // if there are no more resources of this type, then remove Model
+                                    delete group.accessRecords[model];
+                                }
+                            }
+                        }
+                    }
 
                     group.markModified('accessRecords');
 
