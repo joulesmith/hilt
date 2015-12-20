@@ -13,7 +13,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/joulesmith/broadsword.git"
+    "url": "https://github.com/joulesmith/hilt.git"
   },
   "scripts": {
     "start": "node ./bin/www",
@@ -56,6 +56,6 @@
   "readme": "See README file",
   "readmeFilename": "README.md",
   "bugs": {
-    "url": "https://github.com/joulesmith/broadsword/issues"
+    "url": "https://github.com/joulesmith/hilt/issues"
   }
 }
