@@ -6,7 +6,7 @@ var mongoose = require('mongoose');
 var userAuth = require('../../middleware/user');
 var _ = require('lodash');
 var Promise = require('bluebird');
-var sanitize = require('mongo-sanitize');
+
 var googleapis = require('googleapis')
 
 var UsersError = require('../../error')('routes.api.users');

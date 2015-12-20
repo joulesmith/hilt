@@ -1,7 +1,7 @@
 {
-  "name": "broadsword",
+  "name": "hilt",
   "version": "0.0.0",
-  "description": "Data acquisition and control management system.",
+  "description": "A bundle of 'mean' tools to build a web-app.",
   "author": {
     "name": "Joulesmith Energy Technologies, LLC",
     "email": "general@joulesmith.com"
@@ -16,7 +16,8 @@
     "url": "https://github.com/joulesmith/broadsword.git"
   },
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "postinstall" : "bower install"
   },
   "dependencies": {
     "bcrypt": "~0.8.5",
@@ -30,7 +31,6 @@
     "googleapis": "^2.1.7",
     "lodash": "^3.10.1",
     "marked": "^0.3.5",
-    "mongo-sanitize": "^1.0.0",
     "mongoose": "^4.2.7",
     "morgan": "~1.5.1",
     "nodemailer": "0.3.29",

@@ -4,10 +4,12 @@ var router = express.Router();
 var mongoose = require('mongoose');
 
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-    // TODO: set this from database value
-    res.render('index', { title: 'Broadsword' });
-});
 
-module.exports = router;
+
+module.exports = function(server){
+    /* GET home page. */
+    return router.get('/', function(req, res, next) {
+        // TODO: set this from database value
+        res.render('index', { title: server.config.name });
+    });
+};

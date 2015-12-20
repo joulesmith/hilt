@@ -39,7 +39,11 @@ var hasCommonElement = function(sortedArray1, sortedArray2) {
     return false;
 };
 
-module.exports = function(server, models) {
+var api = {};
+var jsonApi = {};
+var server = null;
+
+var addModels = function(models) {
     // creates a pure json formatted string represenation of this model
     var formatModel = function(api) {
 
@@ -47,7 +51,8 @@ module.exports = function(server, models) {
 
     for(var model in models) {
 
-        var api = models[model];
+        var apiModel = models[model];
+        api[model] = apiModel;
 
         var ModelError = error('routes.api.' + model);
 
@@ -77,22 +82,22 @@ module.exports = function(server, models) {
         };
 
         // can change something about the resource
-        if (api.update && api.update.secure) {
+        if (apiModel.update && apiModel.update.secure) {
             secure.update = true;
         }
 
         // can access information about this resource, but cannot alter it in any way
-        if (api.get && api.get.secure) {
+        if (apiModel.get && apiModel.get.secure) {
             secure.get = true;
         }
 
-        if (api.safe && api.safe.secure) {
+        if (apiModel.safe && apiModel.safe.secure) {
             secure.safe = true;
         }
 
         // add method specific security
-        for(var prop in api.safe) {
-            if (api.safe[prop].secure) {
+        for(var prop in apiModel.safe) {
+            if (apiModel.safe[prop].secure) {
                 if (secure.safe) {
                     throw new Error('Security cannot be applied at two different levels.');
                 }
@@ -101,12 +106,12 @@ module.exports = function(server, models) {
             }
         }
 
-        if (api.unsafe && api.unsafe.secure) {
+        if (apiModel.unsafe && apiModel.unsafe.secure) {
             secure.unsafe = true;
         }
 
-        for(var prop in api.unsafe) {
-            if (api.unsafe[prop].secure) {
+        for(var prop in apiModel.unsafe) {
+            if (apiModel.unsafe[prop].secure) {
                 if (secure.unsafe) {
                     throw new Error('Security cannot be applied at two different levels.');
                 }
@@ -116,24 +121,24 @@ module.exports = function(server, models) {
         }
 
         // add custom shema to the model
-        for(var param in api.state.independent) {
-            schema[param] = api.state.independent[param];
+        for(var param in apiModel.state.independent) {
+            schema[param] = apiModel.state.independent[param];
         }
 
-        for(var param in api.state.dependent) {
-            schema[param] = api.state.dependent[param];
+        for(var param in apiModel.state.dependent) {
+            schema[param] = apiModel.state.dependent[param];
         }
 
         var Schema = new mongoose.Schema(schema);
 
-        if (api.state.index) {
-            Schema.index(api.state.index);
+        if (apiModel.state.index) {
+            Schema.index(apiModel.state.index);
         }
 
         // add custom methods to the model
         // these are not exposed in the api, but can be used on database results
-        for(var param in api.internal) {
-            Schema.methods[param] = api.internal[param];
+        for(var param in apiModel.internal) {
+            Schema.methods[param] = apiModel.internal[param];
         }
 
         Schema.methods.event = function(name, data) {
@@ -288,8 +293,8 @@ module.exports = function(server, models) {
         }).exec()
         .then(function(settings){
 
-            if (api.settings) {
-                apiHandle.settings = api.settings(settings) || {};
+            if (apiModel.settings) {
+                apiHandle.settings = apiModel.settings(settings) || {};
             }else{
                 apiHandle.settings = settings || {};
             }
@@ -317,15 +322,17 @@ module.exports = function(server, models) {
             secure : secure
         };
 
-        for(var prop in api.static) {
+        jsonApi[model] = jsonModel;
+
+        for(var prop in apiModel.static) {
             jsonModel.static[prop] = {};
         }
 
-        for(var prop in api.safe) {
+        for(var prop in apiModel.safe) {
             jsonModel.safe[prop] = {};
         }
 
-        for(var prop in api.unsafe) {
+        for(var prop in apiModel.unsafe) {
             jsonModel.unsafe[prop] = {};
         }
 
@@ -390,7 +397,7 @@ module.exports = function(server, models) {
             }
         });
 
-        for(var prop in api.static) {
+        for(var prop in apiModel.static) {
 
             (function(method) {
                 router.get('/' + prop + (method.parameter ? '/' + method.parameter : ''),
@@ -415,7 +422,7 @@ module.exports = function(server, models) {
                             next(error);
                         }
                     });
-            })(api.static[prop]);
+            })(apiModel.static[prop]);
 
         }
 
@@ -441,16 +448,16 @@ module.exports = function(server, models) {
                     new_element.created = Date.now();
                     new_element.edited = Date.now();
 
-                    for (var param in api.state.independent) {
+                    for (var param in apiModel.state.independent) {
                         if (req.body[param]) {
                             new_element[param] = req.body[param];
                         }
                     }
 
-                    new_element.grantUserAccess((api.create && api.create.creatorAccess) || ['root'], req.user)
+                    new_element.grantUserAccess((apiModel.create && apiModel.create.creatorAccess) || ['root'], req.user)
                         .then(function(element){
-                            if (api.create && api.create.handler) {
-                                return api.create.handler.apply(element, [req]);
+                            if (apiModel.create && apiModel.create.handler) {
+                                return apiModel.create.handler.apply(element, [req]);
                             }else{
                                 return element;
                             }
@@ -495,7 +502,7 @@ module.exports = function(server, models) {
 
                                 element.edited = Date.now();
 
-                                for (var param in api.state.independent) {
+                                for (var param in apiModel.state.independent) {
                                     if (req.body[param]) {
                                         element[param] = req.body[param];
                                     }
@@ -503,8 +510,8 @@ module.exports = function(server, models) {
 
                                 var edit_promise;
 
-                                if (api.update && api.update.handler) {
-                                    edit_promise = api.update.handler.apply(element, [req]);
+                                if (apiModel.update && apiModel.update.handler) {
+                                    edit_promise = apiModel.update.handler.apply(element, [req]);
                                 } else {
                                     edit_promise = element.save();
                                 }
@@ -545,7 +552,7 @@ module.exports = function(server, models) {
 
                                 element.edited = Date.now();
 
-                                for (var param in api.state.independent) {
+                                for (var param in apiModel.state.independent) {
                                     if (req.body[param]) {
                                         element[param] = req.body[param];
                                     }
@@ -553,8 +560,8 @@ module.exports = function(server, models) {
 
                                 var edit_promise;
 
-                                if (api.update && api.update.handler) {
-                                    edit_promise = api.update.handler.apply(element, [req]);
+                                if (apiModel.update && apiModel.update.handler) {
+                                    edit_promise = apiModel.update.handler.apply(element, [req]);
                                 } else {
                                     edit_promise = element.save();
                                 }
@@ -673,7 +680,7 @@ module.exports = function(server, models) {
         // Add exposed api safe methods
         //
 
-        for(var prop in api.safe) {
+        for(var prop in apiModel.safe) {
             if (prop === 'secure') {
                 continue;
             }
@@ -794,14 +801,14 @@ module.exports = function(server, models) {
                             }
                         });
                 }
-            })(prop, api.safe[prop]);
+            })(prop, apiModel.safe[prop]);
         }
 
         //
         // unsafe methods
         //
 
-        for(var prop in api.unsafe) {
+        for(var prop in apiModel.unsafe) {
             if (prop === 'secure') {
                 continue;
             }
@@ -919,7 +926,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }
-            })(prop, api.unsafe[prop]);
+            })(prop, apiModel.unsafe[prop]);
         }
 
 
@@ -966,4 +973,20 @@ module.exports = function(server, models) {
         });
 
     }
+};
+
+module.exports = function(serverInstance){
+    server = serverInstance;
+
+    server.express.get('/api', function(req, res, next) {
+        try {
+            res.json(jsonApi);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    return {
+        addModels : addModels
+    };
 };

@@ -1,16 +1,17 @@
 
 module.exports = {
+    "name" : "Hilt",
     "http" : {
         "port" : 3000
     },
     "db" : {
-        "database" : "broadsword",
+        "database" : "hilt",
         "host" : "localhost",
         "port" : 27017,
         "username" : null,
         "password" : null
     },
     "favicon" : null,
-    "uploadPath" : "C:\\Users\\Socrates\\Documents\\GitHub\\broadsword\\uploads",
+    "uploadPath" : "C:\\Users\\Socrates\\Documents\\GitHub\\hilt\\uploads",
     "log" : "dev"
 };

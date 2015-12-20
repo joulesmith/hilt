@@ -34,7 +34,7 @@ if (server.config.log){
 
 
 // view routs
-server.express.use('/', require('./routes/index'));
+server.express.use('/', require('./routes/index')(server));
 
 // api routs
 //
@@ -42,14 +42,12 @@ server.express.use('/', require('./routes/index'));
 server.express.use('/api/util', require('./routes/api/util'));
 server.express.use('/api/user', require('./routes/api/user'));
 
-var apimodelfactory = require('./models/apifactory');
+var apimodelfactory = require('./models/apifactory')(server);
 
-require('./models/file')(server);
-require('./models/account')(server);
-require('./models/receipt')(server);
-require('./models/profile')(server);
-
-apimodelfactory(server, require('./models/profile'));
+apimodelfactory.addModels(require('./models/file'));
+apimodelfactory.addModels(require('./models/account'));
+apimodelfactory.addModels(require('./models/receipt'));
+apimodelfactory.addModels(require('./models/profile'));
 
 // catch 404 and forward to error handler
 server.express.use(function(req, res, next) {
