@@ -63,12 +63,13 @@ require([
     'domReady',
     'ngRoute',
     'ngSanitize',
-    'user',
+    'apifactory',
     'common',
-    'account',
-    'receipt',
+    'user',
     'file',
     'profile',
+    'account',
+    'receipt',
     'uiBootstrap',
     'uiRouter'
 ], function(
@@ -80,11 +81,12 @@ require([
         'ngRoute',
         'ui.bootstrap',
         'ui.router',
+        'apifactory',
         'common',
         'user',
+        'profile',
         'account',
         'receipt',
-        'profile',
         'file',
         'ngSanitize'
     ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){

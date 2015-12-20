@@ -1,15 +1,15 @@
 var mongoose = require('mongoose');
-
 var User = mongoose.model("user");
+
 
 module.exports = function() {
     return function(req, res, next) {
 
         try {
 
-            if (req.body.email && req.body.password){
+            if (req.body.username && req.body.password){
                 User.findOne({
-                    email : '' + req.body.email
+                    username : '' + req.body.username
                 })
                 .exec()
                 .then(function(user){

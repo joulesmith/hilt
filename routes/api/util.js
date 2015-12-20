@@ -10,6 +10,7 @@ router.use(bodyParser.urlencoded({ extended: false }));
 
 // tests the strength of a password using the same algorithm as required for passwords
 router.post('/passwordStrength/', function(req, res, next) {
+    // TODO: move the password to the authorization header?
     var result = zxcvbn(req.body.password);
 
     var warnings = result.feedback.suggestions;

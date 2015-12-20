@@ -14,10 +14,36 @@ var error = require('../error');
 var _ = require('lodash');
 
 var User = mongoose.model('user');
+var Settings = mongoose.model('settings');
+
 var bodyParser = require('body-parser');
 
+// Returns true on the first occurence of a commone element between two
+// sorted arrays. False if there are no common elements
+var hasCommonElement = function(sortedArray1, sortedArray2) {
+    var i, j;
+
+    i = 0;
+    j = 0;
+
+    while(i < sortedArray1.length && j < sortedArray2.length) {
+        if (sortedArray1[i] === sortedArray2[j]) {
+            return true;
+        }else if (sortedArray1[i] < sortedArray2[j]) {
+            i++;
+        }else{
+            j++;
+        }
+    }
+
+    return false;
+};
 
 module.exports = function(server, models) {
+    // creates a pure json formatted string represenation of this model
+    var formatModel = function(api) {
+
+    };
 
     for(var model in models) {
 
@@ -25,76 +51,12 @@ module.exports = function(server, models) {
 
         var ModelError = error('routes.api.' + model);
 
-        var permission = function(user, resource, action) {
-            var i;
-
-            if (!api.authenticate[action] || !resource[action].restricted) {
-                return null;
-            }
-
-            if (!user) {
-                throw new ModelError('nouser',
-                    'A user must be logged in to [0] this [1].',
-                    [action, model],
-                    401);
-            }
-
-            if (user._id.equals(resource.owner)) {
-                return;
-            }
-
-            var user_attribute = 'user_' + user._id;
-
-            var one = resource[action].one;
-            var all = resource[action].all;
-            var none = resource[action].none;
-
-            if (one.length > 0 && _.indexOf(one, user_attribute, true) === -1) {
-                // user needs at least one of these attributes if not directly granted access
-                for(i = 0; i < one.length; i++) {
-                    if (_.indexOf(user.attributes, one[i], true) !== -1) {
-                        break;
-                    }
-                }
-
-                if (i === one.length) {
-                    throw new ModelError('unauthorized',
-                        'The user does not possess any of the qualifying attributes.',
-                        [],
-                        403);
-                }
-            }
-
-            // a user must have all of these attributes
-            for(i = 0; i < all.length; i++) {
-                if (_.indexOf(user.attributes, all[i], true) === -1 && user_attribute !== all[i]) {
-                    throw new ModelError('unauthorized',
-                        'The user does not possess all of the required attributes.',
-                        [],
-                        403);
-                }
-            }
-
-            // a user must not have any of these attributes
-            for(i = 0; i < none.length; i++) {
-                if (_.indexOf(user.attributes, none[i], true) !== -1 || user_attribute === none[i]) {
-                    throw new ModelError('unauthorized',
-                        'The user possess a disqualifying attribute.',
-                        [],
-                        403);
-                }
-            }
-
-            return true;
-        };
-
         //
         // Build the database model using mongoose
         //
 
         // boilerplate schema for all resource models
         var schema = {
-
             // time created in unix time [milliseconds]
             created : {type : Number, default: 0},
             // time last edited in unix time [milliseconds]
@@ -103,52 +65,54 @@ module.exports = function(server, models) {
             flagged : {type : Boolean, default : false},
             // no longer can be accessed from public api
             removed : {type : Boolean, default : false},
-            owner : { type: mongoose.Schema.Types.ObjectId, ref: 'user'}
+            // store access permissions here
+            security : {type: mongoose.Schema.Types.Mixed}
         };
 
         // if a user is not the owner they can still interact with the resource
         // these are a list of qualifying, required, and forbidden attributes
         // a user must satisfy to perform the given class of operation
-
-        // able to do anything an owner can do
-
-        schema.manage = {
-            restricted : {type : Boolean, default : true},
-            one : [{ type: String }],
-            all : [{ type: String }],
-            none : [{ type: String }]
+        //
+        var secure = {
         };
 
-
         // can change something about the resource
-        if (api.authenticate.write) {
-            schema.write = {
-                restricted : {type : Boolean, default : true},
-                one : [{ type: String }],
-                all : [{ type: String }],
-                none : [{ type: String }]
-            };
+        if (api.update && api.update.secure) {
+            secure.update = true;
         }
 
         // can access information about this resource, but cannot alter it in any way
-        if (api.authenticate.read) {
-            schema.read = {
-                restricted : {type : Boolean, default : true},
-                one : [{ type: String }],
-                all : [{ type: String }],
-                none : [{ type: String }]
-            };
+        if (api.get && api.get.secure) {
+            secure.get = true;
         }
 
-        // can call rest api functions of this resource, but not the underlying data
-        // unless that data is returned by an api call
-        if (api.authenticate.execute) {
-            schema.execute = {
-                restricted : {type : Boolean, default : true},
-                one : [{ type: String }],
-                all : [{ type: String }],
-                none : [{ type: String }]
-            };
+        if (api.safe && api.safe.secure) {
+            secure.safe = true;
+        }
+
+        // add method specific security
+        for(var prop in api.safe) {
+            if (api.safe[prop].secure) {
+                if (secure.safe) {
+                    throw new Error('Security cannot be applied at two different levels.');
+                }
+
+                secure['safe.' + prop] = true;
+            }
+        }
+
+        if (api.unsafe && api.unsafe.secure) {
+            secure.unsafe = true;
+        }
+
+        for(var prop in api.unsafe) {
+            if (api.unsafe[prop].secure) {
+                if (secure.unsafe) {
+                    throw new Error('Security cannot be applied at two different levels.');
+                }
+
+                secure['unsafe.' + prop] = true;
+            }
         }
 
         // add custom shema to the model
@@ -174,9 +138,196 @@ module.exports = function(server, models) {
 
         Schema.methods.event = function(name, data) {
             server.io.to(model + "_" + this._id).emit(name, data);
-        }
+        };
+
+        Schema.methods.testAccess = function(action, user) {
+
+            var security = this.security[action];
+            var user_id = '' + user._id;
+
+            if (action !== 'root' && (!secure[action] || (security && security.unrestricted))) {
+                // if there is no security, let anyone through (root is always secure)
+                return true;
+            }
+
+
+
+            // there is security, so a user has to be logged in at least
+            if (!user) {
+                return false;
+            }
+
+            if (security) {
+
+                // try finding the user directly
+                if (security.users && _.indexOf(security.users, user_id, true) !== -1) {
+
+                    return true;
+                }
+
+                // see if the user belongs to a group that has access
+                if (user.groups && security.groups && hasCommonElement(user.groups, security.groups)){
+                    return true;
+                }
+            }
+
+            if (action === 'root') {
+                return false;
+            }else{
+                // as a last resort, any user able to be root can do also anything else
+                return this.testAccess('root', user);
+            }
+
+        };
+
+        Schema.methods.grantUserAccess = function(actions, user) {
+            var element = this;
+            var user_id = '' + user._id;
+
+            if (!element.security) {
+                element.security = {};
+            }
+
+            actions.forEach(function(action){
+                var security = element.security[action] || (element.security[action] = {});
+
+                if (!security.users) {
+                    security.users = [];
+                }
+
+                var index = _.sortedIndex(security.users, user_id);
+
+                if (security.users[index] !== user_id) {
+                    security.users.splice(index, 0, user_id);
+                }
+
+            });
+
+            element.markModified('security');
+
+            return user.accessGranted(model, actions, element).return(element.save());
+        };
+
+        Schema.methods.revokeUserAccess = function(actions, user) {
+            var element = this;
+            var user_id = '' + user._id;
+
+            actions.forEach(function(action){
+                var security = element.security[action];
+
+                var index = _.indexOf(security.users, user_id, true);
+
+                if (index !== -1) {
+                    security.users.splice(index, 1);
+                }
+            });
+
+            element.markModified('security');
+
+            return user.accessRevoked(model, actions, element).return(element.save());
+        };
+
+        Schema.methods.grantGroupAccess = function(actions, group) {
+            var element = this;
+            var group_id = '' + group._id;
+
+            if (!element.security) {
+                element.security = {};
+            }
+
+            actions.forEach(function(action){
+                var security = element.security[action] || (element.security[action] = {});
+
+                if (!security.groups) {
+                    security.groups = [];
+                }
+
+                var index = _.sortedIndex(security.groups, group_id);
+
+                if (security.groups[index] !== group_id) {
+                    security.groups.splice(index, 0, group_id);
+                }
+
+            });
+
+            element.markModified('security');
+
+            return group.accessGranted(model, actions, element).return(element.save());
+        };
+
+        Schema.methods.revokeGroupAccess = function(actions, group) {
+            var element = this;
+            var group_id = '' + group._id;
+
+            actions.forEach(function(action){
+                var security = element.security[action];
+
+                var index = _.indexOf(security.groups, group_id, true);
+
+                if (index !== -1) {
+                    security.groups.splice(index, 1);
+                }
+            });
+
+            element.markModified('security');
+
+            return group.accessRevoked(model, actions, element).return(element.save());
+
+        };
 
         var Model = mongoose.model(model, Schema);
+
+
+        var apiHandle = {
+            settings : {}
+        };
+
+        // load settings
+        Settings.find({
+            model : model
+        }).exec()
+        .then(function(settings){
+
+            if (api.settings) {
+                apiHandle.settings = api.settings(settings) || {};
+            }else{
+                apiHandle.settings = settings || {};
+            }
+
+        }).catch(function(error){
+            // TODO: ?
+        });
+
+        var apiMiddleware = function(req, res, next){
+            req.api = apiHandle;
+            next();
+        };
+
+        //
+        // Make a pure json format string of Model
+        //
+        var jsonModel = {
+            state : {
+                independent : {},
+                dependent : {}
+            },
+            static : {},
+            safe : {},
+            unsafe : {},
+            secure : secure
+        };
+
+        for(var prop in api.static) {
+            jsonModel.static[prop] = {};
+        }
+
+        for(var prop in api.safe) {
+            jsonModel.safe[prop] = {};
+        }
+
+        for(var prop in api.unsafe) {
+            jsonModel.unsafe[prop] = {};
+        }
 
         //
         // Create the necessary routes to use the modeled resource using express.
@@ -192,6 +343,7 @@ module.exports = function(server, models) {
                 extended: false
             }),
             userAuth(),
+            apiMiddleware,
             function(req, res, next) {
                 try {
 
@@ -199,71 +351,14 @@ module.exports = function(server, models) {
                         .exec()
                         .then(function(element) {
                             // this will blow up the request if there is not proper permission
-                            permission(req.user, element, 'manage');
-
-                            element.edited = Date.now();
-
-                            if (req.body.manage) {
-                                element.manage = req.body.manage;
+                            if (!element.testAccess('root', req.user)){
+                                throw new ModelError('noaccess',
+                                    'User does not have permission to alter the permissions of this [1].',
+                                    ['root', model],
+                                    403);
                             }
 
-                            if (req.body.write) {
-                                element.write = req.body.write;
-                            }
-
-                            if (req.body.read) {
-                                element.read = req.body.read;
-                            }
-
-                            if (req.body.execute) {
-                                element.execute = req.body.execute;
-                            }
-
-                            return element.save();
-                        })
-                        .then(function(element) {
-                            var response = {};
-
-                            response[model] = [element];
-
-                            res.json(response)
-                        })
-                        .catch(function(error) {
-                            next(error);
-                        });
-                } catch (error) {
-                    next(error);
-                }
-            });
-
-        // change the owner
-        router.post('/:id/owner',
-            bodyParser.json(),
-            bodyParser.urlencoded({
-                extended: false
-            }),
-            userAuth(),
-            function(req, res, next) {
-                try {
-
-                    // make sure the user exists
-                    User.findById('' + req.body.user)
-                        .exec()
-                        .then(function(user) {
-                            if (!user) {
-                                throw new ModelError('notfound',
-                                    'User [0] could not be found to replace the current user.', [req.body.user],
-                                    404);
-                            }
-
-                            return Model.findById('' + req.params.id).exec()
-                        })
-                        .then(function(element) {
-                            // this will blow up the request if there is not proper permission
-                            permission(req.user, element, 'manage');
-
-                            element.edited = Date.now();
-                            element.owner = '' + req.body.user;
+                            // TODO: have to set the permissions properly
 
                             return element.save();
                         })
@@ -272,7 +367,7 @@ module.exports = function(server, models) {
 
                             response[model] = element;
 
-                            res.json(response);
+                            res.json(response)
                         })
                         .catch(function(error) {
                             next(error);
@@ -286,16 +381,33 @@ module.exports = function(server, models) {
         // static methods
         //
 
+        // api
+        router.get('/model', function(req, res, next) {
+            try {
+                res.json(jsonModel);
+            } catch (error) {
+                next(error);
+            }
+        });
+
         for(var prop in api.static) {
 
             (function(method) {
-                router.get('/' + prop + (method.route ? method.route : ''),
+                router.get('/' + prop + (method.parameter ? '/' + method.parameter : ''),
                     bodyParser.urlencoded({
                         extended: false
                     }),
+                    apiMiddleware,
                     function(req, res, next) {
                         try {
                             method.handler.apply(null, [req, res])
+                                .then(function(result){
+                                    if (result) {
+                                        var response = {};
+                                        response[prop] = result;
+                                        res.json(response);
+                                    }
+                                })
                                 .catch(function(error) {
                                     next(error);
                                 });
@@ -314,6 +426,7 @@ module.exports = function(server, models) {
                 extended: false
             }),
             userAuth(),
+            apiMiddleware,
             function(req, res, next) {
                 try {
 
@@ -325,7 +438,6 @@ module.exports = function(server, models) {
 
                     var new_element = new Model();
 
-                    new_element.owner = req.user._id;
                     new_element.created = Date.now();
                     new_element.edited = Date.now();
 
@@ -335,19 +447,18 @@ module.exports = function(server, models) {
                         }
                     }
 
-                    var creation_promise;
-
-                    if (api.create) {
-                        creation_promise = api.create.apply(new_element, [req]);
-                    } else {
-                        creation_promise = new_element.save();
-                    }
-
-                    creation_promise
+                    new_element.grantUserAccess((api.create && api.create.creatorAccess) || ['root'], req.user)
+                        .then(function(element){
+                            if (api.create && api.create.handler) {
+                                return api.create.handler.apply(element, [req]);
+                            }else{
+                                return element;
+                            }
+                        })
                         .then(function(element) {
                             var response = {};
 
-                            response[model] = [element];
+                            response[model] = element;
 
                             res.json(response);
                         })
@@ -360,13 +471,14 @@ module.exports = function(server, models) {
             });
 
         // full or partial update of the resource state
-        if (api.authenticate.write) {
-            router.post('/:id',
+        if (secure['update']) {
+            router.patch('/:id',
                 bodyParser.json(),
                 bodyParser.urlencoded({
                     extended: false
                 }),
                 userAuth(),
+                apiMiddleware,
                 function(req, res, next) {
                     try {
 
@@ -374,7 +486,12 @@ module.exports = function(server, models) {
                             .exec()
                             .then(function(element) {
                                 // this will blow up the request if there is not proper permission
-                                permission(req.user, element, 'write');
+                                if (!element.testAccess('update', req.user)){
+                                    throw new ModelError('noaccess',
+                                        'User does not have permission to [0] this [1].',
+                                        ['update', model],
+                                        403);
+                                }
 
                                 element.edited = Date.now();
 
@@ -386,8 +503,8 @@ module.exports = function(server, models) {
 
                                 var edit_promise;
 
-                                if (api.update) {
-                                    edit_promise = api.update.apply(element, [req]);
+                                if (api.update && api.update.handler) {
+                                    edit_promise = api.update.handler.apply(element, [req]);
                                 } else {
                                     edit_promise = element.save();
                                 }
@@ -395,11 +512,13 @@ module.exports = function(server, models) {
                                 return edit_promise;
                             })
                             .then(function(element) {
+                                // broadcast that the resource has changed to anyone in the channel
+                                // and the time that the edit happened
                                 element.event('changed', element.edited);
 
                                 var response = {};
 
-                                response[model] = [element];
+                                response[model] = element;
 
                                 res.json(response);
                             })
@@ -416,6 +535,7 @@ module.exports = function(server, models) {
                 bodyParser.urlencoded({
                     extended: false
                 }),
+                apiMiddleware,
                 function(req, res, next) {
                     try {
 
@@ -433,8 +553,8 @@ module.exports = function(server, models) {
 
                                 var edit_promise;
 
-                                if (api.update) {
-                                    edit_promise = api.update.apply(element, [req]);
+                                if (api.update && api.update.handler) {
+                                    edit_promise = api.update.handler.apply(element, [req]);
                                 } else {
                                     edit_promise = element.save();
                                 }
@@ -446,7 +566,7 @@ module.exports = function(server, models) {
 
                                 var response = {};
 
-                                response[model] = [element];
+                                response[model] = element;
 
                                 res.json(response);
                             })
@@ -462,36 +582,42 @@ module.exports = function(server, models) {
 
 
         // retrieve the resource
-        if (api.authenticate.read) {
+        if (secure['get']) {
             router.get('/:id',
                 bodyParser.json(),
                 bodyParser.urlencoded({
                     extended: false
                 }),
                 userAuth(),
+                apiMiddleware,
                 function(req, res, next) {
                     try {
                         Model.findById('' + req.params.id)
                             .exec()
                             .then(function(element) {
                                 if (element.deleted) {
-                                    throw new ModelError('notfound',
+                                    throw new ModelError('removed',
                                         'This [0] has been peranently removed.',
                                         [model],
                                         410);
                                 }
 
                                 if (element.flagged) {
-                                    throw new ModelError('notfound',
+                                    throw new ModelError('flagged',
                                         'This [0] has been flagged for review and is temporarily unavailable.',
                                         [model],
                                         503);
                                 }
 
-                                permission(req.user, element, 'read');
+                                if (!element.testAccess('get', req.user)){
+                                    throw new ModelError('noaccess',
+                                        'User does not have permission to [0] this [1].',
+                                        ['get', model],
+                                        403);
+                                }
 
                                 var response = {};
-                                response[model] = [element];
+                                response[model] = element;
 
                                 res.json(response);
                             })
@@ -507,25 +633,28 @@ module.exports = function(server, models) {
                 bodyParser.urlencoded({
                     extended: false
                 }),
+                apiMiddleware,
                 function(req, res, next) {
                     try {
                         Model.findById('' + req.params.id)
                             .exec()
                             .then(function(element) {
                                 if (element.deleted) {
-                                    throw new ModelError('notfound',
-                                        'This [0] has been peranently removed.', [model],
+                                    throw new ModelError('removed',
+                                        'This [0] has been peranently removed.',
+                                        [model],
                                         410);
                                 }
 
                                 if (element.flagged) {
-                                    throw new ModelError('notfound',
-                                        'This [0] has been flagged for review and is temporarily unavailable.', [model],
+                                    throw new ModelError('flagged',
+                                        'This [0] has been flagged for review and is temporarily unavailable.',
+                                        [model],
                                         503);
                                 }
 
                                 var response = {};
-                                response[model] = [element];
+                                response[model] = element;
 
                                 res.json(response);
                             })
@@ -544,22 +673,88 @@ module.exports = function(server, models) {
         // Add exposed api safe methods
         //
 
-        for(var param in api.safe) {
-            (function(method) {
+        for(var prop in api.safe) {
+            if (prop === 'secure') {
+                continue;
+            }
+
+            (function(prop, method) {
                 // perform a 'get' api call to the resource
-                if (api.authenticate.execute){
-                    router.get('/:id/' + param + (method.route ? method.route : ''),
+                var route = '/:id/' + prop + (method.parameter ? '/' + method.parameter : '');
+
+                if (secure['safe']){
+                    router.get(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
                         userAuth(),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)
                                     .exec()
                                     .then(function(element) {
-                                        permission(req.user, element, 'execute');
+
+                                        if (!element.testAccess('safe', req.user)){
+                                            throw new ModelError('noaccess',
+                                                'User does not have permission to [0] this [1].',
+                                                ['safe.' + prop, model],
+                                                403);
+                                        }
+
                                         return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+
+                                        if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
+
+
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }else if (secure['safe.' + prop]){
+                    router.get(route,
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        userAuth(),
+                        apiMiddleware,
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+
+                                        if (!element.testAccess('safe.' + prop, req.user)){
+                                            throw new ModelError('noaccess',
+                                                'User does not have permission to [0] this [1].',
+                                                ['safe.' + prop, model],
+                                                403);
+                                        }
+
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
                                     })
                                     .catch(function(error) {
                                         next(error);
@@ -569,16 +764,27 @@ module.exports = function(server, models) {
                             }
                         });
                 }else{
-                    router.get('/:id/' + param + (method.route ? method.route : ''),
+                    router.get(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)
                                     .exec()
                                     .then(function(element) {
                                         return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
                                     })
                                     .catch(function(error) {
                                         next(error);
@@ -588,7 +794,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }
-            })(api.safe[param]);
+            })(prop, api.safe[prop]);
         }
 
         //
@@ -596,23 +802,84 @@ module.exports = function(server, models) {
         //
 
         for(var prop in api.unsafe) {
+            if (prop === 'secure') {
+                continue;
+            }
+
             // perform a 'post' api call to the resource
-            (function(method) {
+            (function(prop, method) {
+                var route = '/:id/' + prop + (method.parameter ? '/' + method.parameter : '');
+
                 // perform a 'get' api call to the resource
-                if (api.authenticate.execute || api.authenticate.write){
-                    router.post('/:id/' + param + (method.route ? method.route : ''),
+                if (secure['unsafe']){
+                    router.patch(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
                         userAuth(),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)
                                     .exec()
                                     .then(function(element) {
-                                        permission(req.user, element, 'execute');
-                                        permission(req.user, element, 'write');
+                                        if (!element.testAccess('unsafe', req.user)){
+                                            throw new ModelError('noaccess',
+                                                'User does not have permission to [0] this [1].',
+                                                ['unsafe.' + prop, model],
+                                                403);
+                                        }
+
                                         return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
+                                    })
+                                    .catch(function(error) {
+                                        next(error);
+                                    });
+                            } catch (error) {
+                                next(error);
+                            }
+                        });
+                }else if(secure['unsafe.' + prop]){
+                    router.patch(route,
+                        bodyParser.urlencoded({
+                            extended: false
+                        }),
+                        userAuth(),
+                        apiMiddleware,
+                        function(req, res, next) {
+                            try {
+                                Model.findById('' + req.params.id)
+                                    .exec()
+                                    .then(function(element) {
+
+                                        if (!element.testAccess('unsafe.' + prop, req.user)){
+                                            throw new ModelError('noaccess',
+                                                'User does not have permission to [0] this [1].',
+                                                ['unsafe.' + prop, model],
+                                                403);
+                                        }
+
+                                        return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
                                     })
                                     .catch(function(error) {
                                         next(error);
@@ -622,16 +889,27 @@ module.exports = function(server, models) {
                             }
                         });
                 }else{
-                    router.post('/:id/' + param + (method.route ? method.route : ''),
+                    router.patch(route,
                         bodyParser.urlencoded({
                             extended: false
                         }),
+                        apiMiddleware,
                         function(req, res, next) {
                             try {
                                 Model.findById('' + req.params.id)
                                     .exec()
                                     .then(function(element) {
                                         return method.handler.apply(element, [req, res]);
+                                    })
+                                    .then(function(result){
+                                        if (result) {
+                                            // if something was returned, assume that
+                                            // the response has not been sent yet. so
+                                            // send whatever is the result
+                                            var response = {};
+                                            response[prop] = result;
+                                            res.json(response);
+                                        }
                                     })
                                     .catch(function(error) {
                                         next(error);
@@ -641,7 +919,7 @@ module.exports = function(server, models) {
                             }
                         });
                 }
-            })(api.unsafe[prop]);
+            })(prop, api.unsafe[prop]);
         }
 
 
@@ -663,7 +941,13 @@ module.exports = function(server, models) {
                     Model.findById('' + data._id)
                         .exec()
                         .then(function(element) {
-                            permission(socket.user, element, 'read');
+                            if (!element.testAccess('get', req.user)){
+                                throw new ModelError('noaccess',
+                                    'User does not have permission to [0] this [1].',
+                                    ['get', model],
+                                    403);
+                            }
+
                             socket.join(model + "_" + element._id);
                         })
                         .catch(function(error) {

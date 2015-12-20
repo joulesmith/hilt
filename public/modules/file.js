@@ -49,7 +49,7 @@ define(['angular'], function (angular){
                     headers : {'Content-Type' : undefined} // will be set automatically?
                 })
                 .then(function(res){
-                    return res.data.file[0];
+                    return res.data.file;
                 }, function(res){
                     // TODO this doesn't seem right, maybe use Error somehow?
                     throw res.data.error;
@@ -59,7 +59,7 @@ define(['angular'], function (angular){
         api.ownedfiles = function(userid) {
             return $http.get('api/file/ownedfiles/' + userid)
                 .then(function(res){
-                    console.log(res);
+
                     return res.data.file;
                 }, function (res){
                     throw res.data.error
@@ -80,45 +80,57 @@ define(['angular'], function (angular){
     //
 
     // example component view controller
-    module.controller('file.select', ['$scope', 'file.api', '$uibModalInstance', 'currentURL', 'user.api', function($scope, file, $uibModalInstance, currentURL, user){
+    module.controller('file.select', ['$scope', 'file.api', '$uibModalInstance', 'currentURL', 'apifactory.models', '$q', function($scope, file, $uibModalInstance, currentURL, models, $q){
+        models(['user', 'file'])
+        .then(function(api){
+
+            $scope.updateFiles = function() {
+                $scope.files = [];
+
+                api.user.records('file')
+                    .then(function(fileRecords){
+                        if (fileRecords) {
+                            fileRecords.id.forEach(function(file_id){
+                                api.file.get(file_id)
+                                .then(function(remoteFile){
+                                    $scope.files.push(remoteFile);
+                                });
+                            });
+                        }
+                    })
+                    .catch(function(err){
+                        $scope.error = err;
+                    });
+            };
+
+            $scope.updateFiles();
+
+            $scope.upload = function() {
+                file.upload($scope.localFile)
+                    .then(function(remoteFile){
+                        $scope.newURL = '/api/file/' + remoteFile._id + '/filename/' + remoteFile.name;
+                        $scope.updateFiles();
+                    })
+                    .catch(function(err){
+                        $scope.error = err;
+                    });
+            };
+
+            $scope.selected = function(remoteFile) {
+                $scope.newURL = '/api/file/' + remoteFile._id + '/filename/' + remoteFile.name;
+            };
+
+            $scope.ok = function () {
+              $uibModalInstance.close($scope.newURL);
+            };
+
+            $scope.cancel = function () {
+              $uibModalInstance.dismiss('cancel');
+            };
+        });
 
         $scope.newURL = currentURL;
 
-        $scope.updateFiles = function() {
-            file.ownedfiles(user.isLoggedIn())
-                .then(function(remoteFiles){
-                    $scope.files = remoteFiles;
-
-                })
-                .catch(function(err){
-                    $scope.error = err;
-                });
-        };
-
-        $scope.updateFiles();
-
-        $scope.upload = function() {
-            file.upload($scope.localFile)
-                .then(function(remoteFile){
-                    $scope.newURL = '/api/file/' + remoteFile._id + '/filename/' + remoteFile.name;
-                    $scope.updateFiles();
-                })
-                .catch(function(err){
-                    $scope.error = err;
-                });
-        };
-
-        $scope.selected = function(remoteFile) {
-            $scope.newURL = '/api/file/' + remoteFile._id + '/filename/' + remoteFile.name;
-        };
-
-        $scope.ok = function () {
-          $uibModalInstance.close($scope.newURL);
-        };
-
-        $scope.cancel = function () {
-          $uibModalInstance.dismiss('cancel');
-        };
     }]);
 
 });

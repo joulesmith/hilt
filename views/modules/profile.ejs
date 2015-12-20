@@ -41,7 +41,7 @@
 
 <script type="text/ng-template" id="profile.view">
 
-    <nav ng-if="user.user._id === profile.owner" class="navbar navbar-inverse">
+    <nav ng-if="canEdit" class="navbar navbar-inverse">
         <div class="container-fluid">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle collapsed" ng-click="isCollapsed = !isCollapsed">

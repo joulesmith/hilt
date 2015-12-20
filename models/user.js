@@ -2,6 +2,7 @@ var mongoose = require('mongoose');
 var bcrypt = require('bcrypt');
 var crypto = require('crypto');
 var Promise = require('bluebird');
+var _ = require('lodash');
 
 var bcrypt_hash = Promise.promisify(bcrypt.hash);
 var bcrypt_genSalt = Promise.promisify(bcrypt.genSalt);
@@ -9,10 +10,8 @@ var bcrypt_compare = Promise.promisify(bcrypt.compare);
 var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 var UserSchema = new mongoose.Schema({
-    email : String,
-    groups : [{ type: mongoose.Schema.Types.ObjectId, ref: 'group' }],
-    attributes : [{ type: mongoose.Schema.Types.ObjectId, ref: 'attribute' }],
-
+    created: Number,
+    username : String,
     passwordHash: {type : String, default : ''},
     secretSalt : {type : String, default : ''},
     tokenSalt : {type : String, default : ''},
@@ -20,10 +19,20 @@ var UserSchema = new mongoose.Schema({
 
     // store credentials to use google services for this user
     google : {
-        email : {type : String, default : ''},
-        accessToken : {type : String, default : ''}
-    }
+        id : String
+    },
+    facebook : {
+        id : String,
+        accessToken : String
+    },
+    groups : [String],
+    accessRecords : mongoose.Schema.Types.Mixed
 });
+
+UserSchema.methods.isGuest = function() {
+    // there is no password so this is a guest account.
+    return this.passwordHash === '';
+};
 
 /**
  * Set a password
@@ -114,12 +123,13 @@ UserSchema.methods.verifyPassword = function(password) {
  * Generates a token to replace use of password for authentication.
  * @param  {Number}   milliseconds How long this token will be valid.
  */
-UserSchema.methods.generateToken = function(password, cb) {
+UserSchema.methods.generateToken = function(password) {
     var user = this;
 
     return bcrypt_hash(password, user.secretSalt)
         .then(function(secret){
             var token = {
+                username : user.username,
                 _id : user._id,
                 secret : secret
             };
@@ -132,7 +142,56 @@ UserSchema.methods.generateToken = function(password, cb) {
 
 };
 
-UserSchema.methods.verifyToken = function(token, cb) {
+UserSchema.methods.generateGuestToken = function() {
+    var guest = this;
+    guest.tokenSalt = crypto.randomBytes(16).toString('hex');
+    var secret = crypto.randomBytes(16).toString('hex');
+
+    return crypto_pbkdf2(secret, guest.tokenSalt, 1000, 64, 'sha256')
+        .then(function(tokenHash){
+            guest.tokenHash = tokenHash.toString('hex');
+
+            return guest.save();
+        })
+        .then(function(guest){
+            var token = {
+                _id : guest._id,
+                secret : secret
+            };
+
+            // this enocding is for use in header authorization.
+            token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
+
+            return token;
+        });
+};
+
+UserSchema.methods.generateTokenFromOauthToken = function(oauthToken) {
+    var user = this;
+    user.tokenSalt = crypto.randomBytes(16).toString('hex');
+    var secret = oauthToken;
+
+    return crypto_pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256')
+        .then(function(tokenHash){
+            user.tokenHash = tokenHash.toString('hex');
+
+            return user.save();
+        })
+        .then(function(user){
+            var token = {
+                username : user.username,
+                _id : user._id,
+                secret : secret
+            };
+
+            // this enocding is for use in header authorization.
+            token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
+
+            return token;
+        });
+};
+
+UserSchema.methods.verifyToken = function(token) {
     var user = this;
 
     return crypto_pbkdf2(token.secret, user.tokenSalt, 1000, 64, 'sha256')
@@ -143,7 +202,87 @@ UserSchema.methods.verifyToken = function(token, cb) {
 
             return null;
         });
-
 }
+
+UserSchema.methods.accessGranted = function(model, actions, resource) {
+    var user = this;
+    var resource_id = '' + resource._id;
+
+    if (!user.accessRecords){
+        user.accessRecords = {};
+    }
+
+    if (!user.accessRecords[model]){
+        user.accessRecords[model] = {
+            id : [],
+            actions : []
+        };
+    }
+
+    var recordIndex = _.sortedIndex(user.accessRecords[model].id, resource_id);
+
+
+    if (user.accessRecords[model].id[recordIndex] !== resource_id) {
+        user.accessRecords[model].id.splice(recordIndex, 0, resource_id);
+        user.accessRecords[model].actions.splice(recordIndex, 0, []);
+    }
+
+    user.accessRecords[model].actions[recordIndex] = _.union(user.accessRecords[model].actions[recordIndex], actions);
+
+    user.markModified('accessRecords');
+
+    return user.save();
+}
+
+UserSchema.methods.accessRevoked = function(model, actions, resource) {
+    var user = this;
+    var resource_id = '' + resource._id;
+
+    if (user.accessRecords[model]){
+        var recordIndex = _.sortedIndex(user.accessRecords[model].id, resource_id);
+
+        if (recordIndex !== -1) {
+
+            user.accessRecords[model].actions[recordIndex] = _.without(user.accessRecords[model].actions[recordIndex], actions);
+
+            if (user.accessRecords[model].actions[recordIndex].length === 0) {
+                // if no actions can be be performed, remove resource
+                user.accessRecords[model].id.splice(recordIndex, 1);
+                user.accessRecords[model].actions.splice(recordIndex, 1);
+
+                if (user.accessRecords[model].id.length === 0) {
+                    // if there are no more resources of this type, then remove Model
+                    delete user.accessRecords[model];
+                }
+            }
+        }
+    }
+
+    user.markModified('accessRecords');
+
+    return user.save();
+}
+
+UserSchema.methods.addGroup = function(group) {
+    var user = this;
+    var group_id = group._id.toString();
+
+    var index = _.sortedIndex(user.groups, group_id);
+
+    user.groups.slice(index, 0, group_id);
+
+    return user.save();
+};
+
+UserSchema.methods.removeGroup = function(group) {
+    var user = this;
+    var group_id = group._id.toString();
+
+    var index = _.indexOf(user.groups, group_id, true);
+
+    user.groups.slice(index, 1);
+
+    return user.save();
+};
 
 mongoose.model('user', UserSchema);
