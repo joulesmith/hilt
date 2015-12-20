@@ -19,8 +19,11 @@ var UserSchema = new mongoose.Schema({
 
     // store credentials to use google services for this user
     google : {
-        email : {type : String, default : ''},
-        accessToken : {type : String, default : ''}
+        id : String
+    },
+    facebook : {
+        id : String,
+        accessToken : String
     },
     groups : [String],
     accessRecords : mongoose.Schema.Types.Mixed
@@ -120,7 +123,7 @@ UserSchema.methods.verifyPassword = function(password) {
  * Generates a token to replace use of password for authentication.
  * @param  {Number}   milliseconds How long this token will be valid.
  */
-UserSchema.methods.generateToken = function(password, cb) {
+UserSchema.methods.generateToken = function(password) {
     var user = this;
 
     return bcrypt_hash(password, user.secretSalt)
@@ -153,6 +156,31 @@ UserSchema.methods.generateGuestToken = function() {
         .then(function(guest){
             var token = {
                 _id : guest._id,
+                secret : secret
+            };
+
+            // this enocding is for use in header authorization.
+            token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
+
+            return token;
+        });
+};
+
+UserSchema.methods.generateTokenFromOauthToken = function(oauthToken) {
+    var user = this;
+    user.tokenSalt = crypto.randomBytes(16).toString('hex');
+    var secret = oauthToken;
+
+    return crypto_pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256')
+        .then(function(tokenHash){
+            user.tokenHash = tokenHash.toString('hex');
+
+            return user.save();
+        })
+        .then(function(user){
+            var token = {
+                username : user.username,
+                _id : user._id,
                 secret : secret
             };
 

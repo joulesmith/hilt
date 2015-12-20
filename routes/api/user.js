@@ -7,6 +7,7 @@ var userAuth = require('../../middleware/user');
 var _ = require('lodash');
 var Promise = require('bluebird');
 var sanitize = require('mongo-sanitize');
+var googleapis = require('googleapis')
 
 var UsersError = require('../../error')('routes.api.users');
 
@@ -22,6 +23,12 @@ var email_regex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+
 
 // see if a username is already taken
 
+
+// TODO: have to set this from database values
+var oauth2Client = new googleapis.auth.OAuth2(
+    '227454360184-kk55m7mdg9blkgnkd7pmuhs3d20kh806.apps.googleusercontent.com',
+    'NP53QGYunsiy33xfvF1IeUu5',
+    'http://localhost:3000/api/user/google/auth/callback');
 
 // creates a new user
 router.post('/', function(req, res, next) {
@@ -320,6 +327,102 @@ router.get('/records/:model', userAuth(),  function(req, res, next){
 
 
         res.send(req.user.accessRecords[req.params.model]);
+    }catch(error){
+        next(error);
+    }
+});
+
+var scopes = [
+    'https://www.googleapis.com/auth/plus.me'
+];
+
+var oauthURL = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: scopes.join(" ") // space delimited string of scopes
+});
+
+// returns an authorization url that will then provide a code exchangable for a token
+router.get('/google/auth/url', function(req, res, next){
+    try{
+
+        res.send({
+            user : {
+                google : {
+                    auth : {
+                        url : oauthURL
+                    }
+                }
+            }
+        });
+    }catch(error){
+        next(error);
+    }
+});
+
+router.get('/google/auth/callback', function(req, res, next){
+    try{
+        if (req.query.error){
+            res.render('googleCallback', { error: req.query.error, code : '' });
+        }else{
+            res.render('googleCallback', { error: '', code : req.query.code });
+        }
+
+    }catch(error){
+        next(error);
+    }
+});
+
+// sets the google access token from a code, and returns a local login token
+router.post('/google/auth/token', function(req, res, next){
+
+    try{
+
+        oauth2Client.getToken(req.body.code, function(err, tokens) {
+            // contains an access_token and optionally a refresh_token.
+            // save them permanently.
+            //
+            oauth2Client.setCredentials(tokens);
+
+
+            googleapis
+                .plus('v1').people.get({
+                    userId: 'me',
+                    auth: oauth2Client
+                }, function(err, person) {
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    User.findOne({
+                            'google.id': person.id
+                        }).exec()
+                        .then(function(user) {
+
+                            if (!user) {
+                                user = new User({
+                                    created: Date.now(),
+                                    username: person.displayName,
+                                    google: {
+                                        id : person.id
+                                    }
+                                });
+                            }
+
+                            return user.generateTokenFromOauthToken(tokens.access_token);
+                        })
+                        .then(function(token) {
+                            res.json({
+                                token: token
+                            });
+                        })
+                        .catch(function(error) {
+                            next(error);
+                        });
+                });
+
+        });
+
     }catch(error){
         next(error);
     }

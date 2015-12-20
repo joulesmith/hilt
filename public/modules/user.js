@@ -23,7 +23,7 @@ define(['angular'], function (angular){
         }]);
 
     // create a new user
-    module.controller('user.register', ['$scope', '$state', 'apifactory.models', function($scope, $state, models){
+    module.controller('user.register', ['$scope', '$window', '$state', 'apifactory.models', function($scope, $window, $state, models){
         models('user')
         .then(function(api){
             $scope.user = {
@@ -180,6 +180,48 @@ define(['angular'], function (angular){
                         $scope.error = error;
                     });
                 }
+            };
+
+            $scope.oAuthWindow = function() {
+                api.user.google.auth.url()
+                .then(function(url){
+                    $window.googleCallback = function(err, code) {
+                        // TODO: find a different way to hook back to the parent
+                        // window
+                        delete $window.googleCallback;
+                        $window.focus();
+
+                        if (err !== '') {
+                            $scope.$apply(function(){
+                                $scope.error = {
+                                    message : err
+                                };
+                            });
+
+                            return;
+                        }
+
+                        api.user.google.login(code)
+                        .then(function(){
+                            $state.go('home');
+                        })
+                        .catch(function(error){
+                            $scope.error = error;
+                        });
+                    };
+
+                    var childWindow = $window.open(url);
+                    childWindow.focus();
+
+                    // This doesn't work because I think I don't have control over
+                    // the window once I hand it off to google so the callback disapears.
+                    //childWindow.onbeforeunload = function(event) {
+                    //};
+
+                })
+                .catch(function(error){
+                    $scope.error = error;
+                });
             };
         });
 

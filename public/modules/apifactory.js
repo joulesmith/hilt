@@ -129,7 +129,6 @@ define(['angular'], function (angular){
         */
         api.user.login = function(user){
 
-            // TODO: after logging in, convert the guest account
             return $http.post('/api/user/token', user)
                 .then(function(res){
 
@@ -213,6 +212,63 @@ define(['angular'], function (angular){
                     throw (res.data && res.data.error) || res;
                 });
 
+        };
+
+        api.user.google = {
+            auth : {}
+        };
+
+        api.user.google.auth.url = function(){
+
+            return $http.get('/api/user/google/auth/url')
+                .then(function(res){
+                    return res.data.user.google.auth.url;
+                }, function(res){
+                    throw (res.data && res.data.error) || res;
+                });
+
+        };
+
+        // log into the website using a google authorization code
+        api.user.google.login = function(code){
+
+            return $http.post('/api/user/google/auth/token', {
+                    code : code
+                })
+                .then(function(res){
+                    console.log(res);
+
+                    if (res.data.token) {
+                        user_token = res.data.token;
+                        api.user.guest = false;
+
+                        api.user._id = user_token._id;
+                        api.user.username = user_token.username;
+
+                        $http.defaults.headers.common.Authorization = user_token.base64;
+
+                        if (user.rememberLogin) {
+                            $window.localStorage.setItem("user_token", JSON.stringify(user_token));
+                        }else{
+                            $window.sessionStorage.setItem("user_token", JSON.stringify(user_token));
+                        }
+
+                        if (guest_token) {
+                            return $http.post('/api/user/merge', {
+                                fromToken : guest_token,
+                                toToken : user_token
+                            })
+                            .then(function(){
+                                guest_token = null;
+                                $window.sessionStorage.removeItem('guest_token');
+
+                            });
+                        }
+                    }
+                })
+                .catch(function(res){
+                    throw (res.data && res.data.error) || res;
+                });
         };
 
         api.user.testAccess = function(model, element, action) {

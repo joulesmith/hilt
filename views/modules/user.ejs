@@ -6,6 +6,7 @@
     <div class="row">
         <div class="col-sm-offset-2 col-sm-8">
             <form ng-submit="submit()"  class="form-horizontal">
+
                 <div class="form-group row has-feedback">
                     <label for="username" class="col-sm-2 control-label">Username</label>
                     <div class="col-sm-10 col-lg-6">
@@ -132,6 +133,14 @@
                 <div ng-if="user.username.registered" class="form-group row">
                     <div class="col-sm-offset-2 col-sm-10 col-lg-6">
                         <button type="submit" class="btn btn-primary">Login</button>
+                    </div>
+                </div>
+                <div ng-if="user.username.value === ''" class="form-group row">
+                    <label for="username" class="col-sm-2 control-label">Sign-In With</label>
+                    <div class="col-sm-10 col-lg-6">
+                        <span class="btn btn-default">
+                            <img ng-click="oAuthWindow()" src="./img/btn_google+_signin_small_transparent.png" alt="google plus sing-in" style="display: inline-block"></img>
+                        </span>
                     </div>
                 </div>
                 <div ng-if='error' class="form-group row">

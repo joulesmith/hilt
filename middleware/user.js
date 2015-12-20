@@ -2,38 +2,6 @@ var mongoose = require('mongoose');
 var User = mongoose.model("user");
 
 
-var passport = require('passport')
-var LocalStrategy = require('passport-local').Strategy;
-
-passport.use(new LocalStrategy(
-    function(username, password, done) {
-        User.findOne({
-            username : username
-        })
-        .exec()
-        .then(function(user){
-            if (!user) {
-                done(null, false, { message: 'Incorrect username.' });
-                return null;
-            }
-
-            return user.verifyPassword(password);
-        })
-        .then(function(user){
-
-            if (!user) {
-                done(null, false, { message: 'Incorrect password.' });
-                return null;
-            }
-
-            return done(null, user);
-        })
-        .catch(function(error){
-            done(err);
-        });
-    }
-));
-
 module.exports = function() {
     return function(req, res, next) {
 
