@@ -314,12 +314,14 @@ define(['angular'], function (angular){
             var promises = [];
 
             if (typeof dependencies === 'string') {
+                // this is for laziness when there is only 1 dependency
                 dependencies = [dependencies];
             }
 
             dependencies.forEach(function(model){
                 if (!api[model]) {
                     // TODO : set headers based on if authentication is needed?
+                    // TODO : handle errors here instead of in the caller -> api error handler?
 
                     promises.push($http.get('/api/' + model + '/model')
                     .then(function(res){

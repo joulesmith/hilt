@@ -13,7 +13,7 @@ var user_ioAuth = require('../middleware/user_io');
 var error = require('../error');
 var _ = require('lodash');
 
-var User = mongoose.model('user');
+
 var Settings = mongoose.model('settings');
 
 var bodyParser = require('body-parser');
@@ -50,6 +50,10 @@ var addModels = function(models) {
     };
 
     for(var model in models) {
+
+        if (api[model]){
+            throw new Error("Model " + model + " has already been defined");
+        }
 
         var apiModel = models[model];
         api[model] = apiModel;
@@ -282,6 +286,8 @@ var addModels = function(models) {
 
         var Model = mongoose.model(model, Schema);
 
+        // if this is the user model, these two will be the same
+        var User = mongoose.model('user');
 
         var apiHandle = {
             settings : {}
@@ -457,17 +463,19 @@ var addModels = function(models) {
                     new_element.grantUserAccess((apiModel.create && apiModel.create.creatorAccess) || ['root'], req.user)
                         .then(function(element){
                             if (apiModel.create && apiModel.create.handler) {
-                                return apiModel.create.handler.apply(element, [req]);
+                                return apiModel.create.handler.apply(element, [req, res]);
                             }else{
-                                return element;
+                                return element.save();
                             }
                         })
                         .then(function(element) {
-                            var response = {};
+                            if (element) {
+                                var response = {};
 
-                            response[model] = element;
+                                response[model] = element;
 
-                            res.json(response);
+                                res.json(response);
+                            }
                         })
                         .catch(function(error) {
                             next(error);
@@ -511,23 +519,22 @@ var addModels = function(models) {
                                 var edit_promise;
 
                                 if (apiModel.update && apiModel.update.handler) {
-                                    edit_promise = apiModel.update.handler.apply(element, [req]);
+                                    return apiModel.update.handler.apply(element, [req, res]);
                                 } else {
-                                    edit_promise = element.save();
+                                    return element.save();
                                 }
-
-                                return edit_promise;
                             })
                             .then(function(element) {
                                 // broadcast that the resource has changed to anyone in the channel
                                 // and the time that the edit happened
                                 element.event('changed', element.edited);
+                                if (element){
+                                    var response = {};
 
-                                var response = {};
+                                    response[model] = element;
 
-                                response[model] = element;
-
-                                res.json(response);
+                                    res.json(response);
+                                }
                             })
                             .catch(function(error) {
                                 next(error);
@@ -623,10 +630,20 @@ var addModels = function(models) {
                                         403);
                                 }
 
-                                var response = {};
-                                response[model] = element;
+                                if (apiModel.get && apiModel.get.handler) {
+                                    return apiModel.get.handler.apply(element, [req, res]);
+                                }else{
+                                    return element;
+                                }
 
-                                res.json(response);
+                            })
+                            .then(function(element){
+                                if (element) {
+                                    var response = {};
+                                    response[model] = element;
+
+                                    res.json(response);
+                                }
                             })
                             .catch(function(error) {
                                 next(error);

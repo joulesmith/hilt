@@ -34,16 +34,16 @@ module.exports = {
                     required : Boolean,
                     name : String,
                     option : [{
-                        name : String
+                        name : String,
                         priceAdjustment : Number
                     }]
                 }]
 
             },
             dependent : {
-                forSale : {type: Boolean: default: false},
-                introduced : {type: Number: default: 0}, // time at which it is made available
-                discontinued : {type: Number: default: 0}, // time at which it was discontinued
+                forSale : {type: Boolean, default: false},
+                introduced : {type: Number, default: 0}, // time at which it is made available
+                discontinued : {type: Number, default: 0}, // time at which it was discontinued
                 // only if physical is false
                 inventory : {
                     quantity : {type: Number, default: 0},
@@ -61,7 +61,7 @@ module.exports = {
         },
         get : {
             security : false
-        }
+        },
         update : {
             security : true,
             handler : function(req) {

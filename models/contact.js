@@ -15,7 +15,6 @@ var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 var ModelError = error('routes.api.contact');
 
-
 module.exports = {
     contact : {
         state : { // this is what will be stored in the database specific to each resource

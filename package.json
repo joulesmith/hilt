@@ -17,7 +17,7 @@
   },
   "scripts": {
     "start": "node ./bin/www",
-    "postinstall" : "bower install"
+    "postinstall": "bower install"
   },
   "dependencies": {
     "bcrypt": "~0.8.5",
@@ -28,6 +28,7 @@
     "ejs": "~2.3.1",
     "express": "~4.12.2",
     "formidable": "^1.0.17",
+    "geocoder": "^0.2.2",
     "googleapis": "^2.1.7",
     "lodash": "^3.10.1",
     "marked": "^0.3.5",

@@ -8,20 +8,20 @@ var apimodelfactory = require('./apifactory');
 var fs = require('fs');
 var path = require('path');
 var formidable = require('formidable');
-var error = require('../error');
+
 var Promise = require('bluebird');
 var config = require('../config');
 var mongoose = require('mongoose');
 var braintree = require('braintree');
 
-var ModelError = error('routes.api.account');
+var ModelError = require('../error')('routes.api.account');
 
 
 module.exports = {
     account : {
         state : {
             independent : {
-                acctName : {type : String, default : ''},
+                name : {type : String, default : ''},
             },
             dependent : {
                 balance : {type: Number, default: 0},
@@ -34,10 +34,18 @@ module.exports = {
                 services : [{ type: mongoose.Schema.Types.ObjectId, ref: 'service'}],
                 managers : { type: mongoose.Schema.Types.ObjectId, ref: 'group'},
             },
-            index : {acctName : 'text'}, // used for text searches
+            index : {name : 'text'}, // used for text searches
         },
         create : {
+            handler : function(req, res) {
+                // create the managers group
+                var Group = mongoose.model('group');
+                this.managers = new Group({
+                    name : 'managers'
+                });
 
+                return this.managers.add(req.user).return(this.save());
+            }
         },
         get : {
             secure : true

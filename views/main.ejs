@@ -71,8 +71,7 @@ require([
     'account',
     'receipt',
     'uiBootstrap',
-    'uiRouter',
-    'service'
+    'uiRouter'
 ], function(
     angular,
     domReady) {
@@ -89,8 +88,7 @@ require([
         'account',
         'receipt',
         'file',
-        'ngSanitize',
-        'service'
+        'ngSanitize'
     ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
         $urlRouterProvider.otherwise('/');
 

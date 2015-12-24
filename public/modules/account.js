@@ -8,12 +8,84 @@ define(['angular', 'braintree'], function (angular, braintree){
 
     var module = angular.module('account', [])
         .config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
-
+            $stateProvider
+                .state('account', {
+                    url : '/account',
+                    templateUrl : 'account'
+                })
+                .state('account.create', {
+                    url : '/create',
+                    templateUrl : 'account.create',
+                    controller : 'account.create'
+                })
+                .state('account.edit', {
+                    url : '/:accountId/edit',
+                    templateUrl : 'account.edit',
+                    controller : 'account.edit'
+                });
         }]);
 
     //
     // Controllers for the views of the sub-states
     //
+
+    module.controller('account.create', ['$scope', '$window', '$state', 'apifactory.models', function($scope, $window, $state, models){
+
+        models(['user', 'account'])
+        .then(function(api){
+            $scope.createAccount = function(){
+                api.account.create({
+                    name : $scope.name
+                })
+                .then(function(account){
+                    $state.go('account.edit', {accountId : account._id});
+                })
+                .catch(function(error){
+                    $scope.error = error;
+                });
+            };
+
+        });
+
+    }]);
+
+    module.controller('account.edit', ['$scope', '$window', '$state', 'apifactory.models', function($scope, $window, $state, models){
+
+        $scope.account = {};
+
+        models(['user', 'account', 'service'])
+        .then(function(api){
+            var _id = $state.params.accountId;
+
+            if (_id && _id !== '') {
+                api.account.get(_id)
+                .then(function(account){
+                    angular.copy(account, $scope.account);
+
+                    $scope.addService = function(){
+                        api.service.create({
+                            account : account._id,
+                            name : $scope.newServiceName
+                        })
+                        .then(function(service){
+                            $state.go('service.edit', {serviceId : service._id});
+                        })
+                        .catch(function(error){
+                            $scope.error = error;
+                        })
+                    };
+
+                    $scope.error = null;
+                })
+                .catch(function(error){
+                    $scope.error = error;
+                });
+            }
+        });
+
+    }]);
+
+
 
 
 
@@ -67,4 +139,6 @@ define(['angular', 'braintree'], function (angular, braintree){
             };
         });
     }]);
+
+
 });

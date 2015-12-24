@@ -30,12 +30,11 @@ module.exports = {
                 "countryCodeAlpha2": String,
                 "countryCodeAlpha3": String,
                 "countryCodeNumeric": String,
-                "latitude" : Number, // degrees
-                "longitude": Number // degrees
+                geospatial : mongoose.Schema.Types.Mixed, // geospatial coordinates
             },
             dependent : { // what is set indirectly according to the api
             },
-            index : null, // used for text searches
+            index : {geospatial: "2dsphere"}, //
         },
         create: {
             creatorAccess: ['get']

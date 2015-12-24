@@ -44,9 +44,31 @@ server.express.use('/api/user', require('./routes/api/user'));
 
 var apimodelfactory = require('./models/apifactory')(server);
 
+// needed for group permissions
+apimodelfactory.addModels(require('./models/group'));
+
+// needed for contacting users by email, phone, and postal
+apimodelfactory.addModels(require('./models/contact'));
+
+// needed for uploading files to the server
 apimodelfactory.addModels(require('./models/file'));
+
+// needed for tracking payments to users
 apimodelfactory.addModels(require('./models/account'));
+
+//
+apimodelfactory.addModels(require('./models/product'));
+
+//
+apimodelfactory.addModels(require('./models/service'));
+
+//
+apimodelfactory.addModels(require('./models/order'));
+
+//
 apimodelfactory.addModels(require('./models/receipt'));
+
+// A free-form page which text, images, etc can be added
 apimodelfactory.addModels(require('./models/profile'));
 
 // catch 404 and forward to error handler

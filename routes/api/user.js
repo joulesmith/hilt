@@ -7,7 +7,7 @@ var userAuth = require('../../middleware/user');
 var _ = require('lodash');
 var Promise = require('bluebird');
 
-var googleapis = require('googleapis')
+var googleapis = require('googleapis');
 
 var UsersError = require('../../error')('routes.api.users');
 
@@ -21,7 +21,7 @@ var User = mongoose.model("user");
 
 var email_regex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[A-Z]{2}|com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|museum)\b/;
 
-// see if a username is already taken
+var username_regex = /^[a-zA-Z0-9]{3,20}([._]?[a-zA-Z0-9]{3,20})*$/;
 
 
 // TODO: have to set this from database values
@@ -34,7 +34,7 @@ var oauth2Client = new googleapis.auth.OAuth2(
 router.post('/', function(req, res, next) {
     try {
 
-        if (!req.body.username || req.body.username === '') {
+        if (!req.body.username || !username_regex.test(req.body.username)) {
             throw new UsersError('nousername',
                 'A username must be supplied to register a new user.',
                 [],
@@ -382,7 +382,6 @@ router.post('/google/auth/token', function(req, res, next){
             // save them permanently.
             //
             oauth2Client.setCredentials(tokens);
-
 
             googleapis
                 .plus('v1').people.get({

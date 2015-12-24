@@ -1,0 +1,73 @@
+
+<script type="text/ng-template" id="service">
+    <div ui-view class=""></div>
+</script>
+
+<script type="text/ng-template" id="service.areasearch">
+    <ol class="breadcrumb">
+      <li ng-repeat="category in currentCategories" uib-dropdown class="dropdown">
+          <a uib-dropdown-toggle id="single-button" class="dropdown-toggle" role="button" aria-haspopup="true" aria-expanded="false" style="cursor:pointer;">
+              <span>{{(category.selection && category.selection !== '') ? category.selection : category.category}}</span>
+              <span class="sr-only"></span>
+              <span class="caret">
+          </span></a>
+          <ul class="uib-dropdown-menu" role="menu" aria-labelledby="single-button">
+              <li ng-repeat="(choice, subcat) in category.options" ng-click="select($parent.$index, choice)" style="cursor:pointer;" ng-class="{active:category.selection===choice}">
+                <a>{{choice}}</a>
+            </li>
+          </ul>
+      </li>
+    </ol>
+    <form ng-submit="search()">
+        <div class="input-group">
+            <div class="input-group-btn">
+                <button class="btn btn-default" type="submit">Search Area</button>
+                <span ng-click="getLocation()" class="btn btn-default">
+                    <span class="glyphicon glyphicon-screenshot"></span>
+                    <span class="sr-only">detect current location</span>
+                </span>
+            </div>
+            <input ng-model="location" type="text" class="form-control" placeholder="{{position ? 'lat ' + position.coords.latitude.toFixed(1) + '\u00B0 lng ' + position.coords.longitude.toFixed(1) + '\u00B0': 'Enter Location...'}}">
+        </div>
+    </form>
+    <div ng-repeat="service in services" ng-include="service.preview" ng-controller="service.preview"></div>
+
+    <div ng-if='error' class="form-group row">
+        <div class="col-sm-offset-2 col-sm-10 col-lg-6">
+            <div ng-include="'common.error'" ng-controller="common.error"><div>
+        </div>
+    </div>
+</script>
+
+<script type="text/ng-template" id="service.preview">
+    <div class="row">
+
+    </div>
+</script>
+
+<script type="text/ng-template" id="service.view">
+    <div class="row">
+        <div class="col-sm-2">
+            <h2>{{account.name}}</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2">
+            <h2>{{service.name}}</h2>
+        </div>
+    </div>
+</script>
+
+<script type="text/ng-template" id="service.edit">
+    <div class="input-group">
+        <span class="input-group-btn">
+            <button class="btn btn-default" type="button">Change Name</button>
+        </span>
+        <input ng-model="service.name" type="text" class="form-control" placeholder="Service Name...">
+    </div>
+    <div class="input-group">
+        <div class="input-group-addon">$</div>
+        <input type="text" class="form-control" id="exampleInputAmount" placeholder="Amount">
+        <div class="input-group-addon">.00</div>
+    </div>
+</script>

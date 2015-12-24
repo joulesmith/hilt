@@ -31,7 +31,7 @@ module.exports = {
         },
         get : {
             secure : true
-        }
+        },
         update : {
             secure : true,
             handler : function(req, res){
@@ -58,11 +58,7 @@ module.exports = {
                                 404);
                         }
 
-                        var index = _.sortedIndex(group.users, user_id);
-
-                        group.users.slice(index, 0, user_id);
-
-                        return user.addGroup(group).return(group.save());
+                        return group.add(user);
                     });
                 }
             },
@@ -79,17 +75,29 @@ module.exports = {
                                 404);
                         }
 
-                        var index = _.indexOf(group.users, user_id, true);
-
-                        group.users.slice(index, 1);
-
-                        return user.removeGroup(group).return(group.save());
+                        return group.remove(user);
                     });
                 }
             }
         },
         // only accessible on the server
         internal : {
+            add : function (user) {
+                var user_id = '' + user._id;
+                var index = _.sortedIndex(this.users, user_id);
+
+                this.users.slice(index, 0, user_id);
+
+                return user.addGroup(this).return(this.save());
+            },
+            remove : function(user) {
+                var user_id = '' + user._id;
+                var index = _.indexOf(this.users, user_id, true);
+
+                this.users.slice(index, 1);
+
+                return user.removeGroup(this).return(this.save());
+            },
             accessGranted : function(model, actions, resource) {
                 var group = this;
                 var resource_id = '' + resource._id;
