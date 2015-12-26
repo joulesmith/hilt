@@ -12,6 +12,7 @@ require.config({
         'restangular' : '../lib/restangular',
         'uiRouter' : '../lib/angular-ui-router.min',
         'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min',
+        'ngDialogs' : '../angular-dialog-service/dist/dialogs',
         "marked" : "../marked/lib/marked",
         "MathJax" : "../MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML&amp;delayStartupUntil=configured",
         "braintree" : "../braintree-web/dist/braintree"
@@ -33,6 +34,10 @@ require.config({
         },
         'uiBootstrap' : {
             deps: ['angular']
+        },
+        'ngDialogs' : {
+            deps: ['angular'],
+            exports : 'ngDialogs'
         },
         'lodash' : {
             exports : '_'
@@ -71,6 +76,7 @@ require([
     'account',
     'receipt',
     'uiBootstrap',
+    'ngDialogs',
     'uiRouter',
     'service'
 ], function(
