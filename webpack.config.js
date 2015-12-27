@@ -8,6 +8,8 @@ module.exports = {
             'angular-sanitize' : 'bower_components/angular-sanitize/angular-sanitize.js',
             'angular-bootstrap' : 'bower_components/angular-bootstrap/ui-bootstrap-tpls.js',
             'angular-dialog-service' : 'bower_components/angular-dialog-service/dist/dialogs.js',
+            'angular-simple-logger' : 'bower_components/angular-simple-logger/dist/angular-simple-logger.js',
+            'angular-google-maps' : 'bower_components/angular-google-maps/dist/angular-google-maps.js',
             'domReady' : 'bower_components/requirejs-domready/domReady.js',
             'marked' : 'bower_components/marked/lib/marked.js',
             'MathJax' : 'bower_components/MathJax/MathJax.js',
@@ -24,6 +26,8 @@ module.exports = {
             { test: /angular-sanitize\.js/, loader: "imports?angular" },
             { test: /ui-bootstrap-tpls\.js/, loader: "imports?angular" },
             { test: /dialogs\.js/, loader: "imports?angular" },
+            { test: /angular-simple-logger\.js/, loader: "imports?angular" },
+            { test: /angular-google-maps\.js/, loader: "imports?angular" },
             { test: /lodash\.js/, loader: "exports?_" },
             // expose MathJax as a global, which is actually the configuration only at this point
             { test: /MathJaxConfig\.js/, loader: "expose?MathJax" },
@@ -37,20 +41,3 @@ module.exports = {
         filename: "index.js"
     }
 };
-
-/*
-    TODO: remove this comments when I know MathJax is working right with webpack
-
-"MathJax" : "../MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML&amp;delayStartupUntil=configured",
-
-'MathJax' : {
-    exports : 'MathJax',
-    init: function () {
-        MathJax.Hub.Config({
-            skipStartupTypeset: true
-        });
-        MathJax.Hub.Startup.onload();
-        return MathJax;
-    }
-}
- */

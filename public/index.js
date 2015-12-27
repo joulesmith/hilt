@@ -9,6 +9,8 @@ require([
     'angular-sanitize',
     'angular-bootstrap',
     'angular-dialog-service',
+    'angular-simple-logger',
+    'angular-google-maps',
     'apifactory',
     'common',
     'user',
@@ -34,6 +36,7 @@ require([
         'receipt',
         'file',
         'ngSanitize',
+        'uiGmapgoogle-maps',
         'service'
     ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
         $urlRouterProvider.otherwise('/');

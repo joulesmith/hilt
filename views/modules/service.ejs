@@ -1,4 +1,8 @@
 
+<style type="text/css">
+    .angular-google-map-container { height: 400px; }
+</style>
+
 <script type="text/ng-template" id="service">
     <div ui-view class=""></div>
 </script>
@@ -94,7 +98,52 @@
         <br>
         <div ng-repeat="choice in service.choice" ng-include="'service.choice.edit'" ng-controller="service.choice.edit" class="well col-sm-offset-2"></div>
         <br>
-        <ng-map center="[40.74, -74.18]"></ng-map>
+        <div class="row">
+            <label class="col-sm-2 control-label">Service Area</label>
+            <div class="col-sm-10">
+                <div class="row">
+                    <h6 class="col-sm-1">Radius</h6>
+                    <span class="col-sm-2"><input ng-model="radius" ng-change="computeRadius()" type="number" class="form-control" id="duration" placeholder="Radius..."></span>
+                    <span class="col-sm-2"><select ng-model="radiusUnits" ng-change="computeRadius()" class="form-control">
+                        <option value="1000">kilometers</option>
+                        <option value="1609.34">miles</option>
+                    </select></span>
+
+                </div>
+                <div class="row">
+                    <form ng-submit="setAreaCenter()" class="col-sm-12">
+                        <div class="input-group">
+                            <div class="input-group-btn">
+                                <button class="btn btn-default" type="submit">Set Center</button>
+                                <span ng-click="getLocation()" class="btn btn-default">
+                                    <span class="glyphicon glyphicon-screenshot"></span>
+                                    <span class="sr-only">detect current location</span>
+                                </span>
+                            </div>
+                            <input ng-model="address" type="text" class="form-control" placeholder="{{position ? 'lat ' + position.coords.latitude.toFixed(1) + '\u00B0 lng ' + position.coords.longitude.toFixed(1) + '\u00B0': 'Enter Location...'}}">
+                        </div>
+                    </form>
+                </div>
+                <div class="row">
+                    <ui-gmap-google-map center='map.center' zoom='map.zoom' control='map.control' options='map.options' class="col-sm-12">
+                        <ui-gmap-circle
+                            center='serviceArea.center'
+                            radius='serviceArea.radius'
+                            stroke="serviceArea.stroke"
+                            fill="serviceArea.fill"
+                            radius="serviceArea.radius"
+                            visible="serviceArea.visible"
+                            geodesic="serviceArea.geodesic"
+                            editable="serviceArea.editable"
+                            draggable="serviceArea.draggable"
+                            clickable="serviceArea.clickable"
+                            control="serviceArea.control"
+                            events="serviceArea.events">
+                        </ui-gmap-circle>
+                    </ui-gmap-google-map>
+                </div>
+            </div>
+        </div>
     </div>
 </script>
 

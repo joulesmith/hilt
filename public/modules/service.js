@@ -6,24 +6,30 @@ define(['angular', 'lodash'], function (angular, lodash){
     // module for common interactions with the profile model
     //
     var module = angular.module('service', ['dialogs.main'])
-        .config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
+    .config(['$urlRouterProvider', '$stateProvider', 'uiGmapGoogleMapApiProvider', function($urlRouterProvider, $stateProvider, GoogleMapApi){
 
-            $stateProvider
-                .state('service', {
-                    url : '/service',
-                    templateUrl : 'service'
-                })
-                .state('service.areasearch', {
-                    url : '/areasearch',
-                    templateUrl : 'service.areasearch',
-                    controller : 'service.areasearch'
-                })
-                .state('service.edit', {
-                    url : '/:serviceId/edit',
-                    templateUrl : 'service.edit',
-                    controller : 'service.edit'
-                });
-        }]);
+        GoogleMapApi.configure({
+            key: 'AIzaSyD7gui4zT6BFUeVtiD-fsCHMGvqXo6GDzY',
+            v: '3.20',
+            libraries: 'weather,geometry,visualization'
+        });
+
+        $stateProvider
+            .state('service', {
+                url : '/service',
+                templateUrl : 'service'
+            })
+            .state('service.areasearch', {
+                url : '/areasearch',
+                templateUrl : 'service.areasearch',
+                controller : 'service.areasearch'
+            })
+            .state('service.edit', {
+                url : '/:serviceId/edit',
+                templateUrl : 'service.edit',
+                controller : 'service.edit'
+            });
+    }]);
 
     module.controller('service.areasearch', ['$scope', '$window', 'apifactory.models', function($scope, $window, models){
         $scope.location = '';
@@ -118,16 +124,108 @@ define(['angular', 'lodash'], function (angular, lodash){
 
     }]);
 
-    module.controller('service.edit',
-        ['$scope',
-        '$window',
-        '$state',
-        '$uibModal',
-        'dialogs',
-        'apifactory.models',
-    function($scope, $window, $state, $uibModal, dialogs, models){
+    module.controller('service.edit', ['$scope','$window','$state','$uibModal','dialogs','apifactory.models','uiGmapLogger','uiGmapGoogleMapApi',
+    function($scope, $window, $state, $uibModal, dialogs, models, $log, GoogleMapApi) {
         $scope.service = {};
         $scope.account = {};
+        $log.currentLevel = $log.LEVELS.debug;
+        $scope.address = '';
+        $scope.radius = 10;
+        $scope.radiusUnits = '1000';
+        $scope.getLocation = function () {
+            if ($window.navigator.geolocation) {
+                $window.navigator.geolocation.getCurrentPosition(function(position){
+                    if (!position.coords) {
+                        return $scope.error = new Error("No coordinates detected from browser.");
+                    }
+
+                    $scope.$apply(function(){
+                        $scope.position = position;
+                    });
+                });
+            } else {
+                $scope.error = new Error("Geolocation is not supported by this browser.");
+            }
+        };
+
+        GoogleMapApi.then(function(maps) {
+            $scope.googleVersion = maps.version;
+            maps.visualRefresh = true;
+            var geocoder = new maps.Geocoder();
+
+            $scope.map = {
+                center : { latitude: 45, longitude: -73 },
+                zoom: 8,
+                control: {},
+                options : {
+                    scaleControl : true
+                }
+            };
+
+            $scope.serviceArea = {
+                center : { latitude: 45, longitude: -73 },
+                radius : 10000, // meters?
+                stroke: {
+                    color: '#08B21F',
+                    weight: 2,
+                    opacity: 1
+                },
+                fill: {
+                    color: '#08B21F',
+                    opacity: 0.5
+                },
+                geodesic: true, // optional: defaults to false
+                draggable: true, // optional: defaults to false
+                clickable: true, // optional: defaults to true
+                editable: true, // optional: defaults to false
+                visible: true, // optional: defaults to true
+                control: {},
+                events : {
+                    radius_changed : function(circle){
+                        $scope.radius = (circle.radius / parseFloat($scope.radiusUnits));
+                    }
+                }
+            };
+
+            $scope.computeRadius = function() {
+                $scope.serviceArea.radius = $scope.radius * parseFloat($scope.radiusUnits);
+            };
+
+            $scope.computeRadius();
+
+            $scope.setAreaCenter = function() {
+
+                if ($scope.address !== '') {
+                    // need to use google geocoding to convert the address
+                    geocoder.geocode({
+                        address : $scope.address
+                    }, function(results, status) {
+                        if (status == maps.GeocoderStatus.OK) {
+
+                            var map = $scope.map.control.getGMap();
+                            map.setCenter(results[0].geometry.location);
+
+                            $scope.$apply(function(){
+                                $scope.serviceArea.center.latitude = results[0].geometry.location.lat();
+                                $scope.serviceArea.center.longitude = results[0].geometry.location.lng();
+                            });
+
+                        } else {
+                            window.alert('Geocode was not successful for the following reason: ' + status);
+                        }
+                    });
+
+                }else if ($scope.position) {
+
+                    $scope.serviceArea.center.latitude = $scope.position.coords.latitude;
+                    $scope.serviceArea.center.longitude = $scope.position.coords.longitude;
+                    $scope.map.center.latitude = $scope.position.coords.latitude;
+                    $scope.map.center.longitude = $scope.position.coords.longitude;
+                }else{
+                    $scope.error = new Error("Must give a location to search.");
+                }
+            };
+        });
 
         models(['user', 'account','service'])
         .then(function(api){

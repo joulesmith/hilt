@@ -47,7 +47,7 @@ define(['angular', 'marked', 'MathJax'], function (angular, marked, MathJax){
                 $scope.$watch($attrs.mathjax, function(value) {
 
                     $element.html($sanitize(value));
-                    console.log(MathJax);
+
                     MathJax.Hub.Queue(["Typeset", MathJax.Hub, $element[0]]);
                 });
             }]
