@@ -17,8 +17,10 @@ require('./models/profile');
 server.express.set('views', path.join(__dirname, 'views'));
 server.express.set('view engine', 'ejs');
 
-server.express.use(express.static(path.join(__dirname, 'public')));
 server.express.use(express.static(path.join(__dirname, 'bower_components')));
+server.express.use(express.static(path.join(__dirname, 'dist')));
+server.express.use(express.static(path.join(__dirname, 'public')));
+
 
 
 // third party middleware

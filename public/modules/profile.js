@@ -411,9 +411,7 @@ define(['angular', 'lodash'], function (angular, lodash){
                     if (profile.data !== ''){
                         $scope.element.rows = JSON.parse(profile.data);
                     }
-                    console.log($scope.profile);
-                    console.log(api.profile);
-                    console.log(api.user._id);
+
                     $scope.canEdit = api.user.testAccess('profile', $scope.profile, 'update');
 
                     $scope.error = null;
@@ -519,7 +517,7 @@ define(['angular', 'lodash'], function (angular, lodash){
     module.controller('profile.payment', ['$scope', '$uibModal', function($scope, $uibModal){
 
         $scope.payment = function() {
-            console.log('trying to pay');
+
             var modalInstance = $uibModal.open({
                 animation: true,
                 templateUrl: 'account.braintree',

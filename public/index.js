@@ -1,73 +1,14 @@
 "use strict";
 
-require.config({
-    // set base to where most modules will be located
-    baseUrl : './modules',
-    paths : {
-        'angular' : '../angular/angular.min',
-        'ngRoute' : '../angular-route/angular-route.min',
-        'ngSanitize' : '../angular-sanitize/angular-sanitize.min',
-        'domReady': '../lib/domReady',
-        'lodash' : '../lodash/lodash.min',
-        'restangular' : '../lib/restangular',
-        'uiRouter' : '../lib/angular-ui-router.min',
-        'uiBootstrap' : '../lib/ui-bootstrap-tpls-0.14.3.min',
-        'ngDialogs' : '../angular-dialog-service/dist/dialogs',
-        "marked" : "../marked/lib/marked",
-        "MathJax" : "../MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML&amp;delayStartupUntil=configured",
-        "braintree" : "../braintree-web/dist/braintree"
-    },
-    shim: {
-        'angular' : {
-            exports : 'angular'
-        },
-        'ngRoute' : {
-            deps: ['angular'],
-            exports : 'ngRoute'
-        },
-        'ngSanitize' : {
-            deps: ['angular'],
-            exports : 'ngSanitize'
-        },
-        'uiRouter' : {
-            deps: ['angular']
-        },
-        'uiBootstrap' : {
-            deps: ['angular']
-        },
-        'ngDialogs' : {
-            deps: ['angular'],
-            exports : 'ngDialogs'
-        },
-        'lodash' : {
-            exports : '_'
-        },
-        'restangular' : {
-            deps: ['angular', 'lodash'],
-            exports : 'restangular'
-        },
-        'marked' : {
-            exports : 'marked'
-        },
-        'MathJax' : {
-            exports : 'MathJax',
-            init: function () {
-                MathJax.Hub.Config({
-                    skipStartupTypeset: true
-                });
-                MathJax.Hub.Startup.onload();
-                return MathJax;
-            }
-        }
-    }
-});
-
 // first thing to actually be run in the app
 require([
     'angular',
     'domReady',
-    'ngRoute',
-    'ngSanitize',
+    'angular-route',
+    'angular-ui-router',
+    'angular-sanitize',
+    'angular-bootstrap',
+    'angular-dialog-service',
     'apifactory',
     'common',
     'user',
@@ -75,9 +16,6 @@ require([
     'profile',
     'account',
     'receipt',
-    'uiBootstrap',
-    'ngDialogs',
-    'uiRouter',
     'service'
 ], function(
     angular,

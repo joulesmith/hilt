@@ -4,7 +4,7 @@
 
 "use strict";
 
-define(['angular', 'braintree'], function (angular, braintree){
+define(['angular', 'braintree-web'], function (angular, braintree){
 
     var module = angular.module('account', [])
         .config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
