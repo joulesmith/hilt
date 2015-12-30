@@ -1,3 +1,5 @@
+var path = require('path');
+
 module.exports = {
     resolve: {
         modulesDirectories: ['.', 'public/modules'],
@@ -19,7 +21,10 @@ module.exports = {
     },
     module: {
         loaders: [
+            // import style sheets
             { test: /\.css$/, loader: "style!css" },
+            // can be used to import angular templates into the angular template cache
+            { test: /\.html$/, loader: 'ngtemplate?relativeTo=' + (path.resolve(__dirname, './app')) + '/!html'},
             { test: /angular\.js/, loader: "exports?angular" },
             { test: /angular-route\.js/, loader: "imports?angular" },
             { test: /angular-ui-router\.js/, loader: "imports?angular" },
