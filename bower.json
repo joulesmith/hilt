@@ -1,5 +1,5 @@
 {
-  "name": "broadsword",
+  "name": "hilt",
   "version": "0.0.0",
   "license": "MIT",
   "ignore": [
@@ -18,6 +18,10 @@
     "angular": "~1.4.8",
     "requirejs": "~2.1.22",
     "bootstrap": "~3.3.6",
-    "braintree-web": "~2.17.4"
+    "braintree-web": "~2.17.4",
+    "angular-dialog-service": "~5.2.11",
+    "angular-google-maps": "~2.2.1",
+    "requirejs-domready": "~2.0.1",
+    "angular-ui-router": "~0.2.15"
   }
 }

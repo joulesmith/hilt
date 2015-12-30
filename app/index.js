@@ -13,12 +13,7 @@ require([
     'angular-google-maps',
     'apifactory',
     'common',
-    'user',
-    'file',
-    'profile',
-    'account',
-    'receipt',
-    'service'
+    'user'
 ], function(
     angular,
     domReady) {
@@ -31,13 +26,8 @@ require([
         'apifactory',
         'common',
         'user',
-        'profile',
-        'account',
-        'receipt',
-        'file',
         'ngSanitize',
         'uiGmapgoogle-maps',
-        'service'
     ]).config(['$urlRouterProvider', '$stateProvider', function($urlRouterProvider, $stateProvider){
         $urlRouterProvider.otherwise('/');
 

@@ -23,7 +23,7 @@ define(['angular', 'marked', 'MathJax'], function (angular, marked, MathJax){
                     var markdowned = marked(noTeX);
                     var cur_tex = 0;
 
-                    // Not put back the LaTeX sections so that MathJax will process them
+                    // Now put back the LaTeX sections so that MathJax will process them
                     // into math
                     var reTeX = markdowned.replace(/TmpTexReplacementMarker/gi, function (x){
 

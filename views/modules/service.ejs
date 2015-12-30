@@ -1,4 +1,8 @@
 
+<style type="text/css">
+    .angular-google-map-container { height: 400px; }
+</style>
+
 <script type="text/ng-template" id="service">
     <div ui-view class=""></div>
 </script>
@@ -59,15 +63,167 @@
 </script>
 
 <script type="text/ng-template" id="service.edit">
-    <div class="input-group">
-        <span class="input-group-btn">
-            <button class="btn btn-default" type="button">Change Name</button>
-        </span>
-        <input ng-model="service.name" type="text" class="form-control" placeholder="Service Name...">
+    <div class="form-horizontal">
+        <div class="form-group">
+            <label for="name" class="col-sm-2 control-label">Name</label>
+            <div class="col-sm-10">
+                <input ng-model="service.name" type="text" class="form-control" id="name" placeholder="Service Name...">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="price" class="col-sm-2 control-label">Price</label>
+            <div class="col-sm-10">
+                <input ng-model="service.price" type="number" class="form-control" id="price" placeholder="Service Price...">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="duration" class="col-sm-2 control-label">Duration</label>
+            <div class="col-sm-1">
+                <input ng-model="service.duration" type="number" class="form-control" id="duration" placeholder="Duration...">
+            </div>
+            <div class="col-sm-1">
+                <select ng-model="durationUnits" class="form-control">
+                    <option value="hours">Hours</option>
+                    <option value="minutes">Minutes</option>
+                    <option value="seconds">Seconds</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <label class="col-sm-2 control-label">Choices</label>
+            <div class="col-sm-2">
+                <input ng-click="addChoice()" class="btn btn-default" type="button" value="Add Choice">
+            </div>
+        </div>
+        <br>
+        <div ng-repeat="choice in service.choice" ng-include="'service.choice.edit'" ng-controller="service.choice.edit" class="well col-sm-offset-2"></div>
+        <br>
+        <div class="row">
+            <label class="col-sm-2 control-label">Service Area</label>
+            <div class="col-sm-10">
+                <div class="row">
+                    <h6 class="col-sm-1">Radius</h6>
+                    <span class="col-sm-2"><input ng-model="radius" ng-change="computeRadius()" type="number" class="form-control" id="duration" placeholder="Radius..."></span>
+                    <span class="col-sm-2"><select ng-model="radiusUnits" ng-change="computeRadius()" class="form-control">
+                        <option value="1000">kilometers</option>
+                        <option value="1609.34">miles</option>
+                    </select></span>
+
+                </div>
+                <div class="row">
+                    <form ng-submit="setAreaCenter()" class="col-sm-12">
+                        <div class="input-group">
+                            <div class="input-group-btn">
+                                <button class="btn btn-default" type="submit">Set Center</button>
+                                <span ng-click="getLocation()" class="btn btn-default">
+                                    <span class="glyphicon glyphicon-screenshot"></span>
+                                    <span class="sr-only">detect current location</span>
+                                </span>
+                            </div>
+                            <input ng-model="address" type="text" class="form-control" placeholder="{{position ? 'lat ' + position.coords.latitude.toFixed(1) + '\u00B0 lng ' + position.coords.longitude.toFixed(1) + '\u00B0': 'Enter Location...'}}">
+                        </div>
+                    </form>
+                </div>
+                <div class="row">
+                    <ui-gmap-google-map center='map.center' zoom='map.zoom' control='map.control' options='map.options' class="col-sm-12">
+                        <ui-gmap-circle
+                            center='serviceArea.center'
+                            radius='serviceArea.radius'
+                            stroke="serviceArea.stroke"
+                            fill="serviceArea.fill"
+                            radius="serviceArea.radius"
+                            visible="serviceArea.visible"
+                            geodesic="serviceArea.geodesic"
+                            editable="serviceArea.editable"
+                            draggable="serviceArea.draggable"
+                            clickable="serviceArea.clickable"
+                            control="serviceArea.control"
+                            events="serviceArea.events">
+                        </ui-gmap-circle>
+                    </ui-gmap-google-map>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="input-group">
-        <div class="input-group-addon">$</div>
-        <input type="text" class="form-control" id="exampleInputAmount" placeholder="Amount">
-        <div class="input-group-addon">.00</div>
+</script>
+
+<script type="text/ng-template" id="service.choice.edit">
+    <div class="form-group">
+        <label for="name" class="col-sm-1 control-label">Name</label>
+        <div class="col-sm-10">
+            <input ng-model="choice.name" type="text" class="form-control" id="name" placeholder="Choice Name...">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-offset-1 col-sm-10 checkbox">
+            <label>
+                <input ng-model="choice.required" type="checkbox" id="blankCheckbox" value="option1" aria-label="...">
+                Required?
+            </label>
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <label for="options" class="col-sm-1 control-label">Options</label>
+        <div class="col-sm-2">
+            <select ng-options="option.name for option in choice.option" ng-model="selectedOption" class="form-control" id="options">
+            </select>
+        </div>
+        <div class="col-sm-8">
+            <input ng-click="addOption(choice)" class="btn btn-default" type="button" value="Add Option">
+            <input ng-click="editOption(selectedOption)" ng-disabled="!selectedOption" class="btn btn-default" type="button" value="Edit">
+            <input ng-click="defaultOption()" ng-disabled="!selectedOption" class="btn btn-default" type="button" value="Make Default">
+            <input ng-click="deleteOption(choice, selectedOption)" ng-disabled="!selectedOption" class="btn btn-default" type="button" value="Delete Option">
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-sm-offset-1 col-sm-10">
+            <input ng-click="deleteChoice(choice)" class="btn btn-default" type="button" value="Delete Choice">
+        </div>
+    </div>
+</script>
+
+<script type="text/ng-template" id="service.option.edit.modal">
+    <div class="modal-header">
+        <h3 class="modal-title">Edit Option</h3>
+    </div>
+    <div class="modal-body">
+        <div ng-include="'service.option.edit'"></div>
+        <div ng-if="error" ng-include="'common.error'" ng-controller="common.error"></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-primary" type="button" ng-click="ok()">OK</button>
+        <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
+    </div>
+</script>
+
+<script type="text/ng-template" id="service.option.edit">
+    <div class="form-horizontal">
+        <div class="form-group">
+            <label for="name" class="col-sm-4 control-label">Name</label>
+            <div class="col-sm-8">
+                <input ng-model="option.name" type="text" class="form-control" id="name" placeholder="Option Name...">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="priceAdj" class="col-sm-4 control-label">Price Adj.</label>
+            <div class="col-sm-8">
+                <input ng-model="option.priceAdjustment" type="number" class="form-control" id="priceAdj" placeholder="Price Adjustment...">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="durationAdj" class="col-sm-4 control-label">Duration Adj.</label>
+            <div class="col-sm-4">
+                <input ng-model="option.durationAdj" type="number" class="form-control" id="durationAdj" placeholder="Duration Adjustment...">
+            </div>
+            <div class="col-sm-4">
+                <select ng-model="durationUnits" class="form-control">
+                    <option value="hours">Hours</option>
+                    <option value="minutes">Minutes</option>
+                    <option value="seconds">Seconds</option>
+                </select>
+            </div>
+        </div>
     </div>
 </script>
