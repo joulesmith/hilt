@@ -1,46 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'">-->
-        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title><%= title %></title>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'">-->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <!-- Boostrap styles-->
-        <link href="./css/bootstrap.css" rel="stylesheet">
+  <title>
+    <%= title %>
+  </title>
 
-        <!-- load modules and initialization script -->
-        <script src="index.js"></script>
+</head>
 
-        <!-- load needed angular template files -->
-        <% include modules/common.ejs %>
-        <% include modules/user.ejs %>
-        <% include modules/account.ejs %>
-        <% include modules/service.ejs %>
-        <% include modules/product.ejs %>
-        <% include modules/order.ejs %>
-        <% include modules/receipt.ejs %>
-        <% include modules/profile.ejs %>
-        <% include modules/file.ejs %>
+<body>
+  <!-- root view for react -->
+  <div id='react_root'></div>
 
-    </head>
-    <body ng-controller="MainCtrl">
-        <div id="progressbar" class="" ng-class="loadingClass">Loading...</div>
-        <!-- Top level of page layout and logic -->
+  <!-- load application -->
+  <script src="index.js"></script>
+</body>
 
-        <div class="container-fluid hide" ng-class="mainClass">
-
-            <div class="row">
-                <div ng-include="'user.navbar'" ng-controller="user.welcome"></div>
-            </div>
-            <div class="row">
-              <div ui-view></div>
-            </div>
-            <div class="row">
-              <div ></div>
-            </div>
-        </div>
-    </body>
 </html>
