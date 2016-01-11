@@ -4,8 +4,7 @@ import http from 'axios';
 import React from 'react';
 import Radium from 'radium';
 import * as Bootstrap from 'react-bootstrap';
-import {log, subscribe} from 'journal';
-import './css/bootstrap.css';
+import {request, subscribe} from 'journal';
 
 export default React.createClass({
   getInitialState: function(){
@@ -16,24 +15,25 @@ export default React.createClass({
     };
   },
   componentDidMount: function(){
-    this.unsubscribe = subscribe(state => {
+    this.unsubscribe = subscribe({
+      user: '#/user/current'
+    }, state => {
       this.setState(state)
-    }, {
-      user: './currentUser'
     });
   },
   componentWillUnmount: function(){
     this.unsubscribe();
   },
   register: function() {
-    log({
-      action: './register',
+
+    request({
+      action: '#/modal/register',
       data: {show: true}
     });
   },
   logout: function() {
-    log({
-      action: './logout',
+    request({
+      action: '#/user/logout',
       data: {}
     });
   },
@@ -73,10 +73,10 @@ export default React.createClass({
             <Bootstrap.NavDropdown title={this.state.user.username} id="basic-nav-dropdown">
               {(() => {
                 if (this.state.user._id && !this.state.user.guest) {
-                  <Bootstrap.MenuItem onSelect={this.logout}>Logout</Bootstrap.MenuItem>
+                  return <Bootstrap.MenuItem onSelect={this.logout}>Logout</Bootstrap.MenuItem>;
                 }
 
-                return <Bootstrap.MenuItem onSelect={this.register}>Register</Bootstrap.MenuItem>;
+                return <Bootstrap.MenuItem onSelect={this.register}>Register/Sign-In</Bootstrap.MenuItem>;
               })()}
             </Bootstrap.NavDropdown>
           </Bootstrap.Nav>

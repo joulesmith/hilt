@@ -1,7 +1,7 @@
 "use strict";
 
 import React from 'react';
-import './css/bootstrap.css';
+
 
 export default React.createClass({
   getInitialState: function(){

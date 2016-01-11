@@ -1,12 +1,10 @@
 "use strict";
 
 import React from 'react';
-import {log, subscribe} from 'journal';
+import * as journal from 'journal';
 
 import {Modal, Button} from 'react-bootstrap';
 import RegisterBody from './RegisterBody';
-
-
 
 export default React.createClass({
   getInitialState: function(){
@@ -17,18 +15,26 @@ export default React.createClass({
     };
   },
   componentDidMount: function(){
-    this.unsubscribe = subscribe(state => {
+    this.unsubscribe = journal.subscribe({
+      register: '#/modal/register',
+      user: '#/user/current'
+    }, state => {
       this.setState(state);
-    }, {
-      register: './register'
+
+      if (state.user && state.user._id && !state.user.guest && this.state.register.show) {
+        journal.request({
+          action: '#/modal/register',
+          data: {show: false}
+        });
+      }
     });
   },
   componentWillUnmount: function(){
     this.unsubscribe();
   },
   handleDismiss: function() {
-    log({
-      action: './register',
+    journal.request({
+      action: '#/modal/register',
       data: {show: false}
     });
   },
@@ -37,7 +43,7 @@ export default React.createClass({
     return (
       <Modal show={this.state.register.show} onHide={this.handleDismiss}>
         <Modal.Header closeButton>
-          <Modal.Title>Register</Modal.Title>
+          <Modal.Title>Register/Sign-In</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <RegisterBody />

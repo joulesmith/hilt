@@ -1,7 +1,10 @@
 "use strict";
+import http from 'axios';
 
-// a record of all updates to the
-let logs = [];
+//TODO: convert the processing of requests into an iteration of the requests Array to
+// create a queue of requests which might derive from an orinigal request.
+// a record of all actions determining the 'current' state of the app
+let requests = [];
 let actions = {};
 let publishings = {};
 
@@ -29,33 +32,81 @@ var parseURI = uri => {
   return uriObj;
 };
 
-export function log(update) {
+export function request(update) {
 
-  // in principle, the current state can be re-constructed by a re-play of the logs
-  // but that functionality should be added by another function
-  logs.push(update);
+  if (Array.isArray(update)) {
+    return update.map(u => {return request(u);});
+  }else{
+    // in principle, the current state can be re-constructed by a re-play of the requests
+    // but that functionality should be added by another function
+    requests.push(update);
 
-  let act = actions;
+    // map the url onto the action tree.
+    let uriObj = parseURI(update.action);
 
-  // map the url onto the action tree.
-  let uriObj = parseURI(update.action);
+    if (uriObj.pathParts[0] === '#') {
+      // this action should be defined locally
+      let act = actions;
 
-  uriObj.pathParts.forEach(part => {
-    act = act && act[part] ? act[part] : null;
-  });
+      if (update.definition) {
+        // first add the defintition to the actions
+        var lastPart = uriObj.pathParts[uriObj.pathParts.length-1];
+        uriObj.pathParts.forEach(part => {
+          if (part === lastPart) {
+            if (!act[part]) {
+              act[part] = {};
+            }
+            act[part].action = update.definition;
+            act = act[part];
+          }else{
+            act = act[part] ? act[part] : act[part] = {};
+          }
+        });
+      }else{
+        uriObj.pathParts.forEach(part => {
+          act = act && act[part] ? act[part] : null;
+        });
+      }
 
-  if (typeof update.data === 'function' || !act || !act.action || typeof act.action !== 'function') {
-    // TODO: get the definition from server?
-    // for now just use a default action which simply publishes the contents of
-    // data as the state of the action url
-    // if data is a function, it will become the action performed in subsequent logs
-    // of the 'same' action (the uri)
-    return publish(update.action, update.data);
+      if (update.data) {
+
+        if (!act || !act.action || typeof act.action !== 'function') {
+
+          // TODO: get the definition from server if a valid url is given?
+
+          return Promise.resolve(update.data)
+          .then(data => {
+            // this might seem silly, but gives an idea what an action should be doing
+
+            // for now just use a default action which simply publishes the contents of
+            // data as the state of the action url
+            // but actions can theoretically publish the state of any resource.
+            publish(update.action, data);
+
+            // the action can return a result which is returned to whever requested
+            // the action to resolve the ultimate promise that started the action
+            return data;
+          });
+        }
+
+        return Promise.resolve(update.data).then(act.action);
+      }
+
+      return Promise.resolve();
+    }
+
+    // if its not defined locally, then perform an http POST to perform the action
+    return http.post(update.action, update.data)
+    .then(res => {
+      return res.data;
+    })
+    .catch(res => {
+      request({
+        action: '#/error',
+        data: (res.data && res.data.error) || res
+      });
+    });
   }
-
-  act.action(update.data, uriObj.query);
-
-
 }
 
 export function publish (resource, state) {
@@ -101,7 +152,20 @@ export function publish (resource, state) {
   }
 }
 
-export function subscribe (subscriber, resources) {
+export function get (resource) {
+  return http.get(resource)
+  .then(res => {
+    return res.data;
+  })
+  .catch(res =>{
+    request({
+      action: '#/error',
+      data: (res.data && res.data.error) || res
+    });
+  });
+}
+
+export function subscribe (resources, subscriber) {
   var unsubs = [];
 
   for(let prop in resources){
@@ -153,7 +217,7 @@ export function subscribe (subscriber, resources) {
       subscriber(macroState);
     }else{
       // Not all resources are on the internet though
-      if (parts[0] !== '.') {
+      if (parts[0] !== '#') {
         // TODO:
         http({
           method: 'get',
@@ -163,7 +227,7 @@ export function subscribe (subscriber, resources) {
           publish(resource, res.data);
         })
         .catch(res => {
-          publish('./error', res.data);
+          publish('#/error', res.data);
         });
       }
 

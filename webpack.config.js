@@ -23,9 +23,9 @@ module.exports = {
             { test: /MathJax\.js/, loader: "imports?MathJaxConfig!exports?MathJax" },
         ]
     },
-    entry: "./app/index.jsx",
+    entry: "./app/app.jsx",
     output: {
         path: __dirname + "/dist",
-        filename: "index.js"
+        filename: "app.js"
     }
 };

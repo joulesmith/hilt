@@ -1,9 +1,9 @@
 "use strict";
 import http from 'axios';
-import {log, subscribe} from '../journal';
+import * as journal from '../journal';
 
-log({
-  action: './currentUser',
+journal.request({
+  action: '#/user/current',
   data: {
     guest: false,
     _id: null,
@@ -29,8 +29,8 @@ isLoggedIn();
 export function isLoggedIn() {
 
   if (user_token) {
-    log({
-      action: './currentUser',
+    journal.request({
+      action: '#/user/current',
       data: {
         guest: false,
         _id: user_token._id,
@@ -41,8 +41,8 @@ export function isLoggedIn() {
   }
 
   if (guest_token) {
-    log({
-      action: './currentUser',
+    journal.request({
+      action: '#/user/current',
       data: {
         guest: true,
         _id: guest_token._id,
@@ -58,8 +58,8 @@ export function isLoggedIn() {
 
   if (user_token && user_token.base64) {
     httpHeaders.Authorization = user_token.base64;
-    log({
-      action: './currentUser',
+    journal.request({
+      action: '#/user/current',
       data: {
         guest: false,
         _id: user_token._id,
@@ -74,8 +74,8 @@ export function isLoggedIn() {
 
   if (user_token && user_token.base64) {
     httpHeaders.Authorization = user_token.base64;
-    log({
-      action: './currentUser',
+    journal.request({
+      action: '#/user/current',
       data: {
         guest: false,
         _id: user_token._id,
@@ -90,8 +90,8 @@ export function isLoggedIn() {
 
   if (guest_token && guest_token.base64) {
     httpHeaders.Authorization = guest_token.base64;
-    log({
-      action: './currentUser',
+    journal.request({
+      action: '#/user/current',
       data: {
         guest: true,
         _id: guest_token._id,
@@ -114,8 +114,8 @@ export function isLoggedIn() {
       // only store guest users in session storage.
       window.sessionStorage.setItem("guest_token", JSON.stringify(guest_token));
 
-      log({
-        action: './currentUser',
+      journal.request({
+        action: '#/user/current',
         data: {
           guest: true,
           _id: guest_token._id,
@@ -125,10 +125,9 @@ export function isLoggedIn() {
     }
   })
   .catch(res => {
-    log({
-      action: './error',
-      data: (res.data && res.data.error) || res
-    });
+    var err = (res.data && res.data.error) || res;
+
+    throw err;
   });
 
   return false;
@@ -140,68 +139,105 @@ export function register(user) {
     return res.data;
   })
   .catch(res => {
-    log({
-      action: './error',
-      data: (res.data && res.data.error) || res
-    });
+    var err = (res.data && res.data.error) || res;
+    throw err;
   });
 
 };
 
-export function login(user) {
+journal.request({
+  action: '#/user/register',
+  definition: register
+});
 
-  return http.post('/api/user/token', user)
-  .then(function(res) {
+export function login(data) {
 
-    if (res.data.token) {
-      user_token = res.data.token;
+  if (data.username && data.password) {
+    return http.post('/api/user/token', data)
+    .then(function(res) {
 
-      httpHeaders.Authorization = user_token.base64;
+      if (res.data.token) {
+        user_token = res.data.token;
 
-      log({
-        action: './currentUser',
-        data: {
-          guest: false,
-          _id: user_token._id,
-          username: user_token.username
-        }
-      });
+        httpHeaders.Authorization = user_token.base64;
 
-      if (user.rememberLogin) {
-        window.localStorage.setItem("user_token", JSON.stringify(user_token));
-      } else {
-        window.sessionStorage.setItem("user_token", JSON.stringify(user_token));
-      }
-
-      if (guest_token) {
-        return http.post('/api/user/merge', {
-          fromToken: guest_token,
-          toToken: user_token
-        })
-        .then(function() {
-          guest_token = null;
-          window.sessionStorage.removeItem('guest_token');
-        })
-        .catch(res => {
-          log({
-            action: './error',
-            data: (res.data && res.data.error) || res
-          });
+        journal.request({
+          action: '#/user/current',
+          data: {
+            guest: false,
+            _id: user_token._id,
+            username: user_token.username
+          }
         });
+
+        if (data.rememberLogin) {
+          window.localStorage.setItem("user_token", JSON.stringify(user_token));
+        } else {
+          window.sessionStorage.setItem("user_token", JSON.stringify(user_token));
+        }
+
+        if (guest_token) {
+          return http.post('/api/user/merge', {
+            fromToken: guest_token,
+            toToken: user_token
+          })
+          .then(function() {
+            guest_token = null;
+            window.sessionStorage.removeItem('guest_token');
+          });
+        }
       }
-    }
-  })
-  .catch(res => {
-    log({
-      action: './error',
-      data: (res.data && res.data.error) || res
+    })
+    .catch(res => {
+      var err = (res.data && res.data.error) || res;
+
+      throw err;
     });
-  });
+  }else if (data.googleCode){
+    return http.post('/api/user/google/auth/token', {code: data.googleCode})
+    .then(function(res) {
+      if (res.data.token) {
+        user_token = res.data.token;
+
+        journal.request({
+          action: '#/user/current',
+          data: {
+            guest: false,
+            _id: user_token._id,
+            username: user_token.username
+          }
+        });
+
+        httpHeaders.Authorization = user_token.base64;
+
+        if (data.rememberLogin) {
+          window.localStorage.setItem("user_token", JSON.stringify(user_token));
+        } else {
+          window.sessionStorage.setItem("user_token", JSON.stringify(user_token));
+        }
+
+        if (guest_token) {
+          return http.post('/api/user/merge', {
+            fromToken: guest_token,
+            toToken: user_token
+          })
+          .then(function() {
+            guest_token = null;
+            window.sessionStorage.removeItem('guest_token');
+          });
+        }
+      }
+    }).catch(function(res) {
+      var err = (res.data && res.data.error) || res;
+
+      throw err;
+    });
+  }
 }
 
-log({
-  action: './login',
-  data: login
+journal.request({
+  action: '#/user/login',
+  definition: login
 });
 
 /**
@@ -216,8 +252,8 @@ export function logout() {
   window.sessionStorage.removeItem('guest_token');
   httpHeaders.Authorization = '';
 
-  log({
-    action: './currentUser',
+  journal.request({
+    action: '#/user/current',
     data: {
       guest: false,
       _id: null,
@@ -229,7 +265,7 @@ export function logout() {
   isLoggedIn();
 }
 
-log({
-  action: './logout',
-  data: logout
+journal.request({
+  action: '#/user/logout',
+  definition: logout
 });

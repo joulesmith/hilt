@@ -1,11 +1,16 @@
-"use strict";
-// first thing to actually be run in the app
 import React from 'react';
-import ReactDom from 'react-dom';
-import Root from 'Root';
-import user from 'user';
+import { Router, Route, Link, browserHistory  } from 'react-router';
 
-ReactDom.render(
-  <Root></Root>,
-  document.getElementById('react_root')
-);
+import Navbar from 'Navbar';
+import RegisterModal from './user/RegisterModal';
+
+export default React.createClass({
+  render() {
+
+    return (
+      <div>
+        {this.props.children}
+      </div>
+    );
+  }
+});

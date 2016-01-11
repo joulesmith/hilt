@@ -52,7 +52,7 @@ router.post('/', function(req, res, next) {
 
         if (password_result.score < 3) {
             throw new UsersError('insecurepassword',
-                'The password supplied scored {0}/4 for security. A minimum of 3/4 is required.',
+                'The password supplied scored [0]/4 for security. A minimum of 3/4 is required.',
                 [password_result.score],
                 400);
         }
@@ -64,7 +64,7 @@ router.post('/', function(req, res, next) {
         .then(function(user){
             if (user) {
                 throw new UsersError('inuse',
-                    'The username {0} is already in use by another user.',
+                    'The username [0] is already in use by another user.',
                     [username],
                     400);
             }
@@ -342,21 +342,14 @@ var oauthURL = oauth2Client.generateAuthUrl({
 });
 
 // returns an authorization url that will then provide a code exchangable for a token
-router.get('/google/auth/url', function(req, res, next){
-    try{
-
-        res.send({
-            user : {
-                google : {
-                    auth : {
-                        url : oauthURL
-                    }
-                }
-            }
-        });
-    }catch(error){
-        next(error);
-    }
+router.get('/google/auth/url', function(req, res, next) {
+  try {
+    res.send({
+      url: oauthURL
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get('/google/auth/callback', function(req, res, next){
