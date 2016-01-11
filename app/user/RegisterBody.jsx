@@ -21,19 +21,21 @@ export default React.createClass({
     };
   },
   handleUsername: function(event) {
-    journal.get('api/user/registered/' + event.target.value)
-    .then(data => {
-      this.setState({
-        username: event.target.value,
-        usernameRegistered : data.registered
+    if (event.target.value !== '') {
+      journal.get('api/user/registered/' + event.target.value)
+      .then(data => {
+        this.setState({
+          username: event.target.value,
+          usernameRegistered : data.registered
+        });
+      })
+      .catch(err => {
+        journal.report({
+          action: '#/error',
+          data: err
+        });
       });
-    })
-    .catch(err => {
-      journal.report({
-        action: '#/error',
-        data: err
-      });
-    });
+    }
 
   },
   handlePassword: function(event) {

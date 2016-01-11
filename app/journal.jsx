@@ -1,4 +1,14 @@
 "use strict";
+/**
+ * Manages local state of data through pub/sub and action messaging system.
+ *
+ * Wraps http operations to external data into this pattern. Actions result
+ * in http POST, and get/subscribe result in GET operations. However, the meaning
+ * of url's have a slightly different meaning.
+ *
+ * @module
+ */
+
 import http from 'axios';
 
 //TODO: convert the processing of reports into an iteration of the reports Array to
@@ -32,6 +42,35 @@ var parseURI = uri => {
   return uriObj;
 };
 
+/**
+ * @typedef ReportUpdate
+ * @type {Object}
+ *
+ * @property {string} action - A uri/url to the action of concern. May be local by
+ * using the hash (#) of the url to refer to local actions. Other urls will be processed
+ * using an http post.
+ * @property {Object} data - An action takes some json serializable data to make actions
+ * more general.
+ * @property {function} [definition] - Optionaly define what the action is by supplying
+ * a function which takes a single data argument, which will be the data specified
+ * whenever the action is reported. This will be used for all reports to the
+ * same action url after the report of the definition.
+ * This currently can only define local actions.
+ */
+
+/**
+ * Creates a report of an action, which may result in a state change.
+ *
+ * @param  {ReportUpdate|ReportUpdate[]} update - Update action(s) to report
+ * @return {Promise} A promise which resolves to the value returned directly by
+ * an action, which may or may not be the same as any state changes the action
+ * caused. For example, an action might be used to create a public key as a new state, but
+ * will only resolve the promise to the value of the private key.
+ *
+ * Also, the promise is only resolved when the action is first resolved back to
+ * the 'caller', which is asynchronous. State changes could be passed to some subscribers
+ * before or after the promise of the action itself is resolved.
+ */
 export function report(update) {
 
   if (Array.isArray(update)) {
@@ -95,20 +134,34 @@ export function report(update) {
       return Promise.resolve();
     }
 
-    // if its not defined locally, then perform an http POST to perform the action
+    // if it's not defined locally, then perform an http POST to perform the action
     return http.post(update.action, update.data)
     .then(res => {
       return res.data;
     })
     .catch(res => {
-      report({
-        action: '#/error',
-        data: (res.data && res.data.error) || res
-      });
+      if (res.data) {
+        if (res.data.error) {
+          throw res.data.error;
+        }
+        throw res.data;
+      }
+      throw res;
     });
   }
 }
 
+
+/**
+ * Publishes a new state for a given url, which will alert any subscribers.
+ *
+ * Publishing should only be done by actions since this is a direct change
+ * to state.
+ *
+ * @param  {string} resource - url to publish state about
+ * @param  {Object} state    - json serializable object to put as state
+ * @return {undefined}
+ */
 export function publish (resource, state) {
 
   if (typeof state === 'object') {
@@ -152,19 +205,86 @@ export function publish (resource, state) {
   }
 }
 
+/**
+ * Gets the current state at a given url.
+ *
+ * get('api.somebody.com/data/reallyImportantData')
+ * .then(data => {
+ * 	// do something with data
+ * })
+ * .catch(err => {
+ * 	// do something with the error
+ * });
+ *
+ * @param  {string} resource - url of state to get
+ * @return {Promise} Resolves to the value of the 'current' state.
+ */
 export function get (resource) {
-  return http.get(resource)
-  .then(res => {
-    return res.data;
-  })
-  .catch(res =>{
-    report({
-      action: '#/error',
-      data: (res.data && res.data.error) || res
+
+  var uriObj = parseURI(resource);
+
+  if (uriObj.pathParts[0] === '#') {
+    uriObj.pathParts.forEach(part => {
+      pub = pub && pub[part] ? pub[part] : null;
     });
-  });
+
+    if (pub) {
+      return Promise.resolve(pub);
+    }
+  }else{
+    return http.get(resource)
+    .then(res => {
+      return res.data;
+    })
+    .catch(res => {
+      if (res.data) {
+        if (res.data.error) {
+          throw res.data.error;
+        }
+        //throw res.data;
+      }
+      throw res;
+    });
+  }
+
+  return Promise.reject(new Error("Resource not found."));
 }
 
+/**
+ * Listens for the current state of resources, whether or not it exists. Any changes
+ * to the state of the resource are given to the first parameter of the callback.
+ *
+ * If the resource exists, the callback is called with the current state, and called
+ * anytime the state changes.
+ *
+ * If the resource does not exist, the callback will not be called. But it will be
+ * called when/if the resource is created.
+ *
+ * Each resource state is updated as a partial update to the total state, and it is
+ * up to you (or react or whatever) to manage merging the changes into the total state.
+ *
+ * Currently, errors are reported to #/error
+ *
+ * var unsubscribe = subscribe({
+ *   resource1: 'some/url',
+ *   localError: '#/error'
+ * }, state => {
+ * 	 if (state.localError) {
+ * 		 console.log(state.localError);
+ * 	 }
+ *
+ *   this.setState(state);
+ * });
+ *
+ * // unsubscribe some time later
+ * unsubscribe();
+ *
+ *
+ * @param  {Object} resources - Property is a resource to subscribe to.
+ * @param  {function} subscriber - callback when there is an update to one or more
+ * of the resources specified as partial updates. Takes a single parameter.
+ * @return {[type]}            [description]
+ */
 export function subscribe (resources, subscriber) {
   var unsubs = [];
 
@@ -210,6 +330,7 @@ export function subscribe (resources, subscriber) {
       });
     })(subscription, sub.subscribers);
 
+    // TODO: this is just a really bad cache. See about different way.
     if (pub) {
       // if there is something to see, go ahead and pull it in.
       var macroState = {};
@@ -218,7 +339,7 @@ export function subscribe (resources, subscriber) {
     }else{
       // Not all resources are on the internet though
       if (parts[0] !== '#') {
-        // TODO:
+        // TODO: this does not implement the goal of a subscription
         http({
           method: 'get',
           url: resource
@@ -227,7 +348,21 @@ export function subscribe (resources, subscriber) {
           publish(resource, res.data);
         })
         .catch(res => {
-          publish('#/error', res.data);
+          var err;
+          if (res.data) {
+            if (res.data.error) {
+              err = res.data.error;
+            }else{
+              err = res.data;
+            }
+          }else{
+            err = res;
+          }
+
+          report({
+            action: '#/error',
+            data: err
+          })
         });
       }
 
