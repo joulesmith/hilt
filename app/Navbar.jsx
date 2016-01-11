@@ -4,7 +4,7 @@ import http from 'axios';
 import React from 'react';
 import Radium from 'radium';
 import * as Bootstrap from 'react-bootstrap';
-import {request, subscribe} from 'journal';
+import {report, subscribe} from 'journal';
 
 export default React.createClass({
   getInitialState: function(){
@@ -26,13 +26,13 @@ export default React.createClass({
   },
   register: function() {
 
-    request({
+    report({
       action: '#/modal/register',
       data: {show: true}
     });
   },
   logout: function() {
-    request({
+    report({
       action: '#/user/logout',
       data: {}
     });

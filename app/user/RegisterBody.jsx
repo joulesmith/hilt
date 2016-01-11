@@ -29,7 +29,7 @@ export default React.createClass({
       });
     })
     .catch(err => {
-      journal.request({
+      journal.report({
         action: '#/error',
         data: err
       });
@@ -73,7 +73,7 @@ export default React.createClass({
   },
   handleRegister: function(event) {
     var that = this;
-    journal.request({
+    journal.report({
       action: '#/user/register',
       data: {
         username: this.state.username,
@@ -82,7 +82,7 @@ export default React.createClass({
     })
     .then(function(){
 
-      journal.request({
+      journal.report({
         action: '#/user/login',
         data: {
           username: that.state.username,
@@ -91,7 +91,7 @@ export default React.createClass({
       });
     })
     .catch(err => {
-      journal.request({
+      journal.report({
         action: '#/error',
         data: err
       });
@@ -99,7 +99,7 @@ export default React.createClass({
   },
   handleSignin: function(event) {
 
-    journal.request({
+    journal.report({
       action: '#/user/login',
       data: {
         username: this.state.username,
@@ -107,7 +107,7 @@ export default React.createClass({
       }
     })
     .catch(err => {
-      journal.request({
+      journal.report({
         action: '#/error',
         data: err
       });
@@ -125,20 +125,20 @@ export default React.createClass({
       window.focus();
 
       if (err && err !== '') {
-        return journal.request({
+        return journal.report({
           action: '#/error',
           data: err // is err the right kind of Error?
         });
       }
 
-      journal.request({
+      journal.report({
         action: '#/user/login',
         data: {
           googleCode: code
         }
       })
       .catch(err => {
-        journal.request({
+        journal.report({
           action: '#/error',
           data: err
         });

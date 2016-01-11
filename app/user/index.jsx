@@ -2,7 +2,7 @@
 import http from 'axios';
 import * as journal from '../journal';
 
-journal.request({
+journal.report({
   action: '#/user/current',
   data: {
     guest: false,
@@ -29,7 +29,7 @@ isLoggedIn();
 export function isLoggedIn() {
 
   if (user_token) {
-    journal.request({
+    journal.report({
       action: '#/user/current',
       data: {
         guest: false,
@@ -41,7 +41,7 @@ export function isLoggedIn() {
   }
 
   if (guest_token) {
-    journal.request({
+    journal.report({
       action: '#/user/current',
       data: {
         guest: true,
@@ -58,7 +58,7 @@ export function isLoggedIn() {
 
   if (user_token && user_token.base64) {
     httpHeaders.Authorization = user_token.base64;
-    journal.request({
+    journal.report({
       action: '#/user/current',
       data: {
         guest: false,
@@ -74,7 +74,7 @@ export function isLoggedIn() {
 
   if (user_token && user_token.base64) {
     httpHeaders.Authorization = user_token.base64;
-    journal.request({
+    journal.report({
       action: '#/user/current',
       data: {
         guest: false,
@@ -90,7 +90,7 @@ export function isLoggedIn() {
 
   if (guest_token && guest_token.base64) {
     httpHeaders.Authorization = guest_token.base64;
-    journal.request({
+    journal.report({
       action: '#/user/current',
       data: {
         guest: true,
@@ -102,7 +102,7 @@ export function isLoggedIn() {
   }
 
   // there is no record of a user or a guest on this computer that could
-  // be found. so the only recourse is to request a guest account from the
+  // be found. so the only recourse is to report a guest account from the
   // server.
   http.post('/api/user/guest')
   .then(function(res) {
@@ -114,7 +114,7 @@ export function isLoggedIn() {
       // only store guest users in session storage.
       window.sessionStorage.setItem("guest_token", JSON.stringify(guest_token));
 
-      journal.request({
+      journal.report({
         action: '#/user/current',
         data: {
           guest: true,
@@ -145,7 +145,7 @@ export function register(user) {
 
 };
 
-journal.request({
+journal.report({
   action: '#/user/register',
   definition: register
 });
@@ -161,7 +161,7 @@ export function login(data) {
 
         httpHeaders.Authorization = user_token.base64;
 
-        journal.request({
+        journal.report({
           action: '#/user/current',
           data: {
             guest: false,
@@ -199,7 +199,7 @@ export function login(data) {
       if (res.data.token) {
         user_token = res.data.token;
 
-        journal.request({
+        journal.report({
           action: '#/user/current',
           data: {
             guest: false,
@@ -235,7 +235,7 @@ export function login(data) {
   }
 }
 
-journal.request({
+journal.report({
   action: '#/user/login',
   definition: login
 });
@@ -252,7 +252,7 @@ export function logout() {
   window.sessionStorage.removeItem('guest_token');
   httpHeaders.Authorization = '';
 
-  journal.request({
+  journal.report({
     action: '#/user/current',
     data: {
       guest: false,
@@ -265,7 +265,7 @@ export function logout() {
   isLoggedIn();
 }
 
-journal.request({
+journal.report({
   action: '#/user/logout',
   definition: logout
 });

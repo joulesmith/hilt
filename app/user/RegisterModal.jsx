@@ -22,7 +22,7 @@ export default React.createClass({
       this.setState(state);
 
       if (state.user && state.user._id && !state.user.guest && this.state.register.show) {
-        journal.request({
+        journal.report({
           action: '#/modal/register',
           data: {show: false}
         });
@@ -33,7 +33,7 @@ export default React.createClass({
     this.unsubscribe();
   },
   handleDismiss: function() {
-    journal.request({
+    journal.report({
       action: '#/modal/register',
       data: {show: false}
     });

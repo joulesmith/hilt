@@ -1,10 +1,10 @@
 "use strict";
 import http from 'axios';
 
-//TODO: convert the processing of requests into an iteration of the requests Array to
-// create a queue of requests which might derive from an orinigal request.
+//TODO: convert the processing of reports into an iteration of the reports Array to
+// create a queue of reports which might derive from an orinigal report.
 // a record of all actions determining the 'current' state of the app
-let requests = [];
+let reports = [];
 let actions = {};
 let publishings = {};
 
@@ -32,14 +32,14 @@ var parseURI = uri => {
   return uriObj;
 };
 
-export function request(update) {
+export function report(update) {
 
   if (Array.isArray(update)) {
-    return update.map(u => {return request(u);});
+    return update.map(u => {return report(u);});
   }else{
-    // in principle, the current state can be re-constructed by a re-play of the requests
+    // in principle, the current state can be re-constructed by a re-play of the reports
     // but that functionality should be added by another function
-    requests.push(update);
+    reports.push(update);
 
     // map the url onto the action tree.
     let uriObj = parseURI(update.action);
@@ -83,7 +83,7 @@ export function request(update) {
             // but actions can theoretically publish the state of any resource.
             publish(update.action, data);
 
-            // the action can return a result which is returned to whever requested
+            // the action can return a result which is returned to whever reported
             // the action to resolve the ultimate promise that started the action
             return data;
           });
@@ -101,7 +101,7 @@ export function request(update) {
       return res.data;
     })
     .catch(res => {
-      request({
+      report({
         action: '#/error',
         data: (res.data && res.data.error) || res
       });
@@ -158,7 +158,7 @@ export function get (resource) {
     return res.data;
   })
   .catch(res =>{
-    request({
+    report({
       action: '#/error',
       data: (res.data && res.data.error) || res
     });
