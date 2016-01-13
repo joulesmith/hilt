@@ -12,7 +12,7 @@ export default React.createClass({
       showError: false
     };
   },
-  componentDidMount: function(){
+  componentWillMount: function(){
     this.unsubscribe = subscribe({
       error: '#/error'
     }, state => {

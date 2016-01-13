@@ -10,6 +10,10 @@
  */
 
 import http from 'axios';
+import * as url from 'url';
+
+var authorizations = {};
+
 
 //TODO: convert the processing of reports into an iteration of the reports Array to
 // create a queue of reports which might derive from an orinigal report.
@@ -42,6 +46,11 @@ var parseURI = uri => {
   return uriObj;
 };
 
+export function setAuthorization(authorization, host) {
+    // define the authentication to use with this host
+    authorizations[host || 'apphost'] = authorization;
+}
+
 /**
  * @typedef ReportUpdate
  * @type {Object}
@@ -60,6 +69,9 @@ var parseURI = uri => {
 
 /**
  * Creates a report of an action, which may result in a state change.
+ *
+ * If the action is not defined, the default action is to publish the data as
+ * the new state, and resolve the promise with the new data/state.
  *
  * @param  {ReportUpdate|ReportUpdate[]} update - Update action(s) to report
  * @return {Promise} A promise which resolves to the value returned directly by
@@ -80,11 +92,12 @@ export function report(update) {
     // but that functionality should be added by another function
     reports.push(update);
 
-    // map the url onto the action tree.
-    let uriObj = parseURI(update.action);
+    var urlObj = url.parse(update.action);
 
-    if (uriObj.pathParts[0] === '#') {
+    if (!urlObj.host && urlObj.hash) {
       // this action should be defined locally
+      // map the uri onto the action tree.
+      let uriObj = parseURI(urlObj.hash);
       let act = actions;
 
       if (update.definition) {
@@ -134,8 +147,17 @@ export function report(update) {
       return Promise.resolve();
     }
 
+
+    var headers = {};
+    headers.Authorization = authorizations[urlObj.host || 'apphost'];
+
     // if it's not defined locally, then perform an http POST to perform the action
-    return http.post(update.action, update.data)
+    return http({
+      method: 'post',
+      headers: headers,
+      url: update.action,
+      data: update.data
+    })
     .then(res => {
       return res.data;
     })
@@ -255,7 +277,7 @@ export function get (resource) {
  * to the state of the resource are given to the first parameter of the callback.
  *
  * If the resource exists, the callback is called with the current state, and called
- * anytime the state changes.
+ * anytime the state changes, until it is un-subscribed.
  *
  * If the resource does not exist, the callback will not be called. But it will be
  * called when/if the resource is created.
@@ -263,7 +285,7 @@ export function get (resource) {
  * Each resource state is updated as a partial update to the total state, and it is
  * up to you (or react or whatever) to manage merging the changes into the total state.
  *
- * Currently, errors are reported to #/error
+ * Currently, errors are globally reported to #/error
  *
  * var unsubscribe = subscribe({
  *   resource1: 'some/url',
@@ -277,13 +299,20 @@ export function get (resource) {
  * });
  *
  * // unsubscribe some time later
- * unsubscribe();
+ * unsubscribe()
+ * .then(() => {
+ * 	 // do something once it is un-subscribed
+ * })
+ * .catch(err => {
+ *   // assume the subscription is not valid, so messages to #/error won't do
+ *   // much good at this point, so catch the final score here.
+ * });
  *
  *
  * @param  {Object} resources - Property is a resource to subscribe to.
  * @param  {function} subscriber - callback when there is an update to one or more
  * of the resources specified as partial updates. Takes a single parameter.
- * @return {[type]}            [description]
+ * @return {Promise} Resolves when subscription has be un-subscribed (ie. no more calls to the callback)
  */
 export function subscribe (resources, subscriber) {
   var unsubs = [];
@@ -373,5 +402,8 @@ export function subscribe (resources, subscriber) {
   return () => {
     // this is the un-susbscribe function
     unsubs.forEach(unsub => {unsub()});
+
+    // TODO: reject when errors have occured
+    return Promise.resolve();
   }
 }

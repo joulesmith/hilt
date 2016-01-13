@@ -14,7 +14,7 @@ export default React.createClass({
       }
     };
   },
-  componentDidMount: function(){
+  componentWillMount: function(){
     this.unsubscribe = subscribe({
       user: '#/user/current'
     }, state => {
@@ -73,10 +73,13 @@ export default React.createClass({
             <Bootstrap.NavDropdown title={this.state.user.username} id="basic-nav-dropdown">
               {(() => {
                 if (this.state.user._id && !this.state.user.guest) {
-                  return <Bootstrap.MenuItem onSelect={this.logout}>Logout</Bootstrap.MenuItem>;
+                  return [
+                    <Bootstrap.MenuItem key="1" href='#/settings'>Settings</Bootstrap.MenuItem>,
+                    <Bootstrap.MenuItem key="2" onSelect={this.logout}>Logout</Bootstrap.MenuItem>
+                  ];
                 }
 
-                return <Bootstrap.MenuItem onSelect={this.register}>Register/Sign-In</Bootstrap.MenuItem>;
+                return [<Bootstrap.MenuItem key="0" onSelect={this.register}>Register/Sign-In</Bootstrap.MenuItem>];
               })()}
             </Bootstrap.NavDropdown>
           </Bootstrap.Nav>

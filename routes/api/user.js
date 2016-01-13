@@ -352,6 +352,10 @@ router.get('/google/auth/url', function(req, res, next) {
   }
 });
 
+
+// TODO: I think there might be a security risk by sending the code to the callback
+// I think instead they should supply some information about who should be logged in
+// as this person.
 router.get('/google/auth/callback', function(req, res, next){
     try{
         if (req.query.error){
@@ -414,6 +418,34 @@ router.post('/google/auth/token', function(req, res, next){
                 });
 
         });
+
+    }catch(error){
+        next(error);
+    }
+});
+
+router.get('/facebook/auth/url', function(req, res, next) {
+  try {
+    var url = [
+      'https://www.facebook.com/dialog/oauth?client_id=',
+      '576071689221966',
+      '&amp;redirect_uri=',
+      ''].join('');
+    res.send({
+      url: url
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/facebook/auth/callback', function(req, res, next){
+    try{
+        if (req.query.error){
+            res.render('facebookCallback', { error: req.query.error, code : '' });
+        }else{
+            res.render('facebookCallback', { error: '', code : req.query.code });
+        }
 
     }catch(error){
         next(error);

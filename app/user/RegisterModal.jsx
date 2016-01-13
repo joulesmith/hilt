@@ -14,7 +14,7 @@ export default React.createClass({
       }
     };
   },
-  componentDidMount: function(){
+  componentWillMount: function(){
     this.unsubscribe = journal.subscribe({
       register: '#/modal/register',
       user: '#/user/current'
