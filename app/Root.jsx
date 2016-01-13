@@ -2,12 +2,12 @@ import React from 'react';
 import { Router, Route, Link, browserHistory  } from 'react-router';
 
 
-import Navbar from 'Navbar';
+import Navbar from './Navbar';
 import RegisterModal from './user/RegisterModal';
 
-import ErrorModal from 'ErrorModal';
-import NoMatch from 'NoMatch';
-import Index from 'Index';
+import ErrorModal from './ErrorModal';
+import NoMatch from './NoMatch';
+import Index from './Index';
 import RegisterBody from './user/RegisterBody';
 import Settings from './user/Settings';
 
