@@ -16,7 +16,7 @@ import './css/bootstrap.css';
 export default React.createClass({
   render: function() {
     var brand = {
-      name: 'My Site',
+      name: document.title,
       url: '#'
     };
     var links = [];
