@@ -52,7 +52,7 @@ router.post('/', function(req, res, next) {
 
         if (password_result.score < 3) {
             throw new UsersError('insecurepassword',
-                'The password supplied scored {0}/4 for security. A minimum of 3/4 is required.',
+                'The password supplied scored [0]/4 for security. A minimum of 3/4 is required.',
                 [password_result.score],
                 400);
         }
@@ -64,7 +64,7 @@ router.post('/', function(req, res, next) {
         .then(function(user){
             if (user) {
                 throw new UsersError('inuse',
-                    'The username {0} is already in use by another user.',
+                    'The username [0] is already in use by another user.',
                     [username],
                     400);
             }
@@ -342,23 +342,20 @@ var oauthURL = oauth2Client.generateAuthUrl({
 });
 
 // returns an authorization url that will then provide a code exchangable for a token
-router.get('/google/auth/url', function(req, res, next){
-    try{
-
-        res.send({
-            user : {
-                google : {
-                    auth : {
-                        url : oauthURL
-                    }
-                }
-            }
-        });
-    }catch(error){
-        next(error);
-    }
+router.get('/google/auth/url', function(req, res, next) {
+  try {
+    res.send({
+      url: oauthURL
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
+
+// TODO: I think there might be a security risk by sending the code to the callback
+// I think instead they should supply some information about who should be logged in
+// as this person.
 router.get('/google/auth/callback', function(req, res, next){
     try{
         if (req.query.error){
@@ -421,6 +418,34 @@ router.post('/google/auth/token', function(req, res, next){
                 });
 
         });
+
+    }catch(error){
+        next(error);
+    }
+});
+
+router.get('/facebook/auth/url', function(req, res, next) {
+  try {
+    var url = [
+      'https://www.facebook.com/dialog/oauth?client_id=',
+      '576071689221966',
+      '&amp;redirect_uri=',
+      ''].join('');
+    res.send({
+      url: url
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/facebook/auth/callback', function(req, res, next){
+    try{
+        if (req.query.error){
+            res.render('facebookCallback', { error: req.query.error, code : '' });
+        }else{
+            res.render('facebookCallback', { error: '', code : req.query.code });
+        }
 
     }catch(error){
         next(error);
