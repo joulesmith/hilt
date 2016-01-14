@@ -5,8 +5,8 @@ import React from 'react';
 import {Input, ProgressBar, ButtonInput} from 'react-bootstrap';
 import zxcvbn from 'zxcvbn';
 import * as journal from '../journal';
-import GoogleOAuth from './GoogleOAuth';
-import PasswordTest from './PasswordTest';
+import GoogleOAuth from './google-oauth';
+import PasswordTest from './password-test';
 
 export default React.createClass({
   getInitialState: function(){

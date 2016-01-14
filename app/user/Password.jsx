@@ -3,7 +3,7 @@
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import zxcvbn from 'zxcvbn';
-import PasswordTest from './PasswordTest';
+import PasswordTest from './password-test';
 
 export default React.createClass({
   getInitialState: function(){

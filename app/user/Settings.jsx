@@ -5,10 +5,10 @@ import * as journal from 'journal';
 
 import * as Bootstrap from 'react-bootstrap';
 
-import Password from './Password';
-import Email from './Email';
-import Phone from './Phone';
-import Address from './Address';
+import Password from './password';
+import Email from './email';
+import Phone from './phone';
+import Address from './address';
 
 export default React.createClass({
   getInitialState: function(){

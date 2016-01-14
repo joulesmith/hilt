@@ -2,14 +2,14 @@ import React from 'react';
 import { Router, Route, Link, browserHistory  } from 'react-router';
 
 
-import Navbar from './Navbar';
-import RegisterModal from './user/RegisterModal';
+import Navbar from './navbar';
+import RegisterModal from './user/register-modal';
 
-import ErrorModal from './ErrorModal';
-import NoMatch from './NoMatch';
-import Index from './Index';
-import RegisterBody from './user/RegisterBody';
-import Settings from './user/Settings';
+import ErrorModal from './error-modal';
+import NoMatch from './no-match';
+import Home from './home';
+import RegisterBody from './user/register-body';
+import Settings from './user/settings';
 
 import './css/bootstrap.css';
 
@@ -25,7 +25,7 @@ export default React.createClass({
       <div>
         <Navbar brand={brand} links={links}></Navbar>
         <Router history={browserHistory}>
-          <Route path="/" component={Index}>
+          <Route path="/" component={Home}>
             <Route path="/settings" component={Settings} />
             <Route path="/register" component={RegisterBody} />
             <Route path="*" component={NoMatch}/>

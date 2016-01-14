@@ -4,7 +4,7 @@ import React from 'react';
 import * as journal from 'journal';
 
 import {Modal, Button} from 'react-bootstrap';
-import RegisterBody from './RegisterBody';
+import RegisterBody from './register-body';
 
 export default React.createClass({
   getInitialState: function(){

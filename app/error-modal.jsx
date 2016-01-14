@@ -3,7 +3,7 @@
 import React from 'react';
 import {subscribe, publish} from 'journal';
 import {Modal, Button} from 'react-bootstrap';
-import ErrorBody from 'ErrorBody';
+import ErrorBody from 'error-body';
 
 
 export default React.createClass({
