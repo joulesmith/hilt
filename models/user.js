@@ -11,6 +11,7 @@ var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 var UserSchema = new mongoose.Schema({
     created: Number,
+    locale: {type: String, default: 'en-US'},
     username : String,
     passwordHash: {type : String, default : ''},
     secretSalt : {type : String, default : ''},

@@ -59,6 +59,7 @@ router.post('/', function(req, res, next) {
 
         var username = '' + req.body.username;
         var password = '' + req.body.password;
+        var locale = '' + req.body.locale || 'en-US';
 
         User.findOne({username : username})
         .then(function(user){
@@ -72,6 +73,7 @@ router.post('/', function(req, res, next) {
         .then(function(){
             var newuser = new User({
                 created : Date.now(),
+                locale: locale,
                 username : username
             });
 
@@ -103,6 +105,33 @@ router.post('/', function(req, res, next) {
     }
 });
 
+router.get('/:id', userAuth(), function(req, res, next){
+  try {
+
+      User.findById(req.params.id)
+      .then(function(user) {
+        if (!user || !user._id.equals(req.user._id)) {
+          // user can only get their own details for now
+          throw new UsersError('nouser',
+              'User not found.',
+              [],
+              404);
+        }
+
+        res.send({
+          created: user.created,
+          locale: user.locale,
+          username: user.username,
+          groups: user.groups
+        });
+      })
+      .catch(function(error) {
+        next(error);
+      });
+  }catch(error) {
+      next(error);
+  }
+});
 
 // creates a new guest user
 router.post('/guest', function(req, res, next) {
@@ -242,8 +271,6 @@ router.post('/token', userAuth(),  function(req, res, next){
                 [],
                 401);
         }
-
-
 
         req.user.generateToken('' + req.body.password)
         .then(function(token){

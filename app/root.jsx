@@ -1,10 +1,9 @@
 import React from 'react';
 import { Router, Route, Link, browserHistory  } from 'react-router';
 
-
 import Navbar from './navbar';
 import RegisterModal from './user/register-modal';
-
+import * as journal from './journal';
 import ErrorModal from './error-modal';
 import NoMatch from './no-match';
 import Home from './home';
@@ -14,6 +13,11 @@ import Settings from './user/settings';
 import './css/bootstrap.css';
 
 export default React.createClass({
+  getInitialState: function(){
+    return {
+
+    };
+  },
   render: function() {
     var brand = {
       name: document.title,
@@ -31,6 +35,7 @@ export default React.createClass({
             <Route path="*" component={NoMatch}/>
           </Route>
         </Router>
+
         <RegisterModal></RegisterModal>
         <ErrorModal></ErrorModal>
       </div>

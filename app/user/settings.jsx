@@ -4,11 +4,13 @@ import React from 'react';
 import * as journal from 'journal';
 
 import * as Bootstrap from 'react-bootstrap';
-
+import formatMessage from 'format-message';
 import Password from './password';
 import Email from './email';
 import Phone from './phone';
 import Address from './address';
+import SelectLocale from '../select-locale';
+import If from '../if';
 
 export default React.createClass({
   getInitialState: function(){
@@ -20,13 +22,7 @@ export default React.createClass({
     /*
     this.unsubscribe = journal.subscribe({
       user: '#/user/current',
-      contact: ['user', user => {
-        if (user._id && !user.guest) {
-          return 'api/model/contact/' + user._id;
-        }
-
-        return null; // doesn't retrieve anything else
-      }]
+      contact: 'api/model/contact/{user._id}'
     }, state => {
       this.setState(state)
     });*/
@@ -44,7 +40,7 @@ export default React.createClass({
   },
   handleEditPassword: function(){
     this.setState({
-      editPassword: true
+      editPassword: !this.state.editPassword
     })
   },
   render: function() {
@@ -59,8 +55,20 @@ export default React.createClass({
         <Bootstrap.Row>
           <Bootstrap.Col xs={12} md={8} mdOffset={2}>
              <Bootstrap.ListGroup>
+             <Bootstrap.ListGroupItem>
+               <SelectLocale />
+             </Bootstrap.ListGroupItem>
               <Bootstrap.ListGroupItem>
-                <Password oldPassword={true} newPassword={true} userId={'sadasdasd'}/>
+                <Bootstrap.Button onClick={this.handleEditPassword}>
+                  {formatMessage({
+                    id: 'change_signin_button',
+                    default: 'Sign-In Options',
+                    description: 'Opens editing of username/password or other sign-in methods'
+                  })}
+                  </Bootstrap.Button>
+                <If condition={this.state.editPassword}>
+                  <Password oldPassword={true} newPassword={true} userId={'sadasdasd'}/>
+                </If>
               </Bootstrap.ListGroupItem>
               <Bootstrap.ListGroupItem>
                 <Email />
