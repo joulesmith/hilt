@@ -17,14 +17,14 @@ export default React.createClass({
     };
   },
   componentWillMount: function(){
-    this.unsubscribe = subscribe({
+    this.subscription = subscribe({
       user: '#/user/current'
     }, state => {
       this.setState(state)
     });
   },
   componentWillUnmount: function(){
-    this.unsubscribe();
+    this.subscription.unsubscribe();
   },
   register: function() {
 

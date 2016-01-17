@@ -13,7 +13,7 @@ export default React.createClass({
     };
   },
   componentWillMount: function(){
-    this.unsubscribe = subscribe({
+    this.subscription = subscribe({
       error: '#/error'
     }, state => {
       this.setState(state);
@@ -21,7 +21,7 @@ export default React.createClass({
     });
   },
   componentWillUnmount: function(){
-    this.unsubscribe();
+    this.subscription.unsubscribe();
   },
   handleDismiss: function() {
 

@@ -15,7 +15,7 @@ export default React.createClass({
     };
   },
   componentWillMount: function(){
-    this.unsubscribe = journal.subscribe({
+    this.subscription = journal.subscribe({
       register: '#/modal/register',
       user: '#/user/current'
     }, state => {
@@ -30,7 +30,7 @@ export default React.createClass({
     });
   },
   componentWillUnmount: function(){
-    this.unsubscribe();
+    this.subscription.unsubscribe();
   },
   handleDismiss: function() {
     journal.report({

@@ -19,16 +19,16 @@ export default React.createClass({
     };
   },
   componentDidMount: function(){
-    /*
-    this.unsubscribe = journal.subscribe({
-      user: '#/user/current',
-      contact: 'api/model/contact/{user._id}'
+
+    this.subscription = journal.subscribe({
+      user: '#/user/current'
+      //contact: 'api/model/contact/{user._id}'
     }, state => {
       this.setState(state)
-    });*/
+    });
   },
   componentWillUnmount: function(){
-    //this.unsubscribe();
+    this.subscription.unsubscribe();
   },
   handleChangeEmail: function() {
     /*journal.report({
