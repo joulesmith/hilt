@@ -72,7 +72,10 @@ export default React.createClass({
             })}
           </Bootstrap.Nav>
           <Bootstrap.Nav pullRight>
-            <Bootstrap.NavDropdown title={this.state.user.username} id="basic-nav-dropdown">
+            <Bootstrap.NavDropdown
+              title="Account"
+              id="basic-nav-dropdown"
+            >
               {(() => {
                 if (this.state.user._id && !this.state.user.guest) {
                   return [

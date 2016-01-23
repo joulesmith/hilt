@@ -387,11 +387,6 @@ var makeSubscription = (resource, subscriber) => {
 
   resource.node._subscribers.push(subscription);
 
-  if (resource.unsub) {
-    // there is already a subscription for this resource, so unsubscribe first
-    resource.unsub();
-  }
-
   resource.unsub = () => {
     var index = resource.node._subscribers.indexOf(subscription);
     resource.node._subscribers.splice(index, 1);
@@ -626,16 +621,17 @@ export function subscribe (resources, subscriber, _this) {
 
         // lookup the value in the state
         resource.thisProperties[match].forEach(part => {
-          value = (value && value[part]) ? value[part] : null;
+          if (typeof value[part] === 'undefined') {
+            throw new Error("A value for " + match + " could not be found in 'this' provided to the subscription.");
+          }
+
+          value = value[part];
         });
 
-        if (value) {
-          uri = uri.replace(match, () => {
-            return value;
-          });
-        }else{
-          throw new Error("A value for " + match + " could not be found in " + JSON.stringify(_this));
-        }
+
+        uri = uri.replace(match, () => {
+          return value;
+        });
       }
 
 
@@ -645,6 +641,12 @@ export function subscribe (resources, subscriber, _this) {
       if (uri === resource.currentUri) {
         // already subscribed to it
         return;
+      }
+
+      if (resource.unsub) {
+        // there is already a subscription for this resource, so unsubscribe first
+        resource.unsub();
+        resource.unsub = null;
       }
 
       resource.currentUri = uri;

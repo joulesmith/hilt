@@ -1,6 +1,7 @@
 // need some more middle ware from express
 var express = require('express');
 var path = require('path');
+var compress = require('compression');
 
 // load initialized server instance
 var server = require('./server');
@@ -17,7 +18,8 @@ require('./models/profile');
 server.express.set('views', path.join(__dirname, 'views'));
 server.express.set('view engine', 'ejs');
 
-server.express.use(express.static(path.join(__dirname, 'bower_components')));
+// add express middleware for serving files
+server.express.use(compress());
 server.express.use(express.static(path.join(__dirname, 'dist')));
 server.express.use(express.static(path.join(__dirname, 'public')));
 
@@ -50,7 +52,7 @@ var apimodelfactory = require('./models/apifactory')(server);
 apimodelfactory.addModels(require('./models/group'));
 
 // needed for contacting users by email, phone, and postal
-apimodelfactory.addModels(require('./models/contact'));
+apimodelfactory.addModels(require('./models/email'));
 
 // needed for uploading files to the server
 apimodelfactory.addModels(require('./models/file'));
@@ -84,7 +86,7 @@ server.express.use(function(req, res, next) {
 // error handlers
 
 server.express.use(function(err, req, res, next) {
-
+console.log(err);
   res.status(err.status || 500).json({
     error: {
         status : err.status || 500,

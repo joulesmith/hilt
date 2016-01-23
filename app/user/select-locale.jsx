@@ -24,6 +24,10 @@ export default React.createClass({
       }
     });
 
+    if (this.props.onChangeLocale) {
+      this.props.onChangeLocale(this.state.locale);
+    }
+
   },
   render: function() {
     return (
@@ -35,7 +39,7 @@ export default React.createClass({
         <Bootstrap.Button onClick={this.handleSetLocale} >
         {formatMessage({
           id: 'change_locale_button',
-          default: 'Change Language',
+          default: 'Set Language',
           description: 'Changes the localization used in the app to what is selected.'
         })}
         </Bootstrap.Button>

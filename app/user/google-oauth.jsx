@@ -26,18 +26,22 @@ export default React.createClass({
         });
       }
 
-      journal.report({
-        action: '#/user/login',
-        data: {
-          googleCode: code
-        }
-      })
-      .catch(err => {
+      if (this.props && this.props.onOAuth) {
+        this.props.onOAuth(code);
+      }else{
         journal.report({
-          action: '#/error',
-          data: err
+          action: '#/user/login',
+          data: {
+            googleCode: code
+          }
+        })
+        .catch(err => {
+          journal.report({
+            action: '#/error',
+            data: err
+          });
         });
-      });
+      }
     };
 
     journal.get('api/user/google/auth/url')
