@@ -31,6 +31,7 @@
     "body-parser": "~1.12.0",
     "braintree": "^1.30.0",
     "classnames": "^2.2.1",
+    "compression": "^1.6.1",
     "css-loader": "^0.23.1",
     "debug": "^2.2.0",
     "ejs": "~2.3.1",
@@ -38,11 +39,13 @@
     "expose-loader": "^0.7.1",
     "express": "~4.12.2",
     "file-loader": "^0.8.5",
+    "format-message": "^4.0.0",
     "formidable": "^1.0.17",
     "geocoder": "^0.2.2",
     "googleapis": "^2.1.7",
     "history": "^1.17.0",
     "imports-loader": "^0.6.5",
+    "json-loader": "^0.5.4",
     "lodash": "^3.10.1",
     "marked": "^0.3.5",
     "mongoose": "^4.2.7",
@@ -66,7 +69,9 @@
     "xoauth2": "^1.1.0",
     "zxcvbn": "^4.2.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "format-message-cli": "^4.0.1"
+  },
   "license": "MIT",
   "readme": "See README file",
   "readmeFilename": "README.md",

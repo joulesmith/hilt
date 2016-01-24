@@ -6,6 +6,8 @@ import Radium from 'radium';
 import * as Bootstrap from 'react-bootstrap';
 import {report, subscribe} from 'journal';
 
+import formatMessage from 'format-message';
+
 export default React.createClass({
   getInitialState: function(){
     return {
@@ -15,14 +17,14 @@ export default React.createClass({
     };
   },
   componentWillMount: function(){
-    this.unsubscribe = subscribe({
+    this.subscription = subscribe({
       user: '#/user/current'
     }, state => {
       this.setState(state)
     });
   },
   componentWillUnmount: function(){
-    this.unsubscribe();
+    this.subscription.unsubscribe();
   },
   register: function() {
 
@@ -70,16 +72,36 @@ export default React.createClass({
             })}
           </Bootstrap.Nav>
           <Bootstrap.Nav pullRight>
-            <Bootstrap.NavDropdown title={this.state.user.username} id="basic-nav-dropdown">
+            <Bootstrap.NavDropdown
+              title="Account"
+              id="basic-nav-dropdown"
+            >
               {(() => {
                 if (this.state.user._id && !this.state.user.guest) {
                   return [
-                    <Bootstrap.MenuItem key="1" href='#/settings'>Settings</Bootstrap.MenuItem>,
-                    <Bootstrap.MenuItem key="2" onSelect={this.logout}>Logout</Bootstrap.MenuItem>
+                    <Bootstrap.MenuItem key="1" href='#/settings'>
+                    {formatMessage({
+                      id: 'settings_menu_button',
+                      default: 'Settings'
+                    })}
+                    </Bootstrap.MenuItem>,
+                    <Bootstrap.MenuItem key="2" onSelect={this.logout}>
+                    {formatMessage({
+                      id: 'logout_menu_button',
+                      default: 'Logout'
+                    })}
+                    </Bootstrap.MenuItem>
                   ];
                 }
 
-                return [<Bootstrap.MenuItem key="0" onSelect={this.register}>Register/Sign-In</Bootstrap.MenuItem>];
+                return [
+                  <Bootstrap.MenuItem key="0" onSelect={this.register}>
+                  {formatMessage({
+                    id: 'register_menu_button',
+                    default: 'Register/Sign-In'
+                  })}
+                  </Bootstrap.MenuItem>
+                ];
               })()}
             </Bootstrap.NavDropdown>
           </Bootstrap.Nav>

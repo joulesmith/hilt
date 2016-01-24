@@ -1,0 +1,7 @@
+{
+  "locales": ["en-US"],
+
+  "messages": {
+    "test": "hello world"
+  }
+}

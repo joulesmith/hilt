@@ -5,8 +5,9 @@ import React from 'react';
 import {Input, ProgressBar, ButtonInput} from 'react-bootstrap';
 import zxcvbn from 'zxcvbn';
 import * as journal from '../journal';
-import GoogleOAuth from './GoogleOAuth';
-import PasswordTest from './PasswordTest';
+import GoogleOAuth from './google-oauth';
+import PasswordTest from './password-test';
+import formatMessage from 'format-message';
 
 export default React.createClass({
   getInitialState: function(){
@@ -19,7 +20,8 @@ export default React.createClass({
       },
       username : '',
       usernameRegistered: true,
-      password: ''
+      password: '',
+      rememberLogin: false
     };
   },
   handleUsername: function(event) {
@@ -114,28 +116,73 @@ export default React.createClass({
   render: function() {
     return (
       <form>
-        <Input onChange={this.handleUsername} type="text" label="Username" placeholder="Username" />
-        <Input onChange={this.handlePassword} type="password" label="Password" placeholder="Password"/>
+        <Input
+          onChange={this.handleUsername}
+          type="text"
+          label={formatMessage({
+            id: 'username_label',
+            default: 'Username'
+          })}
+        />
+        <Input
+          onChange={this.handlePassword}
+          type="password"
+          label={formatMessage({
+            id: 'password_label',
+            default: 'Password'
+          })}
+        />
         {(() => {
           if (this.state.username !== '') {
             if (!this.state.usernameRegistered) {
               return (
                 <div>
                   <PasswordTest password={this.state.password} onTest={this.handlePasswordTest}/>
-                  <div style={this.state.passwordConfirm.style}>
-                    <Input onChange={this.handlePasswordConfirm} bsStyle={this.state.passwordConfirm.status} type="password" label="Confirm Password" hasFeedback />
-                  </div>
-                  <ButtonInput onClick={this.handleRegister} type="button" value="Register New Username" disabled={this.state.passwordConfirm.status !== 'success'}/>
+                  <Input
+                    disabled={!this.state.passwordScore || this.state.passwordScore < 3}
+                    onChange={this.handlePasswordConfirm}
+                    bsStyle={this.state.passwordConfirm.status}
+                    type="password"
+                    label={formatMessage({
+                      id: 'confirm_password_label',
+                      default: 'Confirm Password'
+                    })}
+                    hasFeedback
+                  />
+                  <ButtonInput
+                    onClick={this.handleRegister}
+                    type="button"
+                    value={formatMessage({
+                      id: 'new_username_button',
+                      default: 'Register New Username'
+                    })}
+                    disabled={this.state.passwordConfirm.status !== 'success'}
+                  />
                 </div>
               );
             }
-            return (<ButtonInput onClick={this.handleSignin} type="button" value="Sign-In With Existing Username" />);
+            return (
+              <ButtonInput
+                onClick={this.handleSignin}
+                type="button"
+                value={formatMessage({
+                  id: 'signin_username_button',
+                  default: 'Sign-In With Existing Username'
+                })}
+              />
+            );
           }
 
           return <div></div>;
         })()}
         <div>
-          <div>or Sign-In With</div><br />
+          <div>
+            {formatMessage({
+              id: 'signin_alternatives',
+              default: 'Or Sign-In With:'
+            })}
+          </div>
+          <br />
           <GoogleOAuth />
         </div>
       </form>

@@ -3,7 +3,7 @@
 import React from 'react';
 import {subscribe, publish} from 'journal';
 import {Modal, Button} from 'react-bootstrap';
-import ErrorBody from 'ErrorBody';
+import ErrorBody from 'error-body';
 
 
 export default React.createClass({
@@ -13,7 +13,7 @@ export default React.createClass({
     };
   },
   componentWillMount: function(){
-    this.unsubscribe = subscribe({
+    this.subscription = subscribe({
       error: '#/error'
     }, state => {
       this.setState(state);
@@ -21,7 +21,7 @@ export default React.createClass({
     });
   },
   componentWillUnmount: function(){
-    this.unsubscribe();
+    this.subscription.unsubscribe();
   },
   handleDismiss: function() {
 

@@ -9,8 +9,7 @@ journal.report({
   action: '#/user/current',
   data: {
     guest: false,
-    _id: null,
-    username: 'no user'
+    _id: null
   }
 });
 
@@ -30,8 +29,7 @@ export function isLoggedIn() {
       action: '#/user/current',
       data: {
         guest: false,
-        _id: user_token._id,
-        username: user_token.username
+        _id: user_token._id
       }
     })
     .then(() => {return true;});
@@ -44,8 +42,7 @@ export function isLoggedIn() {
       action: '#/user/current',
       data: {
         guest: true,
-        _id: guest_token._id,
-        username: 'guest'
+        _id: guest_token._id
       }
     })
     .then(() => {return false;});
@@ -62,8 +59,7 @@ export function isLoggedIn() {
       action: '#/user/current',
       data: {
         guest: false,
-        _id: user_token._id,
-        username: user_token.username
+        _id: user_token._id
       }
     })
     .then(() => {return true;});
@@ -79,8 +75,7 @@ export function isLoggedIn() {
       action: '#/user/current',
       data: {
         guest: false,
-        _id: user_token._id,
-        username: user_token.username
+        _id: user_token._id
       }
     })
     .then(() => {return true;});
@@ -97,8 +92,7 @@ export function isLoggedIn() {
       action: '#/user/current',
       data: {
         guest: true,
-        _id: guest_token._id,
-        username: 'guest'
+        _id: guest_token._id
       }
     })
     .then(() => {return false;});
@@ -122,8 +116,7 @@ export function isLoggedIn() {
         action: '#/user/current',
         data: {
           guest: true,
-          _id: guest_token._id,
-          username: 'guest'
+          _id: guest_token._id
         }
       })
       .then(() => {return false;});
@@ -167,8 +160,7 @@ export function login(data) {
           action: '#/user/current',
           data: {
             guest: false,
-            _id: user_token._id,
-            username: user_token.username
+            _id: user_token._id
           }
         });
 
@@ -209,8 +201,7 @@ export function login(data) {
           action: '#/user/current',
           data: {
             guest: false,
-            _id: user_token._id,
-            username: user_token.username
+            _id: user_token._id
           }
         });
 
@@ -257,8 +248,7 @@ export function logout() {
     action: '#/user/current',
     data: {
       guest: false,
-      _id: null,
-      username: 'no user'
+      _id: null
     }
   })
   .then(() => {isLoggedIn();});
