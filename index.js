@@ -2,7 +2,8 @@
 var express = require('express');
 var path = require('path');
 var compress = require('compression');
-
+var pack = require('./middleware/pack');
+var webpackConfig = require('./webpack.config.js');
 // load initialized server instance
 var server = require('./server');
 
@@ -23,7 +24,7 @@ server.express.use(compress());
 server.express.use(express.static(path.join(__dirname, 'dist')));
 server.express.use(express.static(path.join(__dirname, 'public')));
 
-
+server.express.use(pack(webpackConfig));
 
 // third party middleware
 if (server.config.favicon) {
