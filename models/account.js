@@ -10,7 +10,7 @@ var path = require('path');
 var formidable = require('formidable');
 
 var Promise = require('bluebird');
-var config = require('../config');
+
 var mongoose = require('mongoose');
 var braintree = require('braintree');
 

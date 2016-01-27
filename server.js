@@ -12,7 +12,15 @@ var debug = require('debug')('broadsword:server');
 var http = require('http');
 var socketio = require('socket.io');
 
-module.exports = function(config) {
+var out = module.exports = {
+    config : null,
+    express : app,
+    io : null
+};
+
+function(config) {
+
+  out.config = config;
 
   /**
    * Get port from environment and store in Express.
@@ -32,6 +40,7 @@ module.exports = function(config) {
    */
 
   var io = socketio(server);
+  out.io = io;
 
   /**
    * Listen on provided port, on all network interfaces.
@@ -106,9 +115,4 @@ module.exports = function(config) {
    */
   mongoose.connect("mongodb://" + config.db.host + ":" + config.db.port + "/" + config.db.database);
 
-  return {
-      config : config,
-      express : app,
-      io : io
-  };
 };
