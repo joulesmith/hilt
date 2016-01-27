@@ -2,7 +2,6 @@
 /**
  * dependencies.
  */
-var config = require('./config');
 
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
@@ -13,100 +12,103 @@ var debug = require('debug')('broadsword:server');
 var http = require('http');
 var socketio = require('socket.io');
 
-/**
- * Get port from environment and store in Express.
- */
+module.exports = function(config) {
 
-var port = normalizePort(config.http.port);
-app.set('port', port);
+  /**
+   * Get port from environment and store in Express.
+   */
 
-/**
- * Create HTTP server.
- */
+  var port = normalizePort(config.http.port);
+  app.set('port', port);
 
-var server = http.createServer(app);
+  /**
+   * Create HTTP server.
+   */
 
-/**
- * Add socket.io to server
- */
+  var server = http.createServer(app);
 
-var io = socketio(server);
+  /**
+   * Add socket.io to server
+   */
 
-/**
- * Listen on provided port, on all network interfaces.
- */
+  var io = socketio(server);
 
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+  /**
+   * Listen on provided port, on all network interfaces.
+   */
 
-/**
- * Normalize a port into a number, string, or false.
- */
+  server.listen(port);
+  server.on('error', onError);
+  server.on('listening', onListening);
 
-function normalizePort(val) {
-  var port = parseInt(val, 10);
+  /**
+   * Normalize a port into a number, string, or false.
+   */
 
-  if (isNaN(port)) {
-    // named pipe
-    return val;
+  function normalizePort(val) {
+    var port = parseInt(val, 10);
+
+    if (isNaN(port)) {
+      // named pipe
+      return val;
+    }
+
+    if (port >= 0) {
+      // port number
+      return port;
+    }
+
+    return false;
   }
 
-  if (port >= 0) {
-    // port number
-    return port;
-  }
+  /**
+   * Event listener for HTTP server "error" event.
+   */
 
-  return false;
-}
-
-/**
- * Event listener for HTTP server "error" event.
- */
-
-function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
-
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
+  function onError(error) {
+    if (error.syscall !== 'listen') {
       throw error;
+    }
+
+    var bind = typeof port === 'string'
+      ? 'Pipe ' + port
+      : 'Port ' + port;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+      case 'EACCES':
+        console.error(bind + ' requires elevated privileges');
+        process.exit(1);
+        break;
+      case 'EADDRINUSE':
+        console.error(bind + ' is already in use');
+        process.exit(1);
+        break;
+      default:
+        throw error;
+    }
   }
-}
 
-/**
- * Event listener for HTTP server "listening" event.
- */
+  /**
+   * Event listener for HTTP server "listening" event.
+   */
 
-function onListening() {
-  var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  debug('Listening on ' + bind);
-}
+  function onListening() {
+    var addr = server.address();
+    var bind = typeof addr === 'string'
+      ? 'pipe ' + addr
+      : 'port ' + addr.port;
+    debug('Listening on ' + bind);
+  }
 
-/**
- * Connect to database
- */
-mongoose.connect("mongodb://" + config.db.host + ":" + config.db.port + "/" + config.db.database);
+  /**
+   * Connect to database
+   */
+  mongoose.connect("mongodb://" + config.db.host + ":" + config.db.port + "/" + config.db.database);
 
-module.exports = {
-    config : config,
-    express : app,
-    io : io
+  return {
+      config : config,
+      express : app,
+      io : io
+  };
 };
