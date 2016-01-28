@@ -7,7 +7,6 @@ var path = require('path');
 var formidable = require('formidable');
 var error = require('../error');
 var Promise = require('bluebird');
-var config = require('../config');
 var mongoose = require('mongoose');
 var braintree = require('braintree');
 

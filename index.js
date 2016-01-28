@@ -7,8 +7,8 @@ var webpackConfig = require('./webpack.config.js');
 // load initialized server instance
 //
 module.exports = function(config) {
-  var server = require('./server')(config);
-
+  var server = require('./server');
+  server.configure(config);
 
   // load schemas to mongoose
   require('./models/settings');
