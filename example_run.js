@@ -1,3 +1,5 @@
+var path = require('path');
+
 require('./index.js')({
   "name": "Hilt",
   "http": {
@@ -12,8 +14,19 @@ require('./index.js')({
     "password": null
   },
   // optional
-  "app": "./app/app.jsx",
+  "appPath": "./app/app.jsx",
   "favicon": null,
-  "uploadPath": "C:\\Users\\Socrates\\Documents\\GitHub\\hilt\\uploads",
-  "log": "dev"
+  "uploadPath": path.join(__dirname, "uploads"),
+  "log": "dev",
+  modelPaths: [
+    './models/group',
+    './models/email',
+    './models/file',
+    './models/account',
+    './models/product',
+    './models/service',
+    './models/order',
+    './models/receipt',
+    './models/profile'
+  ]
 });
