@@ -13,7 +13,6 @@ module.exports = function(config) {
   // load schemas to mongoose
   require('./models/settings');
   require('./models/user');
-  require('./models/profile');
 
   // view engine setup
   server.express.set('views', path.join(__dirname, 'views'));
@@ -24,10 +23,11 @@ module.exports = function(config) {
   server.express.use(express.static(path.join(__dirname, 'dist')));
   server.express.use(express.static(path.join(__dirname, 'public')));
 
-  if (config.app) {
-    webpackConfig.entry = config.app;
+  if (config.appPath) {
+    webpackConfig.entry = config.appPath;
   }
 
+  // serve bundled front-end files
   server.express.use(pack(webpackConfig));
 
   // third party middleware
@@ -53,32 +53,12 @@ module.exports = function(config) {
 
   var apimodelfactory = require('./models/apifactory')(server);
 
-  // needed for group permissions
-  apimodelfactory.addModels(require('./models/group'));
-
-  // needed for contacting users by email, phone, and postal
-  apimodelfactory.addModels(require('./models/email'));
-
-  // needed for uploading files to the server
-  apimodelfactory.addModels(require('./models/file'));
-
-  // needed for tracking payments to users
-  apimodelfactory.addModels(require('./models/account'));
-
-  //
-  apimodelfactory.addModels(require('./models/product'));
-
-  //
-  apimodelfactory.addModels(require('./models/service'));
-
-  //
-  apimodelfactory.addModels(require('./models/order'));
-
-  //
-  apimodelfactory.addModels(require('./models/receipt'));
-
-  // A free-form page which text, images, etc can be added
-  apimodelfactory.addModels(require('./models/profile'));
+  // add custom models to server
+  if (config.modelPaths) {
+    config.modelPaths.forEach(function(modelPath){
+      apimodelfactory.addModels(require(modelPath));
+    });
+  }
 
   // catch 404 and forward to error handler
   server.express.use(function(req, res, next) {
