@@ -474,7 +474,7 @@ export function subscribe (resources, subscriber, _this) {
     resourceList.push(resource);
 
     let uritmpl = resources[prop];
-    let re = /\{(.+)\}/g;
+    let re = /\{([^\}]+)\}/g;
     let match;
 
     let dependencies = {};
