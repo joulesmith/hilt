@@ -473,25 +473,25 @@ var addModels = function(models) {
           }
 
           new_element.grantUserAccess((apiModel.create && apiModel.create.creatorAccess) || ['root'], req.user)
-            .then(function(element) {
-              if (apiModel.create && apiModel.create.handler) {
-                return apiModel.create.handler.apply(element, [req, res]);
-              } else {
-                return element.save();
-              }
-            })
-            .then(function(element) {
-              if (element) {
-                var response = {};
+          .then(function(element) {
+            if (apiModel.create && apiModel.create.handler) {
+              return apiModel.create.handler.apply(element, [req, res]);
+            } else {
+              return element.save();
+            }
+          })
+          .then(function(element) {
+            if (element) {
+              var response = {};
 
-                response[model] = element;
+              response[model] = element;
 
-                res.json(response);
-              }
-            })
-            .catch(function(error) {
-              next(error);
-            });
+              res.json(response);
+            }
+          })
+          .catch(function(error) {
+            next(error);
+          });
         } catch (error) {
           next(error);
         }
@@ -510,46 +510,46 @@ var addModels = function(models) {
           try {
 
             Model.findById('' + req.params.id)
-              .exec()
-              .then(function(element) {
-                // this will blow up the request if there is not proper permission
-                if (!element.testAccess('update', req.user)) {
-                  throw new ModelError('noaccess',
-                    'User does not have permission to [0] this [1].', ['update', model],
-                    403);
+            .exec()
+            .then(function(element) {
+              // this will blow up the request if there is not proper permission
+              if (!element.testAccess('update', req.user)) {
+                throw new ModelError('noaccess',
+                  'User does not have permission to [0] this [1].', ['update', model],
+                  403);
+              }
+
+              element.edited = Date.now();
+
+              for (var param in apiModel.state.independent) {
+                if (req.body[param]) {
+                  element[param] = req.body[param];
                 }
+              }
 
-                element.edited = Date.now();
+              var edit_promise;
 
-                for (var param in apiModel.state.independent) {
-                  if (req.body[param]) {
-                    element[param] = req.body[param];
-                  }
-                }
+              if (apiModel.update && apiModel.update.handler) {
+                return apiModel.update.handler.apply(element, [req, res]);
+              } else {
+                return element.save();
+              }
+            })
+            .then(function(element) {
+              // broadcast that the resource has changed to anyone in the channel
+              // and the time that the edit happened
+              element.event('changed', element.edited);
+              if (element) {
+                var response = {};
 
-                var edit_promise;
+                response[model] = element;
 
-                if (apiModel.update && apiModel.update.handler) {
-                  return apiModel.update.handler.apply(element, [req, res]);
-                } else {
-                  return element.save();
-                }
-              })
-              .then(function(element) {
-                // broadcast that the resource has changed to anyone in the channel
-                // and the time that the edit happened
-                element.event('changed', element.edited);
-                if (element) {
-                  var response = {};
-
-                  response[model] = element;
-
-                  res.json(response);
-                }
-              })
-              .catch(function(error) {
-                next(error);
-              });
+                res.json(response);
+              }
+            })
+            .catch(function(error) {
+              next(error);
+            });
           } catch (error) {
             next(error);
           }
@@ -565,39 +565,39 @@ var addModels = function(models) {
           try {
 
             Model.findById('' + req.params.id)
-              .exec()
-              .then(function(element) {
+            .exec()
+            .then(function(element) {
 
-                element.edited = Date.now();
+              element.edited = Date.now();
 
-                for (var param in apiModel.state.independent) {
-                  if (req.body[param]) {
-                    element[param] = req.body[param];
-                  }
+              for (var param in apiModel.state.independent) {
+                if (req.body[param]) {
+                  element[param] = req.body[param];
                 }
+              }
 
-                var edit_promise;
+              var edit_promise;
 
-                if (apiModel.update && apiModel.update.handler) {
-                  edit_promise = apiModel.update.handler.apply(element, [req]);
-                } else {
-                  edit_promise = element.save();
-                }
+              if (apiModel.update && apiModel.update.handler) {
+                edit_promise = apiModel.update.handler.apply(element, [req]);
+              } else {
+                edit_promise = element.save();
+              }
 
-                return edit_promise;
-              })
-              .then(function(element) {
-                element.event('changed', element.edited);
+              return edit_promise;
+            })
+            .then(function(element) {
+              element.event('changed', element.edited);
 
-                var response = {};
+              var response = {};
 
-                response[model] = element;
+              response[model] = element;
 
-                res.json(response);
-              })
-              .catch(function(error) {
-                next(error);
-              });
+              res.json(response);
+            })
+            .catch(function(error) {
+              next(error);
+            });
           } catch (error) {
             next(error);
           }
@@ -617,45 +617,50 @@ var addModels = function(models) {
         apiMiddleware,
         function(req, res, next) {
           try {
-            Model.findById('' + req.params.id)
-              .exec()
-              .then(function(element) {
-                if (element.deleted) {
-                  throw new ModelError('removed',
-                    'This [0] has been peranently removed.', [model],
-                    410);
-                }
+            var query = Model.findById('' + req.params.id);
 
-                if (element.flagged) {
-                  throw new ModelError('flagged',
-                    'This [0] has been flagged for review and is temporarily unavailable.', [model],
-                    503);
-                }
+            if (apiModel.get && apiModel.get.populate) {
+              query = query.populate.apply(query, apiModel.get.populate);
+            }
 
-                if (!element.testAccess('get', req.user)) {
-                  throw new ModelError('noaccess',
-                    'User does not have permission to [0] this [1].', ['get', model],
-                    403);
-                }
+            query.exec()
+            .then(function(element) {
+              if (element.deleted) {
+                throw new ModelError('removed',
+                  'This [0] has been peranently removed.', [model],
+                  410);
+              }
 
-                if (apiModel.get && apiModel.get.handler) {
-                  return apiModel.get.handler.apply(element, [req, res]);
-                } else {
-                  return element;
-                }
+              if (element.flagged) {
+                throw new ModelError('flagged',
+                  'This [0] has been flagged for review and is temporarily unavailable.', [model],
+                  503);
+              }
 
-              })
-              .then(function(element) {
-                if (element) {
-                  var response = {};
-                  response[model] = element;
+              if (!element.testAccess('get', req.user)) {
+                throw new ModelError('noaccess',
+                  'User does not have permission to [0] this [1].', ['get', model],
+                  403);
+              }
 
-                  res.json(response);
-                }
-              })
-              .catch(function(error) {
-                next(error);
-              });
+              if (apiModel.get && apiModel.get.handler) {
+                return apiModel.get.handler.apply(element, [req, res]);
+              } else {
+                return element;
+              }
+
+            })
+            .then(function(element) {
+              if (element) {
+                var response = {};
+                response[model] = element;
+
+                res.json(response);
+              }
+            })
+            .catch(function(error) {
+              next(error);
+            });
           } catch (error) {
             next(error);
           }
@@ -668,29 +673,34 @@ var addModels = function(models) {
         apiMiddleware,
         function(req, res, next) {
           try {
-            Model.findById('' + req.params.id)
-              .exec()
-              .then(function(element) {
-                if (element.deleted) {
-                  throw new ModelError('removed',
-                    'This [0] has been peranently removed.', [model],
-                    410);
-                }
+            var query = Model.findById('' + req.params.id);
 
-                if (element.flagged) {
-                  throw new ModelError('flagged',
-                    'This [0] has been flagged for review and is temporarily unavailable.', [model],
-                    503);
-                }
+            if (apiModel.get && apiModel.get.populate) {
+              query = query.populate.apply(query, apiModel.get.populate);
+            }
 
-                var response = {};
-                response[model] = element;
+            query.exec()
+            .then(function(element) {
+              if (element.deleted) {
+                throw new ModelError('removed',
+                  'This [0] has been peranently removed.', [model],
+                  410);
+              }
 
-                res.json(response);
-              })
-              .catch(function(error) {
-                next(error);
-              });
+              if (element.flagged) {
+                throw new ModelError('flagged',
+                  'This [0] has been flagged for review and is temporarily unavailable.', [model],
+                  503);
+              }
+
+              var response = {};
+              response[model] = element;
+
+              res.json(response);
+            })
+            .catch(function(error) {
+              next(error);
+            });
           } catch (error) {
             next(error);
           }
@@ -721,34 +731,39 @@ var addModels = function(models) {
             apiMiddleware,
             function(req, res, next) {
               try {
-                Model.findById('' + req.params.id)
-                  .exec()
-                  .then(function(element) {
+                var query = Model.findById('' + req.params.id);
 
-                    if (!element.testAccess('safe', req.user)) {
-                      throw new ModelError('noaccess',
-                        'User does not have permission to [0] this [1].', ['safe.' + prop, model],
-                        403);
-                    }
+                if (method.populate) {
+                  query = query.populate.apply(query, method.populate);
+                }
 
-                    return method.handler.apply(element, [req, res]);
-                  })
-                  .then(function(result) {
+                query.exec()
+                .then(function(element) {
 
-                    if (result) {
-                      // if something was returned, assume that
-                      // the response has not been sent yet. so
-                      // send whatever is the result
-                      var response = {};
-                      response[prop] = result;
-                      res.json(response);
-                    }
+                  if (!element.testAccess('safe', req.user)) {
+                    throw new ModelError('noaccess',
+                      'User does not have permission to [0] this [1].', ['safe.' + prop, model],
+                      403);
+                  }
+
+                  return method.handler.apply(element, [req, res]);
+                })
+                .then(function(result) {
+
+                  if (result) {
+                    // if something was returned, assume that
+                    // the response has not been sent yet. so
+                    // send whatever is the result
+                    var response = {};
+                    response[prop] = result;
+                    res.json(response);
+                  }
 
 
-                  })
-                  .catch(function(error) {
-                    next(error);
-                  });
+                })
+                .catch(function(error) {
+                  next(error);
+                });
               } catch (error) {
                 next(error);
               }
@@ -762,31 +777,36 @@ var addModels = function(models) {
             apiMiddleware,
             function(req, res, next) {
               try {
-                Model.findById('' + req.params.id)
-                  .exec()
-                  .then(function(element) {
+                var query = Model.findById('' + req.params.id);
 
-                    if (!element.testAccess('safe.' + prop, req.user)) {
-                      throw new ModelError('noaccess',
-                        'User does not have permission to [0] this [1].', ['safe.' + prop, model],
-                        403);
-                    }
+                if (method.populate) {
+                  query = query.populate.apply(query, method.populate);
+                }
 
-                    return method.handler.apply(element, [req, res]);
-                  })
-                  .then(function(result) {
-                    if (result) {
-                      // if something was returned, assume that
-                      // the response has not been sent yet. so
-                      // send whatever is the result
-                      var response = {};
-                      response[prop] = result;
-                      res.json(response);
-                    }
-                  })
-                  .catch(function(error) {
-                    next(error);
-                  });
+                query.exec()
+                .then(function(element) {
+
+                  if (!element.testAccess('safe.' + prop, req.user)) {
+                    throw new ModelError('noaccess',
+                      'User does not have permission to [0] this [1].', ['safe.' + prop, model],
+                      403);
+                  }
+
+                  return method.handler.apply(element, [req, res]);
+                })
+                .then(function(result) {
+                  if (result) {
+                    // if something was returned, assume that
+                    // the response has not been sent yet. so
+                    // send whatever is the result
+                    var response = {};
+                    response[prop] = result;
+                    res.json(response);
+                  }
+                })
+                .catch(function(error) {
+                  next(error);
+                });
               } catch (error) {
                 next(error);
               }
@@ -799,24 +819,29 @@ var addModels = function(models) {
             apiMiddleware,
             function(req, res, next) {
               try {
-                Model.findById('' + req.params.id)
-                  .exec()
-                  .then(function(element) {
-                    return method.handler.apply(element, [req, res]);
-                  })
-                  .then(function(result) {
-                    if (result) {
-                      // if something was returned, assume that
-                      // the response has not been sent yet. so
-                      // send whatever is the result
-                      var response = {};
-                      response[prop] = result;
-                      res.json(response);
-                    }
-                  })
-                  .catch(function(error) {
-                    next(error);
-                  });
+                var query = Model.findById('' + req.params.id);
+
+                if (method.populate) {
+                  query = query.populate.apply(query, method.populate);
+                }
+
+                query.exec()
+                .then(function(element) {
+                  return method.handler.apply(element, [req, res]);
+                })
+                .then(function(result) {
+                  if (result) {
+                    // if something was returned, assume that
+                    // the response has not been sent yet. so
+                    // send whatever is the result
+                    var response = {};
+                    response[prop] = result;
+                    res.json(response);
+                  }
+                })
+                .catch(function(error) {
+                  next(error);
+                });
               } catch (error) {
                 next(error);
               }
@@ -848,30 +873,35 @@ var addModels = function(models) {
             apiMiddleware,
             function(req, res, next) {
               try {
-                Model.findById('' + req.params.id)
-                  .exec()
-                  .then(function(element) {
-                    if (!element.testAccess('unsafe', req.user)) {
-                      throw new ModelError('noaccess',
-                        'User does not have permission to [0] this [1].', ['unsafe.' + prop, model],
-                        403);
-                    }
+                var query = Model.findById('' + req.params.id);
 
-                    return method.handler.apply(element, [req, res]);
-                  })
-                  .then(function(result) {
-                    if (result) {
-                      // if something was returned, assume that
-                      // the response has not been sent yet. so
-                      // send whatever is the result
-                      var response = {};
-                      response[prop] = result;
-                      res.json(response);
-                    }
-                  })
-                  .catch(function(error) {
-                    next(error);
-                  });
+                if (method.populate) {
+                  query = query.populate.apply(query, method.populate);
+                }
+
+                query.exec()
+                .then(function(element) {
+                  if (!element.testAccess('unsafe', req.user)) {
+                    throw new ModelError('noaccess',
+                      'User does not have permission to [0] this [1].', ['unsafe.' + prop, model],
+                      403);
+                  }
+
+                  return method.handler.apply(element, [req, res]);
+                })
+                .then(function(result) {
+                  if (result) {
+                    // if something was returned, assume that
+                    // the response has not been sent yet. so
+                    // send whatever is the result
+                    var response = {};
+                    response[prop] = result;
+                    res.json(response);
+                  }
+                })
+                .catch(function(error) {
+                  next(error);
+                });
               } catch (error) {
                 next(error);
               }
@@ -885,31 +915,36 @@ var addModels = function(models) {
             apiMiddleware,
             function(req, res, next) {
               try {
-                Model.findById('' + req.params.id)
-                  .exec()
-                  .then(function(element) {
+                var query = Model.findById('' + req.params.id);
 
-                    if (!element.testAccess('unsafe.' + prop, req.user)) {
-                      throw new ModelError('noaccess',
-                        'User does not have permission to [0] this [1].', ['unsafe.' + prop, model],
-                        403);
-                    }
+                if (method.populate) {
+                  query = query.populate.apply(query, method.populate);
+                }
 
-                    return method.handler.apply(element, [req, res]);
-                  })
-                  .then(function(result) {
-                    if (result) {
-                      // if something was returned, assume that
-                      // the response has not been sent yet. so
-                      // send whatever is the result
-                      var response = {};
-                      response[prop] = result;
-                      res.json(response);
-                    }
-                  })
-                  .catch(function(error) {
-                    next(error);
-                  });
+                query.exec()
+                .then(function(element) {
+
+                  if (!element.testAccess('unsafe.' + prop, req.user)) {
+                    throw new ModelError('noaccess',
+                      'User does not have permission to [0] this [1].', ['unsafe.' + prop, model],
+                      403);
+                  }
+
+                  return method.handler.apply(element, [req, res]);
+                })
+                .then(function(result) {
+                  if (result) {
+                    // if something was returned, assume that
+                    // the response has not been sent yet. so
+                    // send whatever is the result
+                    var response = {};
+                    response[prop] = result;
+                    res.json(response);
+                  }
+                })
+                .catch(function(error) {
+                  next(error);
+                });
               } catch (error) {
                 next(error);
               }
@@ -922,24 +957,29 @@ var addModels = function(models) {
             apiMiddleware,
             function(req, res, next) {
               try {
-                Model.findById('' + req.params.id)
-                  .exec()
-                  .then(function(element) {
-                    return method.handler.apply(element, [req, res]);
-                  })
-                  .then(function(result) {
-                    if (result) {
-                      // if something was returned, assume that
-                      // the response has not been sent yet. so
-                      // send whatever is the result
-                      var response = {};
-                      response[prop] = result;
-                      res.json(response);
-                    }
-                  })
-                  .catch(function(error) {
-                    next(error);
-                  });
+                var query = Model.findById('' + req.params.id);
+
+                if (method.populate) {
+                  query = query.populate.apply(query, method.populate);
+                }
+
+                query.exec()
+                .then(function(element) {
+                  return method.handler.apply(element, [req, res]);
+                })
+                .then(function(result) {
+                  if (result) {
+                    // if something was returned, assume that
+                    // the response has not been sent yet. so
+                    // send whatever is the result
+                    var response = {};
+                    response[prop] = result;
+                    res.json(response);
+                  }
+                })
+                .catch(function(error) {
+                  next(error);
+                });
               } catch (error) {
                 next(error);
               }
