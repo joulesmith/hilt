@@ -620,7 +620,9 @@ var addModels = function(models) {
             var query = Model.findById('' + req.params.id);
 
             if (apiModel.get && apiModel.get.populate) {
-              query = query.populate.apply(query, apiModel.get.populate);
+              apiModel.get.populate.forEach(function(population) {
+                query = query.populate(population);
+              });
             }
 
             query.exec()
@@ -676,7 +678,9 @@ var addModels = function(models) {
             var query = Model.findById('' + req.params.id);
 
             if (apiModel.get && apiModel.get.populate) {
-              query = query.populate.apply(query, apiModel.get.populate);
+              apiModel.get.populate.forEach(function(population) {
+                query = query.populate(population);
+              });
             }
 
             query.exec()
@@ -734,7 +738,9 @@ var addModels = function(models) {
                 var query = Model.findById('' + req.params.id);
 
                 if (method.populate) {
-                  query = query.populate.apply(query, method.populate);
+                  method.populate.forEach(function(population) {
+                    query = query.populate(population);
+                  });
                 }
 
                 query.exec()
@@ -780,7 +786,9 @@ var addModels = function(models) {
                 var query = Model.findById('' + req.params.id);
 
                 if (method.populate) {
-                  query = query.populate.apply(query, method.populate);
+                  method.populate.forEach(function(population) {
+                    query = query.populate(population);
+                  });
                 }
 
                 query.exec()
@@ -822,7 +830,9 @@ var addModels = function(models) {
                 var query = Model.findById('' + req.params.id);
 
                 if (method.populate) {
-                  query = query.populate.apply(query, method.populate);
+                  method.populate.forEach(function(population) {
+                    query = query.populate(population);
+                  });
                 }
 
                 query.exec()
@@ -876,7 +886,9 @@ var addModels = function(models) {
                 var query = Model.findById('' + req.params.id);
 
                 if (method.populate) {
-                  query = query.populate.apply(query, method.populate);
+                  method.populate.forEach(function(population) {
+                    query = query.populate(population);
+                  });
                 }
 
                 query.exec()
@@ -918,7 +930,9 @@ var addModels = function(models) {
                 var query = Model.findById('' + req.params.id);
 
                 if (method.populate) {
-                  query = query.populate.apply(query, method.populate);
+                  method.populate.forEach(function(population) {
+                    query = query.populate(population);
+                  });
                 }
 
                 query.exec()
@@ -960,7 +974,9 @@ var addModels = function(models) {
                 var query = Model.findById('' + req.params.id);
 
                 if (method.populate) {
-                  query = query.populate.apply(query, method.populate);
+                  method.populate.forEach(function(population) {
+                    query = query.populate(population);
+                  });
                 }
 
                 query.exec()
