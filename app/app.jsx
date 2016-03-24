@@ -18,8 +18,10 @@ import Home from './home';
 import RegisterBody from './user/register-body';
 import Settings from './user/settings';
 
-
-
+import BlotterCreate from './blotter/blotter-create';
+import BlotterView from './blotter/blotter-view';
+import BlotterEdit from './blotter/blotter-edit';
+import BlotterSearch from './blotter/blotter-search';
 
 var Root = React.createClass({
   getInitialState: function(){
@@ -41,6 +43,13 @@ var Root = React.createClass({
           <Route path="/" component={Home}>
             <Route path="/settings" component={Settings} />
             <Route path="/register" component={RegisterBody} />
+
+            <Route path="/blotter" component={BlotterCreate} />
+            <Route path="/blotter/search" component={BlotterSearch} />
+            <Route path="/blotter/:id" component={BlotterView} />
+            <Route path="/blotter/:id/edit" component={BlotterEdit} />
+
+
             <Route path="*" component={NoMatch}/>
           </Route>
         </Router>

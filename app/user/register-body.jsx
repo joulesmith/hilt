@@ -24,27 +24,24 @@ export default React.createClass({
       rememberLogin: false
     };
   },
-  handleUsername: function(event) {
-    if (event.target.value !== '') {
-      journal.get('api/user/registered/' + event.target.value)
-      .then(data => {
-        this.setState({
-          username: event.target.value,
-          usernameRegistered : data.registered
-        });
-      })
-      .catch(err => {
-        journal.report({
-          action: '#/error',
-          data: err
-        });
-      });
-    }else{
+  componentWillMount: function(){
+    // subscribe to a specific profile
+    this.subscription = journal.subscribe({
+      username: 'api/user/registered/{this.state.username}'
+    }, state => {
       this.setState({
-        username: event.target.value
+        usernameRegistered: state.username.registered
       });
-    }
+    }, this);
 
+  },
+  componentWillUnmount: function(){
+    this.subscription.unsubscribe();
+  },
+  handleUsername: function(event) {
+    this.setState({
+      username: event.target.value
+    }, this.subscription.thisChanged);
   },
   handlePassword: function(event) {
     this.setState({

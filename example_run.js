@@ -20,13 +20,7 @@ require('./index.js')({
   "log": "dev",
   modelPaths: [
     './models/group',
-    './models/email',
     './models/file',
-    './models/account',
-    './models/product',
-    './models/service',
-    './models/order',
-    './models/receipt',
-    './models/profile'
+    './models/blotter'
   ]
 });

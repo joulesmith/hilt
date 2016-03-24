@@ -37,17 +37,7 @@ module.exports = {
       }, {
         test: /lodash\.js/,
         loader: "exports?_"
-      },
-      // expose MathJax as a global, which is actually the configuration only at this point
-      {
-        test: /MathJaxConfig\.js/,
-        loader: "expose?MathJax"
-      },
-      // the import is just to get MathJaxConfig to go into the global
-      {
-        test: /MathJax\.js/,
-        loader: "imports?MathJaxConfig!exports?MathJax"
-      },
+      }
     ]
   },
   entry: "./app/app.jsx",

@@ -158,6 +158,7 @@ var httpPost = function(url, data) {
     data: data
   })
   .then(res => {
+
     // success!
     // whatever this action did will be handled by the server the request was
     // sent to according to the url, which may or may not affect anything in
@@ -334,40 +335,13 @@ export function publish (resource, state) {
   }
 }
 
-/**
- * Gets the current state at a given url.
- *
- * get('api.somebody.com/data/reallyImportantData')
- * .then(data => {
- * 	// do something with data
- * })
- * .catch(err => {
- * 	// do something with the error
- * });
- *
- * @param  {string} resource - url of state to get
- * @return {Promise} Resolves to the value of the 'current' state.
- */
-export function get (resource) {
-  var result = resourceTree.find(resource, false);
-
-  if (result.node && result.node._state) {
-    return Promise.resolve(result.node._state);
-  }
-
-  if (!result.local) {
-    return httpGet(resource);
-  }
-
-  return Promise.reject(new Error("Resource not found."));
-}
-
 // helper function to tie a subscriber function to a resource
 var makeSubscription = (resource, subscriber) => {
   // form closure
   // add the subscriber callback to the publication
   let subscription = () => {
-    // notify any of the dependent resources
+    // calling means the resource is ready, notify any of the dependent resources
+    // as well in case they need a value to resolve their uri
     resource.dependents.forEach(dependent => {
       // TODO:  changes the resulting uri of the dependent.
       dependent.resolveURI();
@@ -419,6 +393,7 @@ var makeSubscription = (resource, subscriber) => {
  *
  * var unsubscribe = subscribe({
  *   resource1: 'some/url',
+ *   resource2: 'somewhere/{resource1.some.variable.property}',
  *   localError: '#/error'
  * }, state => {
  * 	 if (state.localError) {
@@ -474,16 +449,18 @@ export function subscribe (resources, subscriber, _this) {
     resourceList.push(resource);
 
     let uritmpl = resources[prop];
-    let re = /\{([^\}]+)\}/g;
+    let re = /\{(.+?)\}/g;
     let match;
 
     let dependencies = {};
 
     while(match = re.exec(uritmpl)) {
+      // this is finding the template dependencies like {anotherResource.value} or {this.state.something}
       let props = match[1].split('.');
       let dependency = props[0];
 
       if (dependency === 'this') {
+        // dependency is something in the 'this' object provided
         if (!thisDependents[prop]) {
           thisDependents[prop] = resource;
         }
@@ -492,7 +469,7 @@ export function subscribe (resources, subscriber, _this) {
           resource.thisProperties[match[0]] = props.slice(1);
         }
       }else{
-
+        // the dependency has to be one of the other resources being subscribed to
         if (!resource.unresolvedDependencies[dependency]) {
           resource.unresolvedDependencies[dependency] = {
             resource: resourceKeyValues[dependency],
@@ -696,4 +673,58 @@ export function subscribe (resources, subscriber, _this) {
       return Promise.resolve();
     }
   };
+}
+
+export function get (resources, subscriber, _this) {
+  var fulfilled = {};
+  var subscription = null;
+
+  // if the resource is already local, then the subscription will update state before
+  // it has returned from the subscribe function, amonge other possible orders of
+  // calls. So, a promise is used to detangle the ordering.
+  (new Promise(function(resolve, reject) {
+    // the promise is resolved when the subscription has returned
+    resolve(subscribe(resources, state => {
+
+      var newStates = 0;
+      for(var prop in state) {
+        if (!fulfilled[prop]){
+          fulfilled[prop] = true;
+          newStates++;
+        }
+      }
+
+      if (newStates) {
+        subscriber(state);
+        for(var prop in resources) {
+          if (!fulfilled[prop]){
+            // there are still un-fulfilled states
+            return;
+          }
+        }
+
+        // everything has been fulfilled
+
+        if (subscription) {
+          // this can only happen if the resources were not fulfilled immediatly
+          // subscription will be undefined the first time through if it was immediate
+          // some time later the resource is fulfilled and then it can be unsubscribed.
+          subscription.unsubscribe();
+        }
+      }
+    }, _this));
+  }))
+  .then(sub => {
+    subscription = sub;
+
+    for(var prop in resources) {
+      if (!fulfilled[prop]){
+        // there are still un-fulfilled states
+        return;
+      }
+    }
+
+    // everything has been fulfilled immediatly so go ahead an unsubscribe now.
+    subscription.unsubscribe();
+  });
 }
