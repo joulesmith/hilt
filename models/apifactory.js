@@ -574,6 +574,11 @@ var addModels = function(create) {
 
                 query.exec()
                 .then(function(element) {
+                  if (!element) {
+                    throw new ModelError('notfound',
+                      'A [1] with id = [0] could not be found.', [req.params.id, model],
+                      404);
+                  }
 
                   // authorize user at the view level for all views
                   if (!element.testAccess('view', req.user)) {
@@ -619,6 +624,11 @@ var addModels = function(create) {
 
                 query.exec()
                 .then(function(element) {
+                  if (!element) {
+                    throw new ModelError('notfound',
+                      'A [1] with id = [0] could not be found.', [req.params.id, model],
+                      404);
+                  }
 
                   if (!element.testAccess('view.' + prop, req.user)) {
                     // authorize user to this particular view
@@ -663,6 +673,12 @@ var addModels = function(create) {
 
                 query.exec()
                 .then(function(element) {
+                  if (!element) {
+                    throw new ModelError('notfound',
+                      'A [1] with id = [0] could not be found.', [req.params.id, model],
+                      404);
+                  }
+
                   if (!element.testAccess('view')) {
                     // even though there is no user, may be restricted to everyone for some reason
                     throw new ModelError('noaccess',
@@ -730,6 +746,12 @@ var addModels = function(create) {
 
                 query.exec()
                 .then(function(element) {
+                  if (!element) {
+                    throw new ModelError('notfound',
+                      'A [1] with id = [0] could not be found.', [req.params.id, model],
+                      404);
+                  }
+
                   if (!element.testAccess('action', req.user)) {
                     throw new ModelError('noaccess',
                       'User does not have permission to [0] this [1].', ['action', model],
@@ -789,6 +811,11 @@ var addModels = function(create) {
 
                 query.exec()
                 .then(function(element) {
+                  if (!element) {
+                    throw new ModelError('notfound',
+                      'A [1] with id = [0] could not be found.', [req.params.id, model],
+                      404);
+                  }
 
                   if (!element.testAccess('action.' + prop, req.user)) {
                     throw new ModelError('noaccess',
@@ -848,7 +875,12 @@ var addModels = function(create) {
 
                 query.exec()
                 .then(function(element) {
-
+                  if (!element) {
+                    throw new ModelError('notfound',
+                      'A [1] with id = [0] could not be found.', [req.params.id, model],
+                      404);
+                  }
+                  
                   if (!element.testAccess('action')) {
                     throw new ModelError('noaccess',
                       'User does not have permission to [0] this [1].', ['action', model],
