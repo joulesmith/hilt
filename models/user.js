@@ -13,6 +13,12 @@ var bcrypt_compare = Promise.promisify(bcrypt.compare);
 var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 var googleapis = require('googleapis');
+var zxcvbn = require('zxcvbn');
+
+var email_regex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[A-Z]{2}|com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|museum)\b/;
+
+var username_regex = /^[a-zA-Z0-9]{3,20}([._]?[a-zA-Z0-9]{3,20})*$/;
+
 
 module.exports = function(api) {
 
@@ -179,24 +185,16 @@ module.exports = function(api) {
                   }
                 })
                 .then(function() {
-                  var newuser = api.user.create({
+                  return api.user.create({
                     locale: locale
+                  })
+                  .then(function(newuser){
+                    newuser.signin = {
+                      username: username
+                    };
+
+                    return newuser.setPassword(password);
                   });
-
-                  newuser.signin = {
-                    username: username
-                  };
-
-                  return newuser.setPassword(password);
-                })
-                .then(function(user) {
-                  if (!user) {
-                    throw new api.user.Error('internal',
-                      'An error has occured while setting the password.', [],
-                      500);
-                  }
-
-                  return user;
                 })
                 .then(function(user) {
                   return {

@@ -475,7 +475,7 @@ var addModels = function(create) {
               try {
                 if (prop === 'root') {
                   // the root static action is also the default creation action
-                  if (!req.user) {
+                  if (!req.user && model !== 'user') {
                     throw new ModelError('nouser',
                       'A user must be logged in to add a [0].', [model],
                       401);
