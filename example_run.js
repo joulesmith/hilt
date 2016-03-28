@@ -19,6 +19,7 @@ require('./index.js')({
   "uploadPath": path.join(__dirname, "uploads"),
   "log": "dev",
   modelPaths: [
+    './models/user',
     './models/group',
     './models/file',
     './models/blotter'

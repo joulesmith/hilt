@@ -1,9 +1,10 @@
 var mongoose = require('mongoose');
 
-var User = mongoose.model("user");
+
 
 module.exports = function(socket) {
-
+  var User = mongoose.model("user");
+  
   socket.on('authenticate', function(data) {
     var token = JSON.parse(new Buffer(data.authorization, 'base64').toString('utf8'));
 

@@ -2,7 +2,7 @@
 // first thing to actually be run in the app
 import React from 'react';
 import ReactDom from 'react-dom';
-import { Router, Route, Link, browserHistory  } from 'react-router';
+import { Router, Route, Link, browserHistory, hashHistory } from 'react-router';
 import './css/bootstrap.css';
 import * as journal from './journal';
 
@@ -34,12 +34,18 @@ var Root = React.createClass({
       name: document.title,
       url: '#'
     };
-    var links = [];
+    var links = [{
+      url: "#/blotter",
+      name: "Create Blotter"
+    },{
+      url: "#/blotter/search",
+      name: "Search Blotters"
+    }];
 
     return (
       <div>
         <Navbar brand={brand} links={links}></Navbar>
-        <Router history={browserHistory}>
+        <Router history={hashHistory}>
           <Route path="/" component={Home}>
             <Route path="/settings" component={Settings} />
             <Route path="/register" component={RegisterBody} />

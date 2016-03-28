@@ -1,8 +1,7 @@
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import * as journal from '../journal';
-
-
+import { hashHistory } from 'react-router';
 
 export default React.createClass({
   getInitialState: function(){
@@ -15,12 +14,15 @@ export default React.createClass({
       name: event.target.value,
     })
   },
-  handleSave() {
+  handleCreate() {
     journal.report({
       action: 'api/blotter/',
       data: {
         name: this.state.name
       }
+    })
+    .then(blotter => {
+      hashHistory.push("/blotter/" + blotter._id + "/edit");
     });
   },
   render() {
@@ -28,7 +30,7 @@ export default React.createClass({
     return (
       <div>
         <Bootstrap.Input type='text' value={this.state.name} onChange={this.handleName} />
-        <Bootstrap.Button onClick={this.handleSave}>Create</Bootstrap.Button>
+        <Bootstrap.Button onClick={this.handleCreate}>Create</Bootstrap.Button>
       </div>
     );
   }

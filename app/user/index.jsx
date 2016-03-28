@@ -257,7 +257,13 @@ export function logout() {
 }
 
 // check once on module loading
-isLoggedIn();
+isLoggedIn()
+.catch(function(error){
+  journal.report({
+    action: '#/error',
+    data: error
+  })
+})
 
 // define actions handled by this module
 journal.report([{

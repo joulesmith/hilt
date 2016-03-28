@@ -12,7 +12,6 @@ module.exports = function(config) {
 
   // load schemas to mongoose
   require('./models/settings');
-  require('./models/user');
 
   // view engine setup
   server.express.set('views', path.join(__dirname, 'views'));
@@ -49,7 +48,6 @@ module.exports = function(config) {
   //
   // TODO: convert these to the combined api/model format
   server.express.use('/api/util', require('./routes/api/util'));
-  server.express.use('/api/user', require('./routes/api/user'));
 
   var apimodelfactory = require('./models/apifactory')(server);
 

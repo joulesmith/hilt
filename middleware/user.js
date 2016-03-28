@@ -1,11 +1,10 @@
 var mongoose = require('mongoose');
-var User = mongoose.model("user");
-
 
 module.exports = function() {
   return function(req, res, next) {
 
     try {
+      var User = mongoose.model("user");
 
       if (req.headers && req.headers.authorization && req.headers.authorization !== '') {
 

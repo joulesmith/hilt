@@ -646,7 +646,10 @@ export function subscribe (resources, subscriber, _this) {
           }
         })
         .catch(error => {
-
+          report({
+            action: '#/error',
+            data: error
+          });
         });
       }
 

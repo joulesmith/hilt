@@ -43,11 +43,9 @@ var api = {};
 var jsonApi = {};
 var server = null;
 
-var addModels = function(models) {
-  // creates a pure json formatted string represenation of this model
-  var formatModel = function(api) {
+var addModels = function(create) {
 
-  };
+  var models = create(api);
 
   for (var model in models) {
 
@@ -59,6 +57,7 @@ var addModels = function(models) {
     api[model] = apiModel;
 
     var ModelError = error('routes.api.' + model);
+    apiModel.Error = ModelError;
 
     //
     // Build the database model using mongoose
@@ -304,9 +303,45 @@ var addModels = function(models) {
     };
 
     var Model = mongoose.model(model, Schema);
+    apiModel.Model = Model;
 
-    // if this is the user model, these two will be the same
-    var User = mongoose.model('user');
+    apiModel.create = function(data, user, creatorAccess) {
+      if (model === 'user') {
+        var new_user = new Model();
+
+        new_user.created = Date.now();
+
+        if (data){
+          for (var param in apiModel.state.independent) {
+            if (data[param]) {
+              new_user[param] = data[param];
+            }
+          }
+        }
+
+        return new_user.grantUserAccess(creatorAccess || ['root'], new_user);
+      }
+
+      if (!user) {
+        throw new ModelError('nouser',
+          'A user must be logged in to add a [0].', [model],
+          401);
+      }
+
+      var new_element = new Model();
+
+      new_element.created = Date.now();
+
+      if (data){
+        for (var param in apiModel.state.independent) {
+          if (data[param]) {
+            new_element[param] = data[param];
+          }
+        }
+      }
+
+      return new_element.grantUserAccess(creatorAccess || ['root'], user);
+    };
 
     var apiHandle = {
       settings: {}
@@ -330,10 +365,6 @@ var addModels = function(models) {
       // TODO: ?
     });
 
-    var apiMiddleware = function(req, res, next) {
-      req.api = apiHandle;
-      next();
-    };
 
     //
     // Make a pure json format string of Model
@@ -382,86 +413,130 @@ var addModels = function(models) {
       }
     });
 
-    for (var prop in apiModel.static) {
+    //
+    // Static Views
+    //
+    if (apiModel.static && apiModel.static.view){
 
-      (function(prop, method) {
-        router.get('/' + prop + (method.parameter ? '/' + method.parameter : ''),
-          bodyParser.urlencoded({
-            extended: false
-          }),
-          apiMiddleware,
-          function(req, res, next) {
-            try {
-              method.handler.apply(null, [req, res])
+      for (var prop in apiModel.static.view) {
+
+        (function(prop, method) {
+          var route;
+          if (prop === 'root') {
+            route = '/';
+          }else{
+            route = '/' + prop + (method.parameter ? '/' + method.parameter : '');
+          }
+
+          router.get(route,
+            bodyParser.urlencoded({
+              extended: false
+            }),
+            function(req, res, next) {
+              try {
+                Promise.all([method.handler.apply(null, [req, res])])
                 .then(function(result) {
-                  res.json(result || []);
+                  res.json(result[0] || {});
                 })
                 .catch(function(error) {
                   next(error);
                 });
-            } catch (error) {
-              next(error);
-            }
-          });
-      })(prop, apiModel.static[prop]);
+              } catch (error) {
+                next(error);
+              }
+            });
+        })(prop, apiModel.static.view[prop]);
 
+      }
     }
 
-    // add a new resource
-    router.post('/',
-      bodyParser.json(),
-      bodyParser.urlencoded({
-        extended: false
-      }),
-      userAuth(),
-      apiMiddleware,
-      function(req, res, next) {
-        try {
+    //
+    // Static Actions
+    //
+    if (apiModel.static && apiModel.static.action){
 
-          if (!req.user) {
-            throw new ModelError('nouser',
-              'A user must be logged in to add a [0].', [model],
-              401);
+      for (var prop in apiModel.static.action) {
+
+        (function(prop, method) {
+          var route;
+          if (prop === 'root') {
+            route = '/';
+          }else{
+            route = '/' + prop + (method.parameter ? '/' + method.parameter : '');
           }
 
-          var new_element = new Model();
+          router.post(route,
+            bodyParser.json(),
+            bodyParser.urlencoded({
+              extended: false
+            }),
+            userAuth(),
+            function(req, res, next) {
+              try {
+                if (prop === 'root') {
+                  // the root static action is also the default creation action
+                  if (!req.user) {
+                    throw new ModelError('nouser',
+                      'A user must be logged in to add a [0].', [model],
+                      401);
+                  }
 
-          new_element.created = Date.now();
+                  return apiModel.create(req.body, req.user, method.creatorAccess)
+                  .then(function(element) {
+                    if (method.handler) {
+                      var result = method.handler.apply(element, [req, res]);
 
-          for (var param in apiModel.state.independent) {
-            if (req.body[param]) {
-              new_element[param] = req.body[param];
-            }
-          }
+                      if (result) {
+                        return Promise.all([result]).then(function(result) {
+                          return element.editEvent().save()
+                          .then(function(){
+                            res.json(result[0] || {_id: element._id});
+                          });
+                        });
+                      }
+                    }
 
-          new_element.grantUserAccess((apiModel.create && apiModel.create.creatorAccess) || ['root'], req.user)
-          .then(function(element) {
-            if (apiModel.create && apiModel.create.handler) {
-              var result = apiModel.create.handler.apply(element, [req, res]);
+                    return element.editEvent().save()
+                    .then(function(element){
+                      // default at least reaturn the id so it can be found immediatly
+                      res.json({
+                        _id: element._id
+                      });
+                    });
+                  })
 
-              if (result) {
-                // assume it returned a promise
-                return result.return(element.editEvent().save());
+                  .catch(function(error){
+                    next(error);
+                  });
+                }
+
+                if (method.handler) {
+                  var result = method.handler.apply(null, [req, res]);
+
+                  if (result) {
+                    return Promise.all([result]).then(function(result) {
+                      res.json(result[0] || {});
+                    })
+                    .catch(function(error){
+                      next(error);
+                    });
+
+                  }
+                }
+
+                res.json({});
+
+              } catch (error) {
+                next(error);
               }
-            }
+            });
+        })(prop, apiModel.static.action[prop]);
 
-            return element.editEvent().save();
-
-          })
-          .then(function(element) {
-            res.json(element);
-          })
-          .catch(function(error) {
-            next(error);
-          });
-        } catch (error) {
-          next(error);
-        }
-      });
-
+      }
+    }
 
     //
-    // Add exposed api view methods
+    // Instance Views
     //
 
     for (var prop in apiModel.view) {
@@ -486,7 +561,6 @@ var addModels = function(models) {
               extended: false
             }),
             userAuth(),
-            apiMiddleware,
             function(req, res, next) {
               try {
                 var query = Model.findById('' + req.params.id);
@@ -516,9 +590,7 @@ var addModels = function(models) {
                   return element;
                 })
                 .then(function(result) {
-
-                  return result;
-
+                  return res.json(result);
                 })
                 .catch(function(error) {
                   next(error);
@@ -534,7 +606,6 @@ var addModels = function(models) {
               extended: false
             }),
             userAuth(),
-            apiMiddleware,
             function(req, res, next) {
               try {
                 var query = Model.findById('' + req.params.id);
@@ -579,7 +650,6 @@ var addModels = function(models) {
             bodyParser.urlencoded({
               extended: false
             }),
-            apiMiddleware,
             function(req, res, next) {
               try {
                 var query = Model.findById('' + req.params.id);
@@ -622,7 +692,7 @@ var addModels = function(models) {
     }
 
     //
-    // action methods
+    // Instance Actions
     //
 
     for (var prop in apiModel.action) {
@@ -648,7 +718,6 @@ var addModels = function(models) {
               extended: false
             }),
             userAuth(),
-            apiMiddleware,
             function(req, res, next) {
               try {
                 var query = Model.findById('' + req.params.id);
@@ -682,7 +751,9 @@ var addModels = function(models) {
 
                     if (result) {
                       // assumes a promise is returned, if anything
-                      return result.return(element.editEvent().save());
+                      return result.then(function(result) {
+                        return element.editEvent().save().return(result || {});
+                      });
                     }
                   }
 
@@ -705,7 +776,6 @@ var addModels = function(models) {
               extended: false
             }),
             userAuth(),
-            apiMiddleware,
             function(req, res, next) {
 
               try {
@@ -742,7 +812,9 @@ var addModels = function(models) {
 
                     if (result) {
                       // assumes a promise is returned, if anything
-                      return result.return(element.editEvent().save());
+                      return result.then(function(result) {
+                        return element.editEvent().save().return(result || {});
+                      });
                     }
                   }
 
@@ -764,7 +836,6 @@ var addModels = function(models) {
             bodyParser.urlencoded({
               extended: false
             }),
-            apiMiddleware,
             function(req, res, next) {
               try {
                 var query = Model.findById('' + req.params.id);
@@ -799,7 +870,9 @@ var addModels = function(models) {
 
                     if (result) {
                       // assumes a promise is returned, if anything
-                      return result.return(element.editEvent().save());
+                      return result.then(function(result) {
+                        return element.editEvent().save().return(result || {});
+                      });
                     }
                   }
 
