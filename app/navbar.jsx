@@ -41,6 +41,16 @@ export default React.createClass({
   },
   render: function() {
 
+    var links;
+
+    if (this.props.links){
+      links = this.props.links.map((link, index) => {
+        return <Bootstrap.NavItem key={index} href={link.url}>{link.name}</Bootstrap.NavItem>;
+      });
+    }else{
+      links = [];
+    }
+
     return (
       <Bootstrap.Navbar>
         <Bootstrap.Navbar.Header>
@@ -67,9 +77,7 @@ export default React.createClass({
         </Bootstrap.Navbar.Header>
         <Bootstrap.Navbar.Collapse>
           <Bootstrap.Nav>
-            {this.props.links.map((link, index) => {
-              return <Bootstrap.NavItem key={index} href={link.url}>{link.name}</Bootstrap.NavItem>;
-            })}
+            {links}
           </Bootstrap.Nav>
           <Bootstrap.Nav pullRight>
             <Bootstrap.NavDropdown
@@ -78,20 +86,53 @@ export default React.createClass({
             >
               {(() => {
                 if (this.state.user._id && !this.state.user.guest) {
-                  return [
-                    <Bootstrap.MenuItem key="1" href='#/settings'>
+                  var menuItems;
+
+                  if (this.props.menu){
+                    menuItems = this.props.menu.map(function(item, index){
+                      if (item.href){
+                        return (
+                          <Bootstrap.MenuItem key={index} href={item.href}>
+                            {item.name}
+                          </Bootstrap.MenuItem>
+                        );
+                      }else if(item.handler){
+                        return (
+                          <Bootstrap.MenuItem key={index} onSelect={item.handler}>
+                            {item.name}
+                          </Bootstrap.MenuItem>
+                        );
+                      }
+
+                      return (
+                        <Bootstrap.MenuItem key={index}>
+                          {item.name}
+                        </Bootstrap.MenuItem>
+                      );
+                    });
+                  }else{
+                    menuItems = [];
+                  }
+
+                  menuItems.push(
+                    <Bootstrap.MenuItem key="-1" href='#/settings'>
                     {formatMessage({
                       id: 'settings_menu_button',
                       default: 'Settings'
                     })}
-                    </Bootstrap.MenuItem>,
-                    <Bootstrap.MenuItem key="2" onSelect={this.logout}>
+                    </Bootstrap.MenuItem>
+                  );
+
+                  menuItems.push(
+                    <Bootstrap.MenuItem key="-2" onSelect={this.logout}>
                     {formatMessage({
                       id: 'logout_menu_button',
                       default: 'Logout'
                     })}
                     </Bootstrap.MenuItem>
-                  ];
+                  );
+
+                  return menuItems;
                 }
 
                 return [
