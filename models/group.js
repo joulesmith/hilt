@@ -1,7 +1,6 @@
 "use strict";
 
 var Promise = require('bluebird');
-var mongoose = require('mongoose');
 
 module.exports = function(api){
   return {
@@ -15,7 +14,7 @@ module.exports = function(api){
         },
         dependent: {
           users: [String],
-          accessRecords: mongoose.Schema.Types.Mixed
+          accessRecords: api.types.Mixed
         },
         index: null, // used for text searches
       },

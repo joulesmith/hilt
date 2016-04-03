@@ -5,8 +5,6 @@
  */
 
 var Promise = require('bluebird');
-var mongoose = require('mongoose');
-
 
 module.exports = function(api){
   return {
@@ -18,7 +16,7 @@ module.exports = function(api){
             default: ''
           },
           main: {
-            type: mongoose.Schema.Types.Mixed,
+            type: api.types.Mixed,
             default: {}
           },
           // current key value when adding new elements so that they can be tracked

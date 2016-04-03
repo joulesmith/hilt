@@ -5,7 +5,6 @@ var path = require('path');
 var formidable = require('formidable');
 var Promise = require('bluebird');
 var server = require('../server');
-var mongoose = require('mongoose');
 
 
 module.exports = function(api){

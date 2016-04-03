@@ -40,6 +40,7 @@ var hasCommonElement = function(sortedArray1, sortedArray2) {
 };
 
 var api = {};
+api.types = mongoose.Schema.Types;
 var jsonApi = {};
 var server = null;
 

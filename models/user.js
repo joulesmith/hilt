@@ -1,8 +1,6 @@
 "use strict";
 
 var Promise = require('bluebird');
-var mongoose = require('mongoose');
-
 var bcrypt = require('bcrypt');
 var crypto = require('crypto');
 var _ = require('lodash');
@@ -83,13 +81,13 @@ module.exports = function(api) {
           },
           // email to contact the user about things
           email: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: api.types.ObjectId,
             ref: 'email'
           },
 
           // store credentials to use google services for this user
           groups: [String],
-          accessRecords: mongoose.Schema.Types.Mixed
+          accessRecords: api.types.Mixed
         },
         index: null, // used for text searches
       },
