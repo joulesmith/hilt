@@ -436,7 +436,11 @@ var addModels = function(create) {
               try {
                 Promise.all([method.handler.apply(null, [req, res])])
                 .then(function(result) {
-                  res.json(result[0] || {});
+                  if (result[0]) {
+                    res.json(result[0]);
+                  }
+
+                  // if there is no result, assume handler handled response
                 })
                 .catch(function(error) {
                   next(error);
@@ -494,6 +498,9 @@ var addModels = function(create) {
                           });
                         });
                       }
+
+                      // if there is no result, assume handler handled response
+                      return element.editEvent().save();
                     }
 
                     return element.editEvent().save()
@@ -515,13 +522,19 @@ var addModels = function(create) {
 
                   if (result) {
                     return Promise.all([result]).then(function(result) {
-                      res.json(result[0] || {});
+                      if (result[0]) {
+                        res.json(result[0]);
+                      }
+
+                      // if there is no result, assume handler handled response
                     })
                     .catch(function(error){
                       next(error);
                     });
-
                   }
+
+                  // if there is no result, assume handler handled response
+                  return;
                 }
 
                 res.json({});
@@ -880,7 +893,7 @@ var addModels = function(create) {
                       'A [1] with id = [0] could not be found.', [req.params.id, model],
                       404);
                   }
-                  
+
                   if (!element.testAccess('action')) {
                     throw new ModelError('noaccess',
                       'User does not have permission to [0] this [1].', ['action', model],
