@@ -7,10 +7,10 @@
 
 var express = require('express');
 var mongoose = require('mongoose');
-var userAuth = require('../middleware/user');
-var user_ioAuth = require('../middleware/user_io');
+var userAuth = require('./middleware/user');
+var user_ioAuth = require('./middleware/user_io');
 
-var error = require('../error');
+var error = require('./error');
 var _ = require('lodash');
 var url = require('url');
 

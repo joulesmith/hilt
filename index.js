@@ -49,7 +49,7 @@ module.exports = function(config) {
   // TODO: convert these to the combined api/model format
   server.express.use('/api/util', require('./routes/api/util'));
 
-  var apimodelfactory = require('./models/apifactory')(server);
+  var apimodelfactory = require('./apifactory')(server);
 
   // add custom models to server
   if (config.modelPaths) {
