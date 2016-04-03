@@ -30,7 +30,7 @@ module.exports = function(api){
             var group = this;
             var user_id = '' + req.body.userId;
 
-            return api.user.Model.findById(user_id).exec()
+            return api.user.collection.findById(user_id).exec()
               .then(function(user) {
                 if (!user) {
                   throw new api.group.Error('nouser',
@@ -47,7 +47,7 @@ module.exports = function(api){
             var group = this;
             var user_id = '' + req.body.userId;
 
-            return api.user.Model.findById(user_id).exec()
+            return api.user.collection.findById(user_id).exec()
               .then(function(user) {
                 if (!user) {
                   throw new api.group.Error('nouser',

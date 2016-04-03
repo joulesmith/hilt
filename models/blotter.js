@@ -41,7 +41,7 @@ module.exports = function(api){
           search: {
             handler: function(req, res) {
 
-              return api.blotter.Model.find({
+              return api.blotter.collection.find({
                     $text: {
                       $search: '' + req.query.words
                     }

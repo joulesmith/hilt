@@ -303,8 +303,14 @@ var addModels = function(create) {
     };
 
     var Model = mongoose.model(model, Schema);
-    apiModel.Model = Model;
 
+    // this is technically the mongoose constructor, but the api is doing its own
+    // thing, and from now on the methods (besides constructor) are used as if this
+    // is a reference to the collection itself in the db that mongoose is connected to.
+    // everyone else must use the .create function to contruct a new instance, not new Model
+    apiModel.collection = Model;
+
+    // use this for creating new instances
     apiModel.create = function(data, user, creatorAccess) {
       if (model === 'user') {
         var new_user = new Model();

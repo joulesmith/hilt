@@ -105,7 +105,7 @@ module.exports = function(api) {
                 };
               }
 
-              return api.user.Model.findOne({
+              return api.user.collection.findOne({
                 "signin.username": '' + req.params.username
               }).exec()
               .then(function(user) {
@@ -179,7 +179,7 @@ module.exports = function(api) {
               var password = '' + req.body.password;
               var locale = '' + req.body.locale || 'en-US';
 
-              return api.user.Model.findOne({
+              return api.user.collection.findOne({
                   "signin.username": username
                 })
                 .then(function(user) {
@@ -254,7 +254,7 @@ module.exports = function(api) {
                   return user.verifyToken(req.body.fromToken);
                 }).then(function(user) {
                   fromUser = user;
-                  return api.user.Model.findById(req.body.toToken._id).exec()
+                  return api.user.collection.findById(req.body.toToken._id).exec()
                 })
                 .then(function(user) {
                   if (!user) {
@@ -359,7 +359,7 @@ module.exports = function(api) {
                       return reject(err);
                     }
 
-                    api.user.Model.findOne({
+                    api.user.collection.findOne({
                       'signin.google': person.id
                     }).exec()
                     .then(function(user) {
@@ -468,7 +468,7 @@ module.exports = function(api) {
                   });
               } else {
 
-                return api.user.Model.findOne({
+                return api.user.collection.findOne({
                   "signin.username": username
                 })
                 .then(function(user) {
@@ -513,7 +513,7 @@ module.exports = function(api) {
                       return reject(err);
                     }
 
-                    api.user.Model.findOne({
+                    api.user.collection.findOne({
                       'signin.google': person.id
                     }).exec()
                     .then(function(user) {
