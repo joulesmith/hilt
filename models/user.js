@@ -26,7 +26,7 @@ module.exports = function(api) {
   var oauth2Client = new googleapis.auth.OAuth2(
     '227454360184-kk55m7mdg9blkgnkd7pmuhs3d20kh806.apps.googleusercontent.com',
     'NP53QGYunsiy33xfvF1IeUu5',
-    'http://localhost:3000/api/user/google/auth/callback');
+    'http://localhost:3000/api/user/google-auth-callback');
 
   var scopes = [
     'https://www.googleapis.com/auth/plus.me'
@@ -105,7 +105,7 @@ module.exports = function(api) {
                 };
               }
 
-              return mongoose.model('user').findOne({
+              return api.user.Model.findOne({
                 "signin.username": '' + req.params.username
               }).exec()
               .then(function(user) {
@@ -135,10 +135,15 @@ module.exports = function(api) {
                   error: req.query.error,
                   code: ''
                 });
-              } else {
+              } else if(req.query.code) {
                 res.render('googleCallback', {
                   error: '',
                   code: req.query.code
+                });
+              }else{
+                res.render('googleCallback', {
+                  error: '',
+                  code: ''
                 });
               }
             }
@@ -332,7 +337,7 @@ module.exports = function(api) {
             }
           },
           'google-auth-token': {
-            handler: function(){
+            handler: function(req, res){
 
               return new Promise(function(resolve, reject) {
                 oauth2Client.getToken(req.body.code, function(err, tokens) {
@@ -360,11 +365,17 @@ module.exports = function(api) {
                     .then(function(user) {
 
                       if (!user) {
-                        api.user.create({
-                          signin: {
+                        return api.user.create()
+                        .then(function(user){
+                          user.signin = {
                             'google': person.id
-                          }
-                        });
+                          };
+
+                          return user.save();
+                        })
+                        .then(function(user){
+                          return user.generateTokenFromOauthToken(tokens.access_token);
+                        })
                       }
 
                       return user.generateTokenFromOauthToken(tokens.access_token);

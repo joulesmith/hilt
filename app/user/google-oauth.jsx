@@ -27,8 +27,10 @@ export default React.createClass({
       }
 
       if (this.props && this.props.onOAuth) {
+        // custom callback to get code
         this.props.onOAuth(code);
       }else{
+        // default action is to use the code to log in
         journal.report({
           action: '#/user/login',
           data: {
@@ -44,10 +46,11 @@ export default React.createClass({
       }
     };
 
-    journal.get('api/user/google/auth/url')
-    .then(data => {
+    journal.get({
+      google: 'api/user/google-auth-url'
+    }, state => {
       // open child window to oauth url and give focus.
-      var childWindow = window.open(data.url);
+      var childWindow = window.open(state.google.url);
       childWindow.focus();
     });
   },

@@ -190,7 +190,7 @@ export function login(data) {
       throw res;
     });
   }else if (data.googleCode){
-    return http.post('/api/user/google/auth/token', {code: data.googleCode})
+    return http.post('/api/user/google-auth-token', {code: data.googleCode})
     .then(function(res) {
       if (res.data.token) {
         user_token = res.data.token;
