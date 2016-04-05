@@ -10,7 +10,6 @@ var bcrypt_genSalt = Promise.promisify(bcrypt.genSalt);
 var bcrypt_compare = Promise.promisify(bcrypt.compare);
 var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
-var googleapis = require('googleapis');
 var zxcvbn = require('zxcvbn');
 
 var email_regex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[A-Z]{2}|com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|museum)\b/;
@@ -19,21 +18,6 @@ var username_regex = /^[a-zA-Z0-9]{3,20}([._]?[a-zA-Z0-9]{3,20})*$/;
 
 
 module.exports = function(api) {
-
-  // TODO: have to set this from database values
-  var oauth2Client = new googleapis.auth.OAuth2(
-    '227454360184-kk55m7mdg9blkgnkd7pmuhs3d20kh806.apps.googleusercontent.com',
-    'NP53QGYunsiy33xfvF1IeUu5',
-    'http://localhost:3000/api/user/google-auth-callback');
-
-  var scopes = [
-    'https://www.googleapis.com/auth/plus.me'
-  ];
-
-  var oauthURL = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: scopes.join(" ") // space delimited string of scopes
-  });
 
   return {
     user: {
@@ -67,14 +51,6 @@ module.exports = function(api) {
               default: false
             },
             username: {
-              type: String,
-              default: ''
-            },
-            google: {
-              type: String,
-              default: ''
-            },
-            facebook: {
               type: String,
               default: ''
             }
@@ -117,33 +93,6 @@ module.exports = function(api) {
                   };
                 }
               });
-            }
-          },
-          'google-auth-url' : {
-            handler: function() {
-              return {
-                url: oauthURL
-              };
-            }
-          },
-          'google-auth-callback' : {
-            handler: function(req, res) {
-              if (req.query.error) {
-                res.render('googleCallback', {
-                  error: req.query.error,
-                  code: ''
-                });
-              } else if(req.query.code) {
-                res.render('googleCallback', {
-                  error: '',
-                  code: req.query.code
-                });
-              }else{
-                res.render('googleCallback', {
-                  error: '',
-                  code: ''
-                });
-              }
             }
           }
         },
@@ -235,7 +184,7 @@ module.exports = function(api) {
               var fromUser = null;
               var toUser = null;
 
-              return mongoose.model('user').findById(req.body.fromToken._id).exec()
+              return api.user.collection.findById(req.body.fromToken._id).exec()
                 .then(function(user) {
                   if (!user) {
                     throw new api.user.Error('nouser',
@@ -281,7 +230,7 @@ module.exports = function(api) {
                       fromUser.accessRecords[model].id.forEach(function(_id, fromIndex) {
                         var actions = fromUser.accessRecords[model].actions[fromIndex];
 
-                        promises.push(mongoose.model(model).findById(_id).exec()
+                        promises.push(api[model].collection.findById(_id).exec()
                           .then(function(element) {
                             return element.revokeUserAccess(actions, fromUser).return(element.grantUserAccess(actions, toUser));
                           }));
@@ -332,64 +281,6 @@ module.exports = function(api) {
                     _id: user._id
                   };
                 });
-            }
-          },
-          'google-auth-token': {
-            handler: function(req, res){
-
-              return new Promise(function(resolve, reject) {
-                oauth2Client.getToken(req.body.code, function(err, tokens) {
-
-                  if (err) {
-                    return reject(err);
-                  }
-                  // contains an access_token and optionally a refresh_token.
-                  // save them permanently.
-                  //
-                  oauth2Client.setCredentials(tokens);
-
-                  googleapis.plus('v1').people.get({
-                    userId: 'me',
-                    auth: oauth2Client
-                  }, function(err, person) {
-
-                    if (err) {
-                      return reject(err);
-                    }
-
-                    api.user.collection.findOne({
-                      'signin.google': person.id
-                    }).exec()
-                    .then(function(user) {
-
-                      if (!user) {
-                        return api.user.create()
-                        .then(function(user){
-                          user.signin = {
-                            'google': person.id
-                          };
-
-                          return user.save();
-                        })
-                        .then(function(user){
-                          return user.generateTokenFromOauthToken(tokens.access_token);
-                        })
-                      }
-
-                      return user.generateTokenFromOauthToken(tokens.access_token);
-                    })
-                    .then(function(token) {
-                      resolve({
-                        token: token
-                      });
-                    })
-                    .catch(function(error) {
-                      reject(error);
-                    });
-                  });
-
-                });
-              });
             }
           }
         }
@@ -648,29 +539,6 @@ module.exports = function(api) {
             .then(function(guest) {
               var token = {
                 _id: guest._id,
-                secret: secret
-              };
-
-              // this enocding is for use in header authorization.
-              token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
-
-              return token;
-            });
-        },
-        generateTokenFromOauthToken: function(oauthToken) {
-          var user = this;
-          user.tokenSalt = crypto.randomBytes(16).toString('hex');
-          var secret = oauthToken;
-
-          return crypto_pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256')
-            .then(function(tokenHash) {
-              user.tokenHash = tokenHash.toString('hex');
-
-              return user.save();
-            })
-            .then(function(user) {
-              var token = {
-                _id: user._id,
                 secret: secret
               };
 

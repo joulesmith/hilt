@@ -20,6 +20,7 @@ require('./index.js')({
   "log": "dev",
   modelPaths: [
     './models/user',
+    './models/user-google-auth',
     './models/group',
     './models/file',
     './models/blotter'
