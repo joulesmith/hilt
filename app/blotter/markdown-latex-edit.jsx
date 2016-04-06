@@ -12,7 +12,15 @@ export default React.createClass({
     var numRows = Math.max(5, rows ? rows.length + 1 : 0);
 
     return (
-      <textarea value={this.props.value} onChange={this.props.onChange} rows={numRows} style={{width:'100%'}}/>
+      <textarea
+        value={this.props.value}
+        onChange={event => {
+          if (this.props.onChange){
+            this.props.onChange(event.target.value);
+          }
+        }}
+        rows={numRows}
+        style={{width:'100%'}}/>
     );
 
   }

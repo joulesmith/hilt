@@ -3,23 +3,6 @@ import * as Bootstrap from 'react-bootstrap';
 import Blot from './blot-edit';
 
 export default React.createClass({
-  getDefaultProps() {
-    return {
-      parent: null,
-      element : {
-        type: 'col',
-        key: 0,
-        width: 1,
-        child: {}
-      }
-    };
-  },
-  componentWillMount() {
-    this.setState({
-      parent: this.props.parent,
-      element: this.props.element
-    });
-  },
   handleMoveLeft(event) {
     if (this.props.onMoveLeft) {
       this.props.onMoveLeft(event);
@@ -30,45 +13,63 @@ export default React.createClass({
       this.props.onMoveRight(event);
     }
   },
-  handleDeleteColumn(event) {
+  handleDeleteColumn() {
     if (this.props.onDelete) {
-      this.props.onDelete(event);
+      this.props.onDelete();
     }
   },
-  handleChange(element) {
-    this.state.element.child = element;
-
-    this.setState({
-      element : this.state.element
-    });
+  handleChild(child) {
+    if(this.props.onChange){
+      this.props.onChange({
+        type: 'col',
+        key: this.props.value.key,
+        width: this.props.value.width,
+        offset: this.props.value.offset,
+        child: child
+      });
+    }
   },
   handleDeleteChild(){
-    this.state.element.child = {};
-
-    this.setState({
-      element : this.state.element
-    });
+    if(this.props.onChange){
+      this.props.onChange({
+        type: 'col',
+        key: this.props.value.key,
+        width: this.props.value.width,
+        offset: this.props.value.offset,
+        child: {}
+      });
+    }
   },
   handleWidth(event, eventKey){
-    this.state.element.width = parseInt(eventKey);
-    this.setState({
-      element: this.state.element
-    })
+    if(this.props.onChange){
+      this.props.onChange({
+        type: 'col',
+        key: this.props.value.key,
+        width:  parseInt(eventKey),
+        offset: this.props.value.offset,
+        child: this.props.value.child
+      });
+    }
   },
   handleOffset(event, eventKey){
-    this.state.element.offset = parseInt(eventKey);
-    this.setState({
-      element: this.state.element
-    })
+    if(this.props.onChange){
+      this.props.onChange({
+        type: 'col',
+        key: this.props.value.key,
+        width:  this.props.value.width,
+        offset: parseInt(eventKey),
+        child: this.props.value.child
+      });
+    }
   },
   render() {
     return (
-      <Bootstrap.Col key={this.props.element.key} md={this.props.element.width} mdOffset={this.props.element.offset} style={{border: '2px dotted', 'borderRadius': '10px'}}>
+      <Bootstrap.Col key={this.props.value.key} md={this.props.value.width} mdOffset={this.props.value.offset}>
         <Bootstrap.ButtonGroup>
           <Bootstrap.Button onClick={this.handleMoveLeft} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-left" /></Bootstrap.Button>
           <Bootstrap.Button onClick={this.handleMoveRight} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-right" /></Bootstrap.Button>
           <Bootstrap.DropdownButton
-            title={"# " + this.state.element.width}
+            title={"# " + this.props.value.width}
             id="width-menu"
             onSelect={this.handleWidth}
             bsSize="xsmall"
@@ -88,12 +89,14 @@ export default React.createClass({
           </Bootstrap.DropdownButton>
           <Bootstrap.Button onClick={this.handleDeleteColumn} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
         </Bootstrap.ButtonGroup>
-        <Blot
-          element={this.state.element.child}
-          keygen={this.props.keygen}
-          onChange={this.handleChange}
-          onDelete={this.handleDeleteChild}
-        />
+        <div style={{border: '2px dotted', 'borderRadius': '10px'}}>
+          <Blot
+            value={this.props.value.child}
+            keygen={this.props.keygen}
+            onChange={this.handleChild}
+            onDelete={this.handleDeleteChild}
+          />
+        </div>
       </Bootstrap.Col>
     );
   }

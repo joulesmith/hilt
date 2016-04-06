@@ -17,7 +17,7 @@ export default React.createClass({
   render() {
 
     if (!this.props.element || !this.props.element.type || !types[this.props.element.type]) {
-      return <span>undefined element</span>;
+      return <span></span>;
     }
 
     return React.createElement(types[this.props.element.type], this.props);

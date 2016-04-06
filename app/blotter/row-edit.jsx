@@ -3,67 +3,127 @@ import * as Bootstrap from 'react-bootstrap';
 import Blot from './blot-edit';
 
 export default React.createClass({
-  getDefaultProps() {
-    return {
-      parent: null,
-      element : {
-        type: 'row',
-        key: 0,
-        child: []
-      }
-    };
-  },
-  componentWillMount() {
-    this.setState({
-      parent: this.props.parent,
-      element: this.props.element
-    });
-  },
-  handleAddColumn(event) {
-
-    var element = this.state.element;
+  handleAddColumn() {
     var that = this;
 
     this.props.keygen().then(key => {
-      element.child.push({
+      that.props.value.child.push({
         type: 'col',
         key: key,
         width: 1,
+        offset: 0,
         child: {}
       });
 
-      that.setState({
-        element : element
-      });
+      if(that.props.onChange){
+        that.props.onChange(that.props.value);
+      }
+
     });
   },
   handleMoveUp(event) {
     if (this.props.onMoveUp) {
-      this.props.onMoveUp(event);
+      this.props.onMoveUp();
     }
   },
   handleMoveDown(event) {
     if (this.props.onMoveDown) {
-      this.props.onMoveDown(event);
+      this.props.onMoveDown();
     }
   },
   handleMoveLeft(key) {
+    var index = -1;
+    this.props.value.child.forEach((col, i) => {
+      if (col.key === key){
+        index = i;
+      }
+    });
 
+    if (index === 0) {
+      return;
+    }
+
+    // TODO: the column offsets may need to change to make the changes smoother
+    var tmp = this.props.value.child[index];
+    this.props.value.child[index] = this.props.value.child[index-1];
+    this.props.value.child[index-1] = tmp;
+
+    if (this.props.onChange){
+      this.props.onChange({
+        type: 'row',
+        key: this.props.value.key,
+        child: this.props.value.child
+      });
+    }
   },
   handleMoveRight(key) {
+    var index = -1;
+    this.props.value.child.forEach((col, i) => {
+      if (col.key === key){
+        index = i;
+      }
+    });
 
+    if (index === this.props.value.child.length-1) {
+      return;
+    }
+
+    var tmp = this.props.value.child[index];
+    this.props.value.child[index] = this.props.value.child[index+1];
+    this.props.value.child[index+1] = tmp;
+
+    if (this.props.onChange){
+      this.props.onChange({
+        type: 'row',
+        key: this.props.value.key,
+        child: this.props.value.child
+      });
+    }
+  },
+  handleChangeColumn(key, value){
+    var index = -1;
+    this.props.value.child.forEach((col, i) => {
+      if (col.key === key){
+        index = i;
+      }
+    });
+
+    this.props.value.child[index] = value;
+
+    if(this.props.onChange){
+      this.props.onChange({
+        type: 'row',
+        key: this.props.value.key,
+        child: this.props.value.child
+      });
+    }
   },
   handleDeleteColumn(key) {
+    var index = -1;
+    this.props.value.child.forEach((col, i) => {
+      if (col.key === key){
+        index = i;
+      }
+    });
 
+    this.props.value.child.splice(index, 1);
+
+    if(this.props.onChange){
+      this.props.onChange({
+        type: 'row',
+        key: this.props.value.key,
+        child: this.props.value.child
+      });
+    }
   },
-  handleDeleteRow (event) {
+  handleDeleteRow () {
     if (this.props.onDelete) {
-      this.props.onDelete(event);
+      this.props.onDelete();
     }
   },
   render() {
     return (
-      <div key={this.props.element.key} style={{width:'100%'}}>
+      <div key={this.props.value.key} style={{width:'100%'}}>
         <table style={{width:'100%'}}>
           <tbody>
           <tr>
@@ -71,22 +131,25 @@ export default React.createClass({
               <Bootstrap.ButtonGroup vertical>
                 <Bootstrap.Button onClick={this.handleMoveUp} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-up" /></Bootstrap.Button>
                 <Bootstrap.Button onClick={this.handleMoveDown} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-down" /></Bootstrap.Button>
-                <Bootstrap.Button onClick={this.handleDeleteRow} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
                 <Bootstrap.Button onClick={this.handleAddColumn} bsSize="xsmall"><span className="glyphicon glyphicon-plus" /></Bootstrap.Button>
+                <Bootstrap.Button onClick={this.handleDeleteRow} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
               </Bootstrap.ButtonGroup>
             </td>
-            <td>
-              <Bootstrap.Row style={{minHeight: '200px', border: '2px inset'}}>
-                {this.state.element.child.map(column => {
+            <td style={{minHeight: '200px', border: '4px outset'}}>
+              <Bootstrap.Row>
+                {this.props.value.child.map(column => {
                   return <Blot
                     key={column.key}
-                    element={column}
+                    value={column}
                     keygen={this.props.keygen}
                     onMoveLeft={() => {
                       this.handleMoveLeft(column.key);
                     }}
                     onMoveRight={() => {
                       this.handleMoveRight(column.key);
+                    }}
+                    onChange={value => {
+                      this.handleChangeColumn(column.key, value);
                     }}
                     onDelete={() => {
                       this.handleDeleteColumn(column.key);

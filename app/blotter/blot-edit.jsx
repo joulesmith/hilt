@@ -42,16 +42,16 @@ export default React.createClass({
   },
   render() {
 
-    if (!this.props.element || !this.props.element.type || !types[this.props.element.type]) {
+    if (!this.props.value || !this.props.value.type || !types[this.props.value.type]) {
       return (
         <Bootstrap.ButtonGroup>
-          <Bootstrap.Button onClick={this.handleList}>Create List</Bootstrap.Button>
-          <Bootstrap.Button onClick={this.handleText}>Create Text</Bootstrap.Button>
+          <Bootstrap.Button onClick={this.handleList} bsSize="xsmall">Create List</Bootstrap.Button>
+          <Bootstrap.Button onClick={this.handleText} bsSize="xsmall">Create Text</Bootstrap.Button>
         </Bootstrap.ButtonGroup>
       );
     }
 
-    return React.createElement(types[this.props.element.type], this.props);
+    return React.createElement(types[this.props.value.type], this.props);
 
   }
 });

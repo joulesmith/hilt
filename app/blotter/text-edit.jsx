@@ -4,33 +4,24 @@ import MarkdownLatexView from './markdown-latex-view';
 import * as Bootstrap from 'react-bootstrap';
 
 export default React.createClass({
-  getDefaultProps() {
+  getInitialState(){
     return {
-      parent: null,
-      element : {
-        type: 'text',
-        key: 0,
-        child: ""
-      },
       preview: false
     };
   },
-  componentWillMount() {
-    this.setState({
-      parent: this.props.parent,
-      element: this.props.element
-    });
-  },
   handleDelete(event){
     if (this.props.onDelete) {
-      this.props.onDelete(event);
+      this.props.onDelete();
     }
   },
-  handleText(event) {
-    this.state.element.child = event.target.value;
-    this.setState({
-      element: this.state.element
-    });
+  handleText(text) {
+    if (this.props.onChange) {
+      this.props.onChange({
+        type: 'text',
+        key: this.props.value.key,
+        child: text
+      });
+    }
   },
   handleEdit(event){
     this.setState({
@@ -51,7 +42,7 @@ export default React.createClass({
             <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
           </Bootstrap.ButtonGroup>
           <MarkdownLatexView
-            value={this.state.element.child}
+            value={this.props.value.child}
           />
         </div>
       );
@@ -64,7 +55,7 @@ export default React.createClass({
         <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
         </Bootstrap.ButtonGroup>
         <MarkdownLatexEdit
-          value={this.state.element.child}
+          value={this.props.value.child}
           onChange={this.handleText}
         />
       </div>
