@@ -63,11 +63,11 @@ export default React.createClass({
   },
   render() {
     return (
-      <div key={this.props.element.key}>
-        <table>
+      <div key={this.props.element.key} style={{width:'100%'}}>
+        <table style={{width:'100%'}}>
           <tbody>
           <tr>
-            <td>
+            <td style={{width:'50px'}}>
               <Bootstrap.ButtonGroup vertical>
                 <Bootstrap.Button onClick={this.handleMoveUp} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-up" /></Bootstrap.Button>
                 <Bootstrap.Button onClick={this.handleMoveDown} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-down" /></Bootstrap.Button>
@@ -75,8 +75,8 @@ export default React.createClass({
                 <Bootstrap.Button onClick={this.handleAddColumn} bsSize="xsmall"><span className="glyphicon glyphicon-plus" /></Bootstrap.Button>
               </Bootstrap.ButtonGroup>
             </td>
-            <td style={{width:'100%'}}>
-              <Bootstrap.Row>
+            <td>
+              <Bootstrap.Row style={{minHeight: '200px', border: '2px inset'}}>
                 {this.state.element.child.map(column => {
                   return <Blot
                     key={column.key}

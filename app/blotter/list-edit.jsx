@@ -42,7 +42,18 @@ export default React.createClass({
 
   },
   handleDeleteRow(key) {
+    var index = -1;
+    this.state.element.child.forEach((row, i) => {
+      if (row.key === key){
+        index = i;
+      }
+    });
 
+    this.state.element.child.splice(index, 1);
+
+    this.setState({
+      element: this.state.element
+    });
   },
   handleDeleteList(event) {
     if(this.props.onDelete) {

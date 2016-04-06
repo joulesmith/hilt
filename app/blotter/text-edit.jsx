@@ -1,5 +1,6 @@
 import React from 'react';
-import MarkdownLatex from './markdown-latex-edit';
+import MarkdownLatexEdit from './markdown-latex-edit';
+import MarkdownLatexView from './markdown-latex-view';
 import * as Bootstrap from 'react-bootstrap';
 
 export default React.createClass({
@@ -10,7 +11,8 @@ export default React.createClass({
         type: 'text',
         key: 0,
         child: ""
-      }
+      },
+      preview: false
     };
   },
   componentWillMount() {
@@ -30,17 +32,43 @@ export default React.createClass({
       element: this.state.element
     });
   },
+  handleEdit(event){
+    this.setState({
+      preview: false
+    });
+  },
+  handlePreview(event){
+    this.setState({
+      preview: true
+    });
+  },
   render() {
+    if (this.state.preview){
+      return (
+        <div key={this.props.key}>
+          <Bootstrap.ButtonGroup label='Column'>
+            <Bootstrap.Button onClick={this.handleEdit} bsSize="xsmall"><span className="glyphicon glyphicon-edit" /></Bootstrap.Button>
+            <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
+          </Bootstrap.ButtonGroup>
+          <MarkdownLatexView
+            value={this.state.element.child}
+          />
+        </div>
+      );
+    }
+
     return (
       <div key={this.props.key}>
         <Bootstrap.ButtonGroup>
-          <Bootstrap.Button onClick={this.handleDelete}>Delete Text</Bootstrap.Button>
+        <Bootstrap.Button onClick={this.handlePreview} bsSize="xsmall"><span className="glyphicon glyphicon-eye-open" /></Bootstrap.Button>
+        <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
         </Bootstrap.ButtonGroup>
-        <MarkdownLatex
+        <MarkdownLatexEdit
           value={this.state.element.child}
           onChange={this.handleText}
         />
       </div>
     );
+
   }
 });

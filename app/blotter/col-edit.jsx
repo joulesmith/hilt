@@ -63,7 +63,7 @@ export default React.createClass({
   },
   render() {
     return (
-      <Bootstrap.Col key={this.props.element.key} xs={this.props.element.width} xsOffset={this.props.element.offset}>
+      <Bootstrap.Col key={this.props.element.key} md={this.props.element.width} mdOffset={this.props.element.offset} style={{border: '2px dotted', 'borderRadius': '10px'}}>
         <Bootstrap.ButtonGroup>
           <Bootstrap.Button onClick={this.handleMoveLeft} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-left" /></Bootstrap.Button>
           <Bootstrap.Button onClick={this.handleMoveRight} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-right" /></Bootstrap.Button>
