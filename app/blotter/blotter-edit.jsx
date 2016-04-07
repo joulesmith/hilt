@@ -11,9 +11,12 @@ export default React.createClass({
     this.subscription = journal.subscribe({
       blotter: 'api/blotter/{this.props.params.id}'
     }, state => {
+      var bs = JSON.stringify(state.blotter);
+
       this.setState({
         blotter: state.blotter,
-        localBlotter: state.blotter
+        blotterString: bs,
+        localBlotter: JSON.parse(bs)
       });
     }, this);
   },
@@ -24,6 +27,11 @@ export default React.createClass({
     journal.report({
       action: 'api/blotter/' + this.props.params.id,
       data: this.state.localBlotter
+    })
+    .then(() => {
+      this.setState({
+        blotterString: JSON.stringify(this.state.localBlotter)
+      });
     });
   },
   keygen() {
@@ -72,8 +80,8 @@ export default React.createClass({
 
     var synced = false;
 
-    if (this.state.blotter) {
-      synced = JSON.stringify(this.state.blotter.main) === JSON.stringify(this.state.localBlotter.main);
+    if (this.state.blotterString) {
+      synced = JSON.stringify(this.state.localBlotter) === this.state.blotterString;
     }
 
     var saveStyle = synced ? "default" : "warning";

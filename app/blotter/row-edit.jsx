@@ -15,10 +15,13 @@ export default React.createClass({
         child: {}
       });
 
-      if(that.props.onChange){
-        that.props.onChange(that.props.value);
+      if (that.props.onChange){
+        that.props.onChange({
+          type: 'row',
+          key: that.props.value.key,
+          child: that.props.value.child
+        });
       }
-
     });
   },
   handleMoveUp(event) {
