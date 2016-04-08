@@ -8,7 +8,7 @@ export function shallow(obj1, obj2){
 
   if (obj1) {
     for(var prop in obj1){
-      if (!result[prop]){
+      if (typeof result[prop] === 'undefined'){
         result[prop] = obj1[prop];
       }
     }
