@@ -2,7 +2,6 @@
 
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
-import * as ReactIntl from 'react-intl';
 import * as journal from './journal';
 
 
@@ -22,11 +21,13 @@ export default React.createClass({
     if (this.state.file) {
       this.setState({loading: true});
 
+      var form = new FormData();
+
+      form.append('file', this.state.file);
+
       journal.report({
-        action: '#/file/upload',
-        data: {
-          file: this.state.file
-        }
+        action: '/api/file',
+        data: form
       })
       .then(result => {
         this.setState({loading: false});
@@ -34,19 +35,25 @@ export default React.createClass({
         if (this.props.onUpload) {
           this.props.onUpload(result);
         }
-      });
+      })
+      .catch(function(error){
+        journal.report({
+          action: '#/error',
+          data: error
+        });
+      })
     }
   },
   render: function() {
     return (
       <div>
         <input onChange={this.handleFile} type="file" />
-        <Button
+        <Bootstrap.Button
           bsStyle="primary"
           disabled={!this.state.file || this.state.loading}
           onClick={this.handleUpload}>
           {this.state.loading ? 'Uploading...' : 'Upload'}
-        </Button>
+        </Bootstrap.Button>
       </div>
     );
   }

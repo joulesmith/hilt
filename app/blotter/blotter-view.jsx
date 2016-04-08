@@ -31,7 +31,7 @@ export default React.createClass({
     return (
       <div>
         <Link to={'/blotter/' + this.state.blotter._id}>{this.state.blotter.name}</Link> (<Link to={'/blotter/' + this.state.blotter._id + '/edit'}>edit</Link>)
-        <Blot element={this.state.blotter.main} />
+        <Blot value={this.state.blotter.main} />
       </div>
     );
   }

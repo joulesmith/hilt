@@ -771,7 +771,9 @@ var serveModels = function(){
                     return element;
                   })
                   .then(function(result) {
-                    return res.json(result);
+                    if (result) {
+                      res.json(result);
+                    }
                   })
                   .catch(function(error) {
                     next(error);
@@ -821,7 +823,9 @@ var serveModels = function(){
                     return element;
                   })
                   .then(function(result) {
-                    res.json(result);
+                    if (result) {
+                      res.json(result);
+                    }
                   })
                   .catch(function(error) {
                     next(error);
@@ -870,7 +874,9 @@ var serveModels = function(){
                     return element;
                   })
                   .then(function(result) {
-                    res.json(result);
+                    if (result) {
+                      res.json(result);
+                    }
                   })
                   .catch(function(error) {
                     next(error);
@@ -1113,7 +1119,7 @@ var serveModels = function(){
 // to this resource.
 //
 
-
+var subscriptions = new Map();
 
 module.exports = function(serverInstance) {
   server = serverInstance;
@@ -1148,7 +1154,26 @@ module.exports = function(serverInstance) {
               403);
           }
 
-          // create subscription
+          var key = data.model + '/' + data._id;
+
+          var sub = subscriptions.get(key);
+
+          if (!sub) {
+            sub = {
+              subscribers: new Map()
+            };
+
+            // create subscription
+            subscriptions.set(key, sub);
+          }
+
+          sub.subscribers.set(socket.user._id, function(state){
+            // callback when there is a change with the instance subscribed to
+
+            // the state must be passed through the view which this is subscribed to
+            //var result = api[data.model].view[data.view].handler.apply(state, req?, res?);
+            //socket.emit(key, result);
+          });
         })
         .catch(function(error) {
           socket.emit('error', error);
@@ -1156,7 +1181,20 @@ module.exports = function(serverInstance) {
       });
 
       socket.on('unsubscribe', function(data) {
+        var key = data.model + '_' + data._id;
 
+        var instance = subscriptions.get(key);
+
+        if (!instance) {
+          return;
+        }
+
+        instance.subscribers.delete(socket.user._id);
+
+        if (instance.subscribers.size() === 0) {
+          // remove since noone is listening
+          subscriptions.delete(key);
+        }
       });
 
       socket.on('report', function(data) {

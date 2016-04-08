@@ -17,7 +17,7 @@ export default React.createClass({
   handleText(text) {
     if (this.props.onChange) {
       this.props.onChange({
-        child: text
+        text: text
       });
     }
   },
@@ -40,7 +40,7 @@ export default React.createClass({
             <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
           </Bootstrap.ButtonGroup>
           <MarkdownLatexView
-            value={this.props.value.child}
+            value={this.props.value.text}
           />
         </div>
       );
@@ -53,7 +53,7 @@ export default React.createClass({
         <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
         </Bootstrap.ButtonGroup>
         <MarkdownLatexEdit
-          value={this.props.value.child}
+          value={this.props.value.text}
           onChange={this.handleText}
         />
       </div>

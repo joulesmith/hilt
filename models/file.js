@@ -8,7 +8,7 @@ var server = require('../server');
 
 
 module.exports = function(api){
-  return{
+  return {
     file: {
       state: {
         independent: {
@@ -87,7 +87,6 @@ module.exports = function(api){
           }
         }
       },
-      // need execute permission, only uses http gets to specific resource
       view: {
         secure: false,
         // anyone can get the file
@@ -110,6 +109,7 @@ module.exports = function(api){
             return (new Promise(function(resolve, reject) {
               res.setHeader("Content-Type", file.type);
               // thye filename on the server is the same as the _id, without extensions
+              // the _id is used as the filename in the uploads folder
               res.sendFile(file._id, options, function(err) {
                 if (err) {
                   reject(err);

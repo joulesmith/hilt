@@ -25,7 +25,10 @@ module.exports = function(api){
             default: 0
           },
           words: String,
-          files: []
+          files: [{
+            type: api.types.ObjectId,
+            ref: 'file'
+          }]
         },
         dependent: {},
         index: {
@@ -75,16 +78,19 @@ module.exports = function(api){
       view: {
         // GET: /api/model/id
         root: {
-          secure: true
+          secure: true,
+          populate: ['files']
         },
         // GET: /api/model/id/primary
         primary: {
           secure: false,
+          populate: ['files'],
           handler: function() {
             return {
               _id: this._id,
               name: this.name,
-              main: this.main
+              main: this.main,
+              files: this.files
             };
           }
         }

@@ -7,7 +7,7 @@ import './css/bootstrap.css';
 import * as journal from './journal';
 
 import user from 'user';
-import * as fileUpload from './actions/file-upload';
+
 import locale from './locale';
 import Navbar from './navbar';
 import RegisterModal from './user/register-modal';

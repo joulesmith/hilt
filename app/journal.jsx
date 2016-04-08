@@ -144,11 +144,17 @@ export function setAuthorization(authorization, host) {
     authorizations[host || 'apphost'] = authorization;
 }
 
-var httpPost = function(url, data) {
+var httpPost = function(url, data, type) {
   // use any authorizations set to contact the server
   var parsedUrl = nodeUrl.parse(url);
   var headers = {};
   headers.Authorization = authorizations[parsedUrl.host || 'apphost'];
+
+  if (type){
+    headers['Content-Type'] = type;
+  }else{
+    headers['Content-Type'] = undefined;
+  }
 
   // if it's not defined locally, then perform an http POST to perform the action
   return http({
@@ -302,8 +308,14 @@ export function report(update) {
       return Promise.resolve();
     }
 
-    // if execution reaches here, it means the action could not be handled locally
-    return httpPost(update.action, update.data);
+    if (update.data) {
+      // if execution reaches here, it means the action could not be handled locally
+      return httpPost(update.action, update.data);
+    }else if (update.form) {
+
+    }
+
+
   }
 }
 

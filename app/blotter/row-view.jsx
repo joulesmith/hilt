@@ -5,9 +5,9 @@ import Blot from './blot-view';
 export default React.createClass({
   render() {
     return (
-      <Bootstrap.Row key={this.props.element.key}>
-        {this.props.element.child.map(column => {
-          return <Blot key={column.key} element={column} />;
+      <Bootstrap.Row key={this.props.value.key}>
+        {this.props.value.child.map(column => {
+          return <Blot key={column.key} value={column} />;
         })}
       </Bootstrap.Row>
     );
