@@ -3,7 +3,7 @@ import * as Bootstrap from 'react-bootstrap';
 import * as journal from '../journal';
 import { Router, Route, Link, browserHistory  } from 'react-router';
 import Blot from './blot-edit';
-
+import * as merge from '../merge';
 
 export default React.createClass({
   componentWillMount: function(){
@@ -41,12 +41,9 @@ export default React.createClass({
       var key = that.state.localBlotter.key;
 
       that.setState({
-        localBlotter: {
-          _id : that.state.localBlotter._id,
-          name : that.state.localBlotter.name,
-          main : that.state.localBlotter.main,
+        localBlotter: merge.shallow(that.state.localBlotter, {
           key: key + 1
-        }
+        })
       });
 
       resolve(key);
@@ -54,22 +51,16 @@ export default React.createClass({
   },
   handleChild(child) {
     this.setState({
-      localBlotter: {
-        _id : this.state.localBlotter._id,
-        name : this.state.localBlotter.name,
-        main : child,
-        key: this.state.localBlotter.key
-      }
+      localBlotter: merge.shallow(this.state.localBlotter, {
+        main : merge.shallow(this.state.localBlotter.main, child)
+      })
     });
   },
   handleDelete() {
     this.setState({
-      localBlotter: {
-        _id : this.state.localBlotter._id,
-        name : this.state.localBlotter.name,
-        main : {},
-        key: this.state.localBlotter.key
-      }
+      localBlotter: merge.shallow(this.state.localBlotter, {
+        main : {}
+      })
     });
   },
   render() {

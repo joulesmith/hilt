@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import Blot from './blot-edit';
+import * as merge from '../merge';
 
 export default React.createClass({
   handleMoveLeft(event) {
@@ -21,21 +22,13 @@ export default React.createClass({
   handleChild(child) {
     if(this.props.onChange){
       this.props.onChange({
-        type: 'col',
-        key: this.props.value.key,
-        width: this.props.value.width,
-        offset: this.props.value.offset,
-        child: child
+        child: merge.shallow(this.props.value.child, child)
       });
     }
   },
   handleDeleteChild(){
     if(this.props.onChange){
       this.props.onChange({
-        type: 'col',
-        key: this.props.value.key,
-        width: this.props.value.width,
-        offset: this.props.value.offset,
         child: {}
       });
     }
@@ -43,22 +36,14 @@ export default React.createClass({
   handleWidth(event, eventKey){
     if(this.props.onChange){
       this.props.onChange({
-        type: 'col',
-        key: this.props.value.key,
-        width:  parseInt(eventKey),
-        offset: this.props.value.offset,
-        child: this.props.value.child
+        width:  parseInt(eventKey)
       });
     }
   },
   handleOffset(event, eventKey){
     if(this.props.onChange){
       this.props.onChange({
-        type: 'col',
-        key: this.props.value.key,
-        width:  this.props.value.width,
-        offset: parseInt(eventKey),
-        child: this.props.value.child
+        offset: parseInt(eventKey)
       });
     }
   },

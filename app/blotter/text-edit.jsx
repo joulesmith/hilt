@@ -17,8 +17,6 @@ export default React.createClass({
   handleText(text) {
     if (this.props.onChange) {
       this.props.onChange({
-        type: 'text',
-        key: this.props.value.key,
         child: text
       });
     }
