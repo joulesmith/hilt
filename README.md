@@ -23,239 +23,239 @@ wrapped in the journal module, which implements a subscription service.
 
 #### Example Model Definition: modelName.js
 
-  var Promise = require('bluebird');
-
-  module.exports = function(api) {
-    return {
-      // This model will be referenced on both server and client by this name
-      modelName: {
-        // This adds to the database Schema the data to store using the same
-        // syntax as mongoose Schemas
-        state: {
-          // the fields independent/dependent will not be separated within
-          // the database schema. This only separates which fields have to be
-          // changed functionally.
-          independent: {
-            // data which can be directly set without regard to side-effects
-            // api.types is set using mongoose.Schema.Types so you don't need to include it explicitly
-            objRefData: {
-              type: api.types.ObjectId,
-              ref: 'account'
-            },
-            textData: {
-              type: String,
-              default: ''
-            },
-            tag: {
-              type: String,
-              required: true
-            }
-          },
-          dependent: {
-            // data which are set because of side-effects either from
-            // methods directly on this model, or from external effects
-            externallyUpdatedBoolean: {
-              type: Boolean,
-              default: false
-            },
-          },
-          // index to use to make queries more efficient
-          index: {
-            textData: 'text',
-          }
-        },
-        static: {
-          action: {
-            // model instance creation options
-            // -> POST /api/modelName
-            root: {
-              // optional access permissions the creator of an instance
-              // if ommited, the creator will get root access to the instance
-              creatorAccess: ['root'],
-              // optional custom route handler on creation of an instance.
-              // the instance must be saved within the handler if a handler is used.
-              // if a value (or promise) is returned, that value is returned to the response
-              // if nothing is returned, then nothing is sent in the response as it
-              // assumed the response was handled in the handler
-              handler: function(req, res) {
-                // the this variable refers to the mongoose object of the instance
-                var instance = this;
-                // do stuff, like grand permissions to someone else
-                // here, grantUser_id is supplied in the request to grant access to.
-                // grantUserAccess automatically saves the instance
-                //
-                return api.user.collection.findById(req.body.grantUser_id)
-                .then(function(user){
-                  if (!user){
-                    throw new api.modelName.Error('nouser',
-                      'The user could not be found.', [],
-                      404);
-                  }
-
-                  // the action.boolean corresponds to POST: api/modelName/:id/boolean
-                  return instance.grantUserAccess('action.boolean', user);
-                });
+    var Promise = require('bluebird');
+  
+    module.exports = function(api) {
+      return {
+        // This model will be referenced on both server and client by this name
+        modelName: {
+          // This adds to the database Schema the data to store using the same
+          // syntax as mongoose Schemas
+          state: {
+            // the fields independent/dependent will not be separated within
+            // the database schema. This only separates which fields have to be
+            // changed functionally.
+            independent: {
+              // data which can be directly set without regard to side-effects
+              // api.types is set using mongoose.Schema.Types so you don't need to include it explicitly
+              objRefData: {
+                type: api.types.ObjectId,
+                ref: 'account'
+              },
+              textData: {
+                type: String,
+                default: ''
+              },
+              tag: {
+                type: String,
+                required: true
               }
             },
+            dependent: {
+              // data which are set because of side-effects either from
+              // methods directly on this model, or from external effects
+              externallyUpdatedBoolean: {
+                type: Boolean,
+                default: false
+              },
+            },
+            // index to use to make queries more efficient
+            index: {
+              textData: 'text',
+            }
+          },
+          static: {
+            action: {
+              // model instance creation options
+              // -> POST /api/modelName
+              root: {
+                // optional access permissions the creator of an instance
+                // if ommited, the creator will get root access to the instance
+                creatorAccess: ['root'],
+                // optional custom route handler on creation of an instance.
+                // the instance must be saved within the handler if a handler is used.
+                // if a value (or promise) is returned, that value is returned to the response
+                // if nothing is returned, then nothing is sent in the response as it
+                // assumed the response was handled in the handler
+                handler: function(req, res) {
+                  // the this variable refers to the mongoose object of the instance
+                  var instance = this;
+                  // do stuff, like grand permissions to someone else
+                  // here, grantUser_id is supplied in the request to grant access to.
+                  // grantUserAccess automatically saves the instance
+                  //
+                  return api.user.collection.findById(req.body.grantUser_id)
+                  .then(function(user){
+                    if (!user){
+                      throw new api.modelName.Error('nouser',
+                        'The user could not be found.', [],
+                        404);
+                    }
+  
+                    // the action.boolean corresponds to POST: api/modelName/:id/boolean
+                    return instance.grantUserAccess('action.boolean', user);
+                  });
+                }
+              },
+            },
+            view: {
+              // -> GET /api/modelName/search/:tag
+              search: {
+                parameter: ':tag(*)',
+                handler: function(req, res) {
+                  return api.modelName.collection.find({
+                    tag: req.params.tag
+                  });
+                }
+              }
+            }
           },
           view: {
-            // -> GET /api/modelName/search/:tag
-            search: {
-              parameter: ':tag(*)',
+            // -> GET /api/modelName/:_id
+            root: {
+              // Optional security limits access to those in the access list for 'get'
+              // If no security, anyone may call this route
+              security: true,
+              // can specify population of other models from reference ids
+              populate: ['objRefData'],
+              // Optional custom route handler for get method
+              // if a value (or promise) is returned, that value is returned to the response
+              // if nothing is returned, then nothing is sent in the response as it
+              // assumes the response was handled in the handler
               handler: function(req, res) {
+                var that = this;
+                // whatever is returned from this function is sent to client
+                return new Promise(function(resolve, reject) {
+                  // async operations returned as a promise;
+                  return that;
+                });
+              }
+            },
+            // -> GET /api/modelName/:_id/similar
+            similar: {
+              // anyone can call this route since security is disabled
+              security: false,
+  
+              // whatever is returned from the handler is returned to the response
+              // if nothing is returned, then it is assumed the response was already
+              // handled by the handler
+              handler: function(req, res) {
+                var instance = this;
+  
                 return api.modelName.collection.find({
-                  tag: req.params.tag
+                  tag: instance.tag
                 });
               }
             }
           }
-        },
-        view: {
-          // -> GET /api/modelName/:_id
-          root: {
-            // Optional security limits access to those in the access list for 'get'
-            // If no security, anyone may call this route
-            security: true,
-            // can specify population of other models from reference ids
-            populate: ['objRefData'],
-            // Optional custom route handler for get method
-            // if a value (or promise) is returned, that value is returned to the response
-            // if nothing is returned, then nothing is sent in the response as it
-            // assumes the response was handled in the handler
-            handler: function(req, res) {
-              var that = this;
-              // whatever is returned from this function is sent to client
-              return new Promise(function(resolve, reject) {
-                // async operations returned as a promise;
-                return that;
-              });
+          action: {
+            // -> POST /api/modelName/:_id
+            root: {
+              // optional security can be used to limit access to the 'update' list
+              security: true,
+  
+              // Optional custom route handler for update method
+              // the instance must save changes within the handler if a handler is used
+              // if a value (or promise) is returned, that value is returned to the response
+              // if nothing is returned, then nothing is sent in the response as it
+              // assumes the response was handled in the handler
+              handler: function(req, res) {
+                if (this.externallyUpdatedBoolean) {
+                  // restrict update to only if this state is false
+                  throw new api.modelName.Error('updatenotallowed',
+                    'Update of [0] not allowed at this time.', // template message
+                    [this.textData], // template values to insert at runtime
+                    405); // send a status code
+                }
+  
+                return this.save();
+              }
+            },
+            // -> POST /api/modelName/:_id/boolean?value=#
+            boolean: {
+              security: true,
+              handler: function(req, res) {
+                return this.setBoolean(req.query.value);
+              }
             }
           },
-          // -> GET /api/modelName/:_id/similar
-          similar: {
-            // anyone can call this route since security is disabled
-            security: false,
-
-            // whatever is returned from the handler is returned to the response
-            // if nothing is returned, then it is assumed the response was already
-            // handled by the handler
-            handler: function(req, res) {
-              var instance = this;
-
-              return api.modelName.collection.find({
-                tag: instance.tag
-              });
-            }
-          }
-        }
-        action: {
-          // -> POST /api/modelName/:_id
-          root: {
-            // optional security can be used to limit access to the 'update' list
-            security: true,
-
-            // Optional custom route handler for update method
-            // the instance must save changes within the handler if a handler is used
-            // if a value (or promise) is returned, that value is returned to the response
-            // if nothing is returned, then nothing is sent in the response as it
-            // assumes the response was handled in the handler
-            handler: function(req, res) {
-              if (this.externallyUpdatedBoolean) {
-                // restrict update to only if this state is false
-                throw new api.modelName.Error('updatenotallowed',
-                  'Update of [0] not allowed at this time.', // template message
-                  [this.textData], // template values to insert at runtime
-                  405); // send a status code
-              }
-
+          internal: {
+            // custom helper methods that can only be called on the server from an instance
+            setBoolean: function(value) {
+              this.externallyUpdatedBoolean = value;
               return this.save();
             }
-          },
-          // -> POST /api/modelName/:_id/boolean?value=#
-          boolean: {
-            security: true,
-            handler: function(req, res) {
-              return this.setBoolean(req.query.value);
-            }
-          }
-        },
-        internal: {
-          // custom helper methods that can only be called on the server from an instance
-          setBoolean: function(value) {
-            this.externallyUpdatedBoolean = value;
-            return this.save();
           }
         }
-      }
+      };
     };
-  };
 
 
 #### Example React and journal subscription
 
-  import React from 'react';
-  import * as Bootstrap from 'react-bootstrap';
-  import * as journal from '../journal';
-  import { Router, Route, Link, browserHistory  } from 'react-router';
-
-  export default React.createClass({
-    componentWillMount: function(){
-      // subscribe to a search using a variable tag
-      this.subscription = journal.subscribe({
-        search: 'api/modelName/search/{this.state.tag}'
-      }, state => {
-        this.setState(state);
-      }, this);
-
-    },
-    componentWillUnmount: function(){
-      // cancel subscription when component goes away
-      this.subscription.unsubscribe();
-    },
-    handleTag(event) {
-      // set new state and update subscription
-      this.setState({
-        tag: event.target.value
-      }, this.subscription.thisChanged);
-    },
-    render() {
-      if (this.state.search) {
+    import React from 'react';
+    import * as Bootstrap from 'react-bootstrap';
+    import * as journal from '../journal';
+    import { Router, Route, Link, browserHistory  } from 'react-router';
+  
+    export default React.createClass({
+      componentWillMount: function(){
+        // subscribe to a search using a variable tag
+        this.subscription = journal.subscribe({
+          search: 'api/modelName/search/{this.state.tag}'
+        }, state => {
+          this.setState(state);
+        }, this);
+  
+      },
+      componentWillUnmount: function(){
+        // cancel subscription when component goes away
+        this.subscription.unsubscribe();
+      },
+      handleTag(event) {
+        // set new state and update subscription
+        this.setState({
+          tag: event.target.value
+        }, this.subscription.thisChanged);
+      },
+      render() {
+        if (this.state.search) {
+          return (
+            <div>
+              <div style={{padding: '1em'}}>
+                <Bootstrap.Row>
+                  <Bootstrap.Col md={2}>
+                    <Bootstrap.Input
+                      type="text"
+                      value={this.state.tag}
+                      onChange={this.handleTag}
+                    />
+                  </Bootstrap.Col>
+                </Bootstrap.Row>
+              </div>
+              {this.state.search.map(instance => {
+                return (
+                  <div key={instance._id} style={{padding: '1em'}}>
+                    <Link to={'/modelName/' + instance._id}>{instance.textData}</Link>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+  
         return (
           <div>
-            <div style={{padding: '1em'}}>
-              <Bootstrap.Row>
-                <Bootstrap.Col md={2}>
-                  <Bootstrap.Input
-                    type="text"
-                    value={this.state.tag}
-                    onChange={this.handleTag}
-                  />
-                </Bootstrap.Col>
-              </Bootstrap.Row>
-            </div>
-            {this.state.search.map(instance => {
-              return (
-                <div key={instance._id} style={{padding: '1em'}}>
-                  <Link to={'/modelName/' + instance._id}>{instance.textData}</Link>
-                </div>
-              );
-            })}
+            <Bootstrap.Row>
+              <Bootstrap.Col md={2}>
+                <Bootstrap.Input
+                  type="text"
+                  value={this.state.tag}
+                  onChange={this.handleTag}
+                />
+              </Bootstrap.Col>
+            </Bootstrap.Row>
           </div>
         );
       }
-
-      return (
-        <div>
-          <Bootstrap.Row>
-            <Bootstrap.Col md={2}>
-              <Bootstrap.Input
-                type="text"
-                value={this.state.tag}
-                onChange={this.handleTag}
-              />
-            </Bootstrap.Col>
-          </Bootstrap.Row>
-        </div>
-      );
-    }
-  });
+    });
