@@ -11,7 +11,9 @@
 
 import http from 'axios';
 import * as nodeUrl from 'url';
+import io from 'socket.io-client';
 
+var socket = io.connect('http://localhost:3000');
 var authorizations = {};
 
 //TODO: convert the processing of reports into an iteration of the reports Array to
@@ -138,10 +140,13 @@ let resourceTree = (function(){
 
 
 
-
 export function setAuthorization(authorization, host) {
-    // define the authentication to use with this host
-    authorizations[host || 'apphost'] = authorization;
+  // define the authentication to use with this host
+  authorizations[host || 'apphost'] = authorization;
+
+  socket.emit('authenticate', {
+    authorization: authorization
+  });
 }
 
 var httpPost = function(url, data, type) {
@@ -346,6 +351,28 @@ export function publish (resource, state) {
     }
   }
 }
+
+socket.on('update', function(data){
+  var result = resourceTree.find(data.uri, false);
+
+  if (result && result.node && result.node._subscribers) {
+    httpGet(data.uri)
+    .then(state => {
+      result.node._state = state; // copy?
+
+      if (result.node._subscribers) {
+        result.node._subscribers.forEach(subscription => {subscription()});
+      }
+    });
+  }
+});
+
+socket.on('error', function(data){
+  report({
+    action: '#/error',
+    data: data
+  });
+});
 
 // helper function to tie a subscriber function to a resource
 var makeSubscription = (resource, subscriber) => {
@@ -633,9 +660,14 @@ export function subscribe (resources, subscriber, _this) {
       }
 
       if (resource.unsub) {
-        // there is already a subscription for this resource, so unsubscribe first
+        // there is already a subscription for this resource, but not the correct uri, so unsubscribe first
         resource.unsub();
         resource.unsub = null;
+
+        // TODO: check if resource is with app's server
+        socket.emit('unsubscribe', {
+          uri : uri
+        });
       }
 
       resource.currentUri = uri;
@@ -648,7 +680,6 @@ export function subscribe (resources, subscriber, _this) {
       makeSubscription(resource, subscriber);
 
       if (!result.local) {
-        // TODO: this does not implement subscription for remote resources.
         httpGet(resource.currentUri)
         .then(state => {
           result.node._state = state; // copy?
@@ -663,6 +694,13 @@ export function subscribe (resources, subscriber, _this) {
             data: error
           });
         });
+
+        // if the resource has a socket.io api, subscribe for update events
+        if (!result.parsedUrl.host) {
+          socket.emit('subscribe', {
+            uri : uri
+          });
+        }
       }
 
     };

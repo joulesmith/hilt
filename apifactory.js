@@ -306,6 +306,14 @@ var serveModels = function(){
 
       Schema.methods.editEvent = function() {
         // TODO: send update to socket io since it is already in memory.
+        var sub = subscriptions.get('api/' + model + '/' + this._id);
+
+        if (sub){
+          sub.subscribers.forEach(function(subscription){
+            subscription();
+          });
+        }
+
         this.edited = Date.now();
         return this;
       };
@@ -1142,58 +1150,93 @@ module.exports = function(serverInstance) {
 
       // listen for changes to a particular resource.
       socket.on('subscribe', function(data) {
-        mongoose.model('' + data.model).findById('' + data._id)
-        .exec()
-        .then(function(element) {
-          // first make sure they have permission to even see this stuff
-          var view = 'view.' + data.view;
+        try{
+          var parts = data.uri.split('/');
+          var model, _id, view;
 
-          if (!element.testAccess(view, socket.user)) {
-            throw new ModelError('noaccess',
-              'User does not have permission to [0] this [1].', [view, data.model],
-              403);
+          if (/[a-z0-9]{24}/.test(parts[2])) {
+            // there is an 12byte _id, so this is an instance
+            model = parts[1];
+            _id = parts[2];
+            view = parts[3];
+
+            mongoose.model(model).findById(_id)
+            .exec()
+            .then(function(element) {
+              // first make sure they have permission to even see this instance view
+
+              if (!element.testAccess('view.' + view, socket.user)) {
+                throw new ModelError('noaccess',
+                  'User does not have permission to [0] this [1].', ['view.' + view, model],
+                  403);
+              }
+
+              var sub = subscriptions.get('api/' + model + '/' + _id);
+
+              if (!sub) {
+                sub = {
+                  subscribers: new Map()
+                };
+
+                // create subscription
+                subscriptions.set(data.uri, sub);
+              }
+
+              sub.subscribers.set(socket.id, function(){
+                // callback when there is a change with the instance subscribed to
+                socket.emit('update', {
+                  uri: data.uri
+                });
+              });
+            })
+            .catch(function(error) {
+              socket.emit('error', error);
+            });
+          }else {
+
+            // this one will just be listening for updates to a whole collection
+            model = parts[1];
+
+            var sub = subscriptions.get('api/' + model);
+
+            if (!sub) {
+              sub = {
+                subscribers: new Map()
+              };
+
+              // create subscription
+              subscriptions.set(data.uri, sub);
+            }
+
+            sub.subscribers.set(socket.id, function(){
+              // callback when there is a change with the instance subscribed to
+              socket.emit('update', {
+                uri: data.uri
+              });
+            });
           }
-
-          var key = data.model + '/' + data._id;
-
-          var sub = subscriptions.get(key);
-
-          if (!sub) {
-            sub = {
-              subscribers: new Map()
-            };
-
-            // create subscription
-            subscriptions.set(key, sub);
-          }
-
-          sub.subscribers.set(socket.user._id, function(state){
-            // callback when there is a change with the instance subscribed to
-
-            // the state must be passed through the view which this is subscribed to
-            //var result = api[data.model].view[data.view].handler.apply(state, req?, res?);
-            //socket.emit(key, result);
-          });
-        })
-        .catch(function(error) {
+        }catch(error){
           socket.emit('error', error);
-        });
+        }
       });
 
+
       socket.on('unsubscribe', function(data) {
-        var key = data.model + '_' + data._id;
+        try{
+          var instance = subscriptions.get(data.uri);
 
-        var instance = subscriptions.get(key);
+          if (!instance) {
+            return;
+          }
 
-        if (!instance) {
-          return;
-        }
+          instance.subscribers.delete(socket.id);
 
-        instance.subscribers.delete(socket.user._id);
-
-        if (instance.subscribers.size() === 0) {
-          // remove since noone is listening
-          subscriptions.delete(key);
+          if (instance.subscribers.size === 0) {
+            // remove since noone is listening
+            subscriptions.delete(data.uri);
+          }
+        }catch(error){
+          socket.emit('error', error);
         }
       });
 
