@@ -363,6 +363,9 @@ socket.on('update', function(data){
       if (result.node._subscribers) {
         result.node._subscribers.forEach(subscription => {subscription()});
       }
+    })
+    .catch(function(error){
+
     });
   }
 });
@@ -689,10 +692,7 @@ export function subscribe (resources, subscriber, _this) {
           }
         })
         .catch(error => {
-          report({
-            action: '#/error',
-            data: error
-          });
+
         });
 
         // if the resource has a socket.io api, subscribe for update events
