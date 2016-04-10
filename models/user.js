@@ -63,7 +63,10 @@ module.exports = function(api) {
 
           // store credentials to use google services for this user
           groups: [String],
-          accessRecords: api.types.Mixed
+          accessRecords: {
+            type: api.types.Mixed,
+            default: {}
+          }
         },
         index: null, // used for text searches
       },
@@ -302,10 +305,14 @@ module.exports = function(api) {
           parameter: ':model(*)',
           handler: function(req){
             if (req.params.model) {
-              return req.user.accessRecords[req.params.model];
+              if (this.accessRecords[req.params.model]) {
+                return this.accessRecords[req.params.model];
+              }
+
+              return {id: [], actions: []};
             }
 
-            return req.user.accessRecords;
+            return  this.accessRecords;
           }
         }
       },
@@ -445,7 +452,7 @@ module.exports = function(api) {
               user.passwordHash = hash;
 
               // reset tokens because password changed
-              return user.resetTokens(new_password);
+              return user.editEvent().resetTokens(new_password);
             });
         },
         resetTokens: function(password) {
@@ -476,7 +483,7 @@ module.exports = function(api) {
             .then(function(tokenHash) {
               user.tokenHash = tokenHash.toString('hex');
 
-              return user.save();
+              return user.editEvent().save();
             });
         },
         verifyPassword: function(password) {
@@ -587,7 +594,7 @@ module.exports = function(api) {
 
           user.markModified('accessRecords');
 
-          return user.save();
+          return user.editEvent().save();
         },
         accessRevoked: function(model, actions, resource) {
           var user = this;
@@ -615,7 +622,7 @@ module.exports = function(api) {
 
           user.markModified('accessRecords');
 
-          return user.save();
+          return user.editEvent().save();
         },
         addGroup: function(group) {
           var user = this;
@@ -625,7 +632,7 @@ module.exports = function(api) {
 
           user.groups.slice(index, 0, group_id);
 
-          return user.save();
+          return user.editEvent().save();
         },
         removeGroup: function(group) {
           var user = this;
@@ -635,7 +642,7 @@ module.exports = function(api) {
 
           user.groups.slice(index, 1);
 
-          return user.save();
+          return user.editEvent().save();
         },
       }
     }
