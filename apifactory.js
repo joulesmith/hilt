@@ -1150,6 +1150,7 @@ module.exports = function(serverInstance) {
 
       // listen for changes to a particular resource.
       socket.on('subscribe', function(data) {
+
         try{
           var parts = data.uri.split('/');
           var model, _id, view;
@@ -1179,7 +1180,7 @@ module.exports = function(serverInstance) {
                 };
 
                 // create subscription
-                subscriptions.set(data.uri, sub);
+                subscriptions.set('api/' + model + '/' + _id, sub);
               }
 
               sub.subscribers.set(socket.id, function(){
@@ -1205,7 +1206,7 @@ module.exports = function(serverInstance) {
               };
 
               // create subscription
-              subscriptions.set(data.uri, sub);
+              subscriptions.set('api/' + model, sub);
             }
 
             sub.subscribers.set(socket.id, function(){
@@ -1223,7 +1224,22 @@ module.exports = function(serverInstance) {
 
       socket.on('unsubscribe', function(data) {
         try{
-          var instance = subscriptions.get(data.uri);
+          var parts = data.uri.split('/');
+          var model, _id, view;
+          var uri;
+
+          if (/[a-z0-9]{24}/.test(parts[2])) {
+            // there is an 12byte _id, so this is an instance
+            model = parts[1];
+            _id = parts[2];
+            view = parts[3];
+            uri = 'api/' + model + '/' + _id
+          }else{
+            model = parts[1];
+            uri = 'api/' + model;
+          }
+
+          var instance = subscriptions.get(uri);
 
           if (!instance) {
             return;
@@ -1233,7 +1249,7 @@ module.exports = function(serverInstance) {
 
           if (instance.subscribers.size === 0) {
             // remove since noone is listening
-            subscriptions.delete(data.uri);
+            subscriptions.delete(uri);
           }
         }catch(error){
           socket.emit('error', error);
