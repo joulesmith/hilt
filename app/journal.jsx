@@ -732,7 +732,7 @@ export function subscribe (resources, subscriber, _this) {
       resource.node = result.node;
 
       // inserts update function into the resource tree and unsub reference on resource
-      makeSubscription(resource, subscriber);
+      makeSubscription(resource, subscriber, update);
 
       if (!result.local) {
         // request a fresh copy of the data from the server, even though it may
