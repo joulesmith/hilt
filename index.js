@@ -42,12 +42,14 @@ module.exports = function(config) {
 
 
   // view routs
-  server.express.use('/', require('./routes/index')(server));
+  server.express.use('/', function(req, res, next) {
+    // TODO: set this from database value
+    res.render('index', { title: server.config.name });
+  });
 
   // api routs
   //
   // TODO: convert these to the combined api/model format
-  server.express.use('/api/util', require('./routes/api/util'));
 
   var apimodelfactory = require('./apifactory')(server);
 
