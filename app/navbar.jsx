@@ -45,10 +45,20 @@ export default React.createClass({
 
     if (this.props.links){
       links = this.props.links.map((link, index) => {
-        return <Bootstrap.NavItem key={index} href={link.url}>{link.name}</Bootstrap.NavItem>;
+        return <Bootstrap.NavItem key={index} href={link.href}>{link.name}</Bootstrap.NavItem>;
       });
     }else{
       links = [];
+    }
+
+    var userlinks;
+
+    if (this.props.userlinks && this.state.user._id && !this.state.user.guest){
+      userlinks = this.props.userlinks.map((link, index) => {
+        return <Bootstrap.NavItem key={index} href={link.href}>{link.name}</Bootstrap.NavItem>;
+      });
+    }else{
+      userlinks = [];
     }
 
     return (
@@ -78,6 +88,7 @@ export default React.createClass({
         <Bootstrap.Navbar.Collapse>
           <Bootstrap.Nav>
             {links}
+            {userlinks}
           </Bootstrap.Nav>
           <Bootstrap.Nav pullRight>
             <Bootstrap.NavDropdown
@@ -88,8 +99,8 @@ export default React.createClass({
                 if (this.state.user._id && !this.state.user.guest) {
                   var menuItems;
 
-                  if (this.props.menu){
-                    menuItems = this.props.menu.map(function(item, index){
+                  if (this.props.usermenu){
+                    menuItems = this.props.usermenu.map(function(item, index){
                       if (item.href){
                         return (
                           <Bootstrap.MenuItem key={index} href={item.href}>

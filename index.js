@@ -42,7 +42,7 @@ module.exports = function(config) {
 
 
   // view routs
-  server.express.use('/', function(req, res, next) {
+  server.express.get('/', function(req, res, next) {
     // TODO: set this from database value
     res.render('index', { title: server.config.name });
   });

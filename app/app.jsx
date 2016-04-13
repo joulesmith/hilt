@@ -35,10 +35,10 @@ var Root = React.createClass({
       url: '#'
     };
     var links = [{
-      url: "#/blotter",
+      href: "#/blotter",
       name: "Create Blotter"
     },{
-      url: "#/blotter/search",
+      href: "#/blotter/search",
       name: "Search Blotters"
     }];
 
