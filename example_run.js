@@ -22,6 +22,7 @@ require('./index.js')({
     './models/user',
     './models/user-google-auth',
     './models/group',
+    './models/email',
     './models/file',
     './models/blotter'
   ]

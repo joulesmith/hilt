@@ -141,12 +141,21 @@ let resourceTree = (function(){
 
 
 export function setAuthorization(authorization, host) {
+
   // define the authentication to use with this host
   authorizations[host || 'apphost'] = authorization;
 
-  socket.emit('authenticate', {
-    authorization: authorization
-  });
+  if (authorization){
+    if (!host) {
+      socket.emit('login', {
+        authorization: authorization
+      });
+    }
+  }else{
+    if (!host) {
+      socket.emit('logout', {});
+    }
+  }
 }
 
 var httpPost = function(url, data, type) {

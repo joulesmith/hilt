@@ -5,7 +5,7 @@ var mongoose = require('mongoose');
 module.exports = function(socket) {
   var User = mongoose.model("user");
 
-  socket.on('authenticate', function(data) {
+  socket.on('login', function(data) {
 
     try{
       var token = JSON.parse(new Buffer(data.authorization, 'base64').toString('utf8'));
@@ -34,5 +34,9 @@ module.exports = function(socket) {
     }catch(error){
       socket.disconnect('unauthorized');
     }
+  });
+
+  socket.on('logout', function(){
+    socket.user = null;
   });
 };

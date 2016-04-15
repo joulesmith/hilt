@@ -305,11 +305,12 @@ var serveModels = function(){
       }
 
       Schema.methods.editEvent = function() {
-        // TODO: send update to socket io since it is already in memory.
-        var sub = subscriptions.get('api/' + model + '/' + this._id);
+        // TODO: send update to socket io
+        var key = 'api/' + model + '/' + this._id;
+        var sub = subscriptions.get(key);
 
         if (sub){
-          sub.subscribers.forEach(function(subscription){
+          sub.subscribers.forEach(function(subscription, key){
             subscription();
           });
         }
@@ -484,7 +485,7 @@ var serveModels = function(){
 
           if (data){
             for (var param in apiModel.state.independent) {
-              if (data[param]) {
+              if (typeof data[param] !== 'undefined') {
                 new_user[param] = data[param];
               }
             }
@@ -505,7 +506,7 @@ var serveModels = function(){
 
         if (data){
           for (var param in apiModel.state.independent) {
-            if (data[param]) {
+            if (typeof data[param] !== 'undefined') {
               new_element[param] = data[param];
             }
           }
@@ -671,6 +672,7 @@ var serveModels = function(){
                         }
 
                         // if there is no result, assume handler handled response
+                        // no additional response is given.
                         return element.editEvent().save();
                       }
 
@@ -952,7 +954,8 @@ var serveModels = function(){
                       for (var param in apiModel.state.independent) {
                         // update any independent fields that were supplied directly
                         // in the request
-                        if (req.body[param]) {
+                        if (typeof req.body[param] !== 'undefined') {
+
                           element[param] = req.body[param];
                         }
                       }
@@ -1018,7 +1021,7 @@ var serveModels = function(){
                       for (var param in apiModel.state.independent) {
                         // update any independent fields that were supplied directly
                         // in the request
-                        if (req.body[param]) {
+                        if (typeof req.body[param] !== 'undefined') {
                           element[param] = req.body[param];
                         }
                       }
@@ -1081,7 +1084,7 @@ var serveModels = function(){
                       for (var param in apiModel.state.independent) {
                         // update any independent fields that were supplied directly
                         // in the request
-                        if (req.body[param]) {
+                        if (typeof req.body[param] !== 'undefined') {
                           element[param] = req.body[param];
                         }
                       }
@@ -1146,8 +1149,16 @@ module.exports = function(serverInstance) {
 
       socket.on('disconnect', function(){
         // remove listeners
+        for(var uri in subs) {
+          if (subs[uri]){
+            unsub({
+              uri: uri
+            });
+          }
+        }
       });
 
+      var subs = {};
       // listen for changes to a particular resource.
       socket.on('subscribe', function(data) {
 
@@ -1159,7 +1170,7 @@ module.exports = function(serverInstance) {
             // there is an 12byte _id, so this is an instance
             model = parts[1];
             _id = parts[2];
-            view = parts[3];
+            view = parts[3] || 'root';
 
             mongoose.model(model).findById(_id)
             .exec()
@@ -1171,8 +1182,8 @@ module.exports = function(serverInstance) {
                   'User does not have permission to [0] this [1].', ['view.' + view, model],
                   403);
               }
-
-              var sub = subscriptions.get('api/' + model + '/' + _id);
+              var key = 'api/' + model + '/' + _id;
+              var sub = subscriptions.get(key);
 
               if (!sub) {
                 sub = {
@@ -1180,15 +1191,21 @@ module.exports = function(serverInstance) {
                 };
 
                 // create subscription
-                subscriptions.set('api/' + model + '/' + _id, sub);
+                subscriptions.set(key, sub);
               }
 
-              sub.subscribers.set(socket.id, function(){
+              // the key is set to the socket id (not user, since the same user could have multiple connections)
+              // the view is included because a socket could be subscribed to multiple views
+              // of the same instance, and must have separate update events sent.
+              sub.subscribers.set(socket.id + '/' + data.uri, function(){
                 // callback when there is a change with the instance subscribed to
                 socket.emit('update', {
                   uri: data.uri
                 });
               });
+
+              subs[data.uri] = true;
+
             })
             .catch(function(error) {
               socket.emit('error', error);
@@ -1197,8 +1214,9 @@ module.exports = function(serverInstance) {
 
             // this one will just be listening for updates to a whole collection
             model = parts[1];
-
-            var sub = subscriptions.get('api/' + model);
+            view = parts[2] || 'root';
+            var key = 'api/' + model;
+            var sub = subscriptions.get(key);
 
             if (!sub) {
               sub = {
@@ -1206,15 +1224,18 @@ module.exports = function(serverInstance) {
               };
 
               // create subscription
-              subscriptions.set('api/' + model, sub);
+              subscriptions.set(key, sub);
             }
 
-            sub.subscribers.set(socket.id, function(){
+            sub.subscribers.set(socket.id + '/' + data.uri, function(){
               // callback when there is a change with the instance subscribed to
               socket.emit('update', {
                 uri: data.uri
               });
             });
+
+            subs[data.uri] = true;
+
           }
         }catch(error){
           socket.emit('error', error);
@@ -1222,39 +1243,46 @@ module.exports = function(serverInstance) {
       });
 
 
-      socket.on('unsubscribe', function(data) {
+
+      var unsub = function(data) {
         try{
           var parts = data.uri.split('/');
           var model, _id, view;
-          var uri;
+          var key, sub;
 
           if (/[a-z0-9]{24}/.test(parts[2])) {
             // there is an 12byte _id, so this is an instance
             model = parts[1];
             _id = parts[2];
-            view = parts[3];
-            uri = 'api/' + model + '/' + _id
+            view = parts[3] || 'root';
+            key = 'api/' + model + '/' + _id;
           }else{
             model = parts[1];
-            uri = 'api/' + model;
+            view = parts[2] || 'root';
+            key = 'api/' + model;
           }
 
-          var instance = subscriptions.get(uri);
+          sub = subscriptions.get(key);
 
-          if (!instance) {
+          if (!sub) {
             return;
           }
 
-          instance.subscribers.delete(socket.id);
+          sub.subscribers.delete(socket.id + '/' + data.uri);
 
-          if (instance.subscribers.size === 0) {
+          if (sub.subscribers.size === 0) {
             // remove since noone is listening
-            subscriptions.delete(uri);
+            subscriptions.delete(key);
           }
+
+          subs[data.uri] = false;
+
         }catch(error){
           socket.emit('error', error);
         }
-      });
+      };
+
+      socket.on('unsubscribe', unsub);
 
       socket.on('report', function(data) {
 

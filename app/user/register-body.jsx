@@ -1,7 +1,7 @@
 "use strict";
 
 import React from 'react';
-
+import { hashHistory } from 'react-router';
 import {Input, ProgressBar, ButtonInput} from 'react-bootstrap';
 import zxcvbn from 'zxcvbn';
 import * as journal from '../journal';
@@ -21,7 +21,8 @@ export default React.createClass({
       username : '',
       usernameRegistered: true,
       password: '',
-      rememberLogin: false
+      rememberLogin: false,
+      processing: false
     };
   },
   componentWillMount: function(){
@@ -69,50 +70,83 @@ export default React.createClass({
     }
   },
   handleRegister: function(event) {
+    event.preventDefault();
     var that = this;
-    journal.report({
-      action: '#/user/register',
-      data: {
-        username: this.state.username,
-        password: this.state.password
-      }
-    })
-    .then(function(){
 
-      return journal.report({
+    this.setState({
+      processing: true
+    }, () => {
+      journal.report({
+        action: '#/user/register',
+        data: {
+          username: that.state.username,
+          password: that.state.password
+        }
+      })
+      .then(() => {
+
+        return journal.report({
+          action: '#/user/login',
+          data: {
+            username: that.state.username,
+            password: that.state.password
+          }
+        });
+      })
+      .then(() => {
+        that.setState({
+          processing: false
+        });
+      })
+      .catch(err => {
+        that.setState({
+          processing: false
+        });
+
+        journal.report({
+          action: '#/error',
+          data: err
+        });
+      });
+    });
+
+
+
+  },
+  handleSignin: function(event) {
+    event.preventDefault();
+    var that = this;
+
+    this.setState({
+      processing: true
+    }, () => {
+      journal.report({
         action: '#/user/login',
         data: {
           username: that.state.username,
           password: that.state.password
         }
-      });
-    })
-    .catch(err => {
-      journal.report({
-        action: '#/error',
-        data: err
-      });
-    });
-  },
-  handleSignin: function(event) {
+      })
+      .then(() => {
+        that.setState({
+          processing: false
+        });
+      })
+      .catch(err => {
+        that.setState({
+          processing: false
+        });
 
-    journal.report({
-      action: '#/user/login',
-      data: {
-        username: this.state.username,
-        password: this.state.password
-      }
-    })
-    .catch(err => {
-      journal.report({
-        action: '#/error',
-        data: err
+        journal.report({
+          action: '#/error',
+          data: err
+        });
       });
     });
   },
   render: function() {
     return (
-      <form>
+      <form name="register">
         <Input
           onChange={this.handleUsername}
           type="text"
@@ -120,6 +154,7 @@ export default React.createClass({
             id: 'username_label',
             default: 'Username'
           })}
+          name="username"
         />
         <Input
           onChange={this.handlePassword}
@@ -128,6 +163,7 @@ export default React.createClass({
             id: 'password_label',
             default: 'Password'
           })}
+          name="password"
         />
         {(() => {
           if (this.state.username !== '') {
@@ -147,25 +183,21 @@ export default React.createClass({
                     hasFeedback
                   />
                   <ButtonInput
-                    onClick={this.handleRegister}
-                    type="button"
-                    value={formatMessage({
-                      id: 'new_username_button',
-                      default: 'Register New Username'
-                    })}
-                    disabled={this.state.passwordConfirm.status !== 'success'}
+                    onClick={this.state.processing ? null : this.handleRegister}
+                    type="submit"
+                    value={this.state.processing ? 'Processing...' : 'Register New Username'}
+                    disabled={this.state.processing || this.state.passwordConfirm.status !== 'success'}
                   />
                 </div>
               );
             }
+
             return (
               <ButtonInput
-                onClick={this.handleSignin}
-                type="button"
-                value={formatMessage({
-                  id: 'signin_username_button',
-                  default: 'Sign-In With Existing Username'
-                })}
+                onClick={this.state.processing ? null : this.handleSignin}
+                type="submit"
+                value={this.state.processing ? 'Processing...' : 'Sign-In With Existing Username'}
+                disabled={this.state.processing}
               />
             );
           }

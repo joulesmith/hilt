@@ -6,7 +6,8 @@ import { hashHistory } from 'react-router';
 export default React.createClass({
   getInitialState: function(){
     return {
-      name: ''
+      name: '',
+      processing: false
     };
   },
   handleName(event){
@@ -15,23 +16,31 @@ export default React.createClass({
     })
   },
   handleCreate() {
-    journal.report({
-      action: 'api/blotter/',
-      data: {
-        name: this.state.name
-      }
-    })
-    .then(blotter => {
-      hashHistory.push("/blotter/" + blotter._id + "/edit");
+    this.setState({
+      processing: true
+    }, () => {
+      journal.report({
+        action: 'api/blotter/',
+        data: {
+          name: this.state.name
+        }
+      })
+      .then(blotter => {
+        hashHistory.push("/blotter/" + blotter._id + "/edit");
+      });
     });
   },
   render() {
 
     return (
-      <div>
+      <form>
         <Bootstrap.Input type='text' value={this.state.name} onChange={this.handleName} />
-        <Bootstrap.Button onClick={this.handleCreate}>Create</Bootstrap.Button>
-      </div>
+        <Bootstrap.ButtonInput
+          onClick={this.state.processing ? null : this.handleCreate}
+          value={this.state.processing ? "Processing..." : "New Blotter"}
+        >
+        </Bootstrap.ButtonInput>
+      </form>
     );
   }
 });

@@ -11,38 +11,32 @@ import Phone from './edit-phone';
 import Address from './edit-address';
 import SelectLocale from './select-locale';
 import If from '../if';
+import * as merge from '../merge.jsx';
 
 
 export default React.createClass({
   getInitialState: function(){
     return {
       editPassword: false,
-      editLocale: false
+      editLocale: false,
+
     };
   },
   componentDidMount: function(){
 
     this.subscription = journal.subscribe({
-      user_basic: '#/user/current',
+      currentUser: '#/user/current',
       // get full user details
-      user: 'api/user/{user_basic._id}',
+      user: 'api/user/{currentUser._id}',
       // get email details
-      email: 'api/email/{user.email}',
-      phone: 'api/phone/{user.phone}',
+      emails: 'api/user/{currentUser._id}/records/email',
+      phones: 'api/user/{currentUser._id}/records/phone'
     }, state => {
       this.setState(state)
     });
   },
   componentWillUnmount: function(){
     this.subscription.unsubscribe();
-  },
-  handleChangeEmail: function() {
-    /*journal.report({
-      action: 'api/model/contact/' + this.state.user._id + '/update',
-      data: {
-        email: this.state.email
-      }
-    });*/
   },
   handleEditPassword: function(){
     this.setState({
@@ -58,7 +52,38 @@ export default React.createClass({
   handleEditPhone: function() {
     this.setState({ editPhone: !this.state.editPhone })
   },
+  register: function() {
+    journal.report({
+      action: '#/modal/register',
+      data: {show: true}
+    });
+  },
   render: function() {
+    var emails;
+
+    if (!this.state.currentUser || !this.state.currentUser._id || this.state.currentUser.guest) {
+      return (
+        <Bootstrap.Row>
+          <Bootstrap.Col md={8} mdOffset={1}>
+            Please <a style={{cursor:'pointer'}} onClick={this.register}>register or sign-in</a> to access settings.
+          </Bootstrap.Col>
+        </Bootstrap.Row>
+      );
+    }
+
+    if (this.state.editEmail){
+      if (this.state.emails && this.state.emails.id.length){
+        emails = this.state.emails.id.map(id => {
+          return (
+            <Email id={id} key = {id}/>
+          );
+        });
+      }else{
+        emails = <Email />
+      }
+    }else{
+      emails = <div></div>;
+    }
 
     return (
       <Bootstrap.Grid>
@@ -110,7 +135,7 @@ export default React.createClass({
             })}
             </Bootstrap.Button>
             <Bootstrap.Panel collapsible expanded={this.state.editEmail}>
-              <Email email={this.state.email} />
+              {emails}
             </Bootstrap.Panel>
           </Bootstrap.Col>
         </Bootstrap.Row>

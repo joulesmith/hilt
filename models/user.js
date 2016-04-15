@@ -452,7 +452,7 @@ module.exports = function(api) {
               user.passwordHash = hash;
 
               // reset tokens because password changed
-              return user.editEvent().resetTokens(new_password);
+              return user.resetTokens(new_password);
             });
         },
         resetTokens: function(password) {
@@ -483,7 +483,7 @@ module.exports = function(api) {
             .then(function(tokenHash) {
               user.tokenHash = tokenHash.toString('hex');
 
-              return user.editEvent().save();
+              return user.save();
             });
         },
         verifyPassword: function(password) {

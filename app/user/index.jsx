@@ -243,7 +243,7 @@ export function logout() {
   window.sessionStorage.removeItem('user_token');
   window.sessionStorage.removeItem('guest_token');
 
-  journal.setAuthorization('');
+  journal.setAuthorization(null);
   return journal.report({
     action: '#/user/current',
     data: {
