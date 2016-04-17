@@ -36,8 +36,7 @@ var out = module.exports = {
        * Add socket.io to server
        */
 
-      var io = socketio(server);
-      out.io = io;
+      var io = out.io = socketio(server);
 
       /**
        * Listen on provided port, on all network interfaces.

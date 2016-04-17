@@ -4,6 +4,7 @@ var path = require('path');
 var compress = require('compression');
 var pack = require('./middleware/pack');
 var webpackConfig = require('./webpack.config.js');
+var crypto = require('crypto');
 // load initialized server instance
 //
 module.exports = function(config) {
@@ -48,10 +49,8 @@ module.exports = function(config) {
   });
 
   // api routs
-  //
-  // TODO: convert these to the combined api/model format
 
-  var apimodelfactory = require('./apifactory')(server);
+  var apimodelfactory = require('./apifactory');
 
   // add custom models to server
   if (config.modelPaths) {
@@ -60,7 +59,7 @@ module.exports = function(config) {
     });
   }
 
-  apimodelfactory.serveModels();
+  apimodelfactory.serveModels(server);
 
   // catch 404 and forward to error handler
   server.express.use(function(req, res, next) {
@@ -81,5 +80,35 @@ module.exports = function(config) {
         code: err.code || 'internalerror'
       }
     });
+  });
+
+  //
+  apimodelfactory.api.admin.collection.findOne().exec()
+  .then(function(admin){
+    if (!admin) {
+      // no admin object exists, create a user and then create admin object with user
+      // making it the default admin user.
+      var tmpPassword;
+
+      apimodelfactory.api.user.create()
+      .then(function(user){
+        user.signin = {
+          username: 'admin'
+        };
+
+        tmpPassword = crypto.randomBytes(16).toString('hex');
+        return user.setPassword(tmpPassword);
+      })
+      .then(function(user){
+        return apimodelfactory.api.admin.create({}, user);
+      })
+      .then(function(admin){
+        console.log("A new admin user has been created, with a random temporary password.");
+        console.log("This is the only time this message will be generated.");
+        console.log("Username: admin");
+        console.log("Password: " + tmpPassword);
+        console.log("Please log into the admin user to set a new password.");
+      });
+    }
   });
 };

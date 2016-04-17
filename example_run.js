@@ -13,7 +13,6 @@ require('./index.js')({
     "username": null,
     "password": null
   },
-  // optional
   "appPath": "./app/app.jsx",
   "favicon": null,
   "uploadPath": path.join(__dirname, "uploads"),
@@ -22,6 +21,7 @@ require('./index.js')({
     './models/user',
     './models/user-google-auth',
     './models/group',
+    './models/admin',
     './models/email',
     './models/file',
     './models/blotter'

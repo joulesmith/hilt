@@ -178,8 +178,6 @@ var combineApiModels = function(api1, api2) {
 
 var api = {};
 api.types = mongoose.Schema.Types;
-var jsonApi = {};
-var server = null;
 
 var addModels = function(create) {
 
@@ -198,7 +196,9 @@ var addModels = function(create) {
   }
 };
 
-var serveModels = function(){
+var serveModels = function(server){
+  var jsonApi = {};
+  var subscriptions = new Map();
 
   for (var model in api) {
     if (model === 'types') {
@@ -1123,17 +1123,6 @@ var serveModels = function(){
     })(model, api[model]);
   }
 
-};
-
-//
-// Create the necessary route/event handlers for websocket connections
-// to this resource.
-//
-
-var subscriptions = new Map();
-
-module.exports = function(serverInstance) {
-  server = serverInstance;
 
   server.express.get('/api', function(req, res, next) {
     try {
@@ -1142,6 +1131,11 @@ module.exports = function(serverInstance) {
       next(error);
     }
   });
+
+  //
+  // Create the necessary route/event handlers for websocket connections
+  // to this resource.
+  //
 
   server.io.on('connect', function(socket) {
     try {
@@ -1293,9 +1287,10 @@ module.exports = function(serverInstance) {
     }
 
   });
+};
 
-  return {
-    addModels: addModels,
-    serveModels: serveModels
-  };
+module.exports = {
+  addModels: addModels,
+  serveModels: serveModels,
+  api: api
 };
