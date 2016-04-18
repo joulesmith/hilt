@@ -32,7 +32,7 @@ export default React.createClass({
       emails: 'api/user/{currentUser._id}/records/email',
       phones: 'api/user/{currentUser._id}/records/phone'
     }, state => {
-      this.setState(state)
+      this.setState(state);
     });
   },
   componentWillUnmount: function(){

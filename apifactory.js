@@ -256,7 +256,7 @@ var serveModels = function(server){
       for (var prop in apiModel.view) {
         if (apiModel.view[prop].secure) {
           if (secure.view) {
-            throw new Error('Security cannot be applied at two different levels.');
+            throw new Error('All views for ' + model + ' were made secure, so independently setting view.' + prop + ' is not allowed.');
           }
 
           secure['view.' + prop] = true;
@@ -270,7 +270,7 @@ var serveModels = function(server){
       for (var prop in apiModel.action) {
         if (apiModel.action[prop].secure) {
           if (secure.action) {
-            throw new Error('Security cannot be applied at two different levels.');
+            throw new Error('All actions for ' + model + ' were made secure, so independently setting action.' + prop + ' is not allowed.');
           }
 
           secure['action.' + prop] = true;
@@ -1166,16 +1166,17 @@ var serveModels = function(server){
             _id = parts[2];
             view = parts[3] || 'root';
 
-            mongoose.model(model).findById(_id)
+            api[model].collection.findById(_id)
             .exec()
             .then(function(element) {
               // first make sure they have permission to even see this instance view
 
               if (!element.testAccess('view.' + view, socket.user)) {
-                throw new ModelError('noaccess',
+                throw new api[model].Error('noaccess',
                   'User does not have permission to [0] this [1].', ['view.' + view, model],
                   403);
               }
+
               var key = 'api/' + model + '/' + _id;
               var sub = subscriptions.get(key);
 

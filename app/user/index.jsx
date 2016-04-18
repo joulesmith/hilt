@@ -229,6 +229,37 @@ export function login(data) {
 
       throw res;
     });
+  }else if (data.token) {
+    // a token has already been generated, so just use it
+    user_token = data.token;
+
+
+    journal.setAuthorization(user_token.base64);
+
+    journal.report({
+      action: '#/user/current',
+      data: {
+        guest: false,
+        _id: user_token._id
+      }
+    });
+
+    if (data.rememberLogin) {
+      window.localStorage.setItem("user_token", JSON.stringify(user_token));
+    } else {
+      window.sessionStorage.setItem("user_token", JSON.stringify(user_token));
+    }
+
+    if (guest_token) {
+      return http.post('/api/user/merge', {
+        fromToken: guest_token,
+        toToken: user_token
+      })
+      .then(function() {
+        guest_token = null;
+        window.sessionStorage.removeItem('guest_token');
+      });
+    }
   }
 }
 
@@ -263,7 +294,7 @@ isLoggedIn()
     action: '#/error',
     data: error
   })
-})
+});
 
 // define actions handled by this module
 journal.report([{

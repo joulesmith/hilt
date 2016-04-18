@@ -9,6 +9,8 @@ import GoogleOAuth from './google-oauth';
 import If from '../if.jsx';
 import * as journal from 'journal';
 
+var username_regex = /^[a-z0-9._-]{3,20}$/;
+
 export default React.createClass({
   getInitialState: function(){
     return {
@@ -16,10 +18,7 @@ export default React.createClass({
       currentPassword: '',
       password: '',
       passwordConfirm: '',
-      passwordConfirmStatus: 'error',
-      usernameRegistered: {
-        registered: false
-      }
+      passwordConfirmStatus: 'error'
     };
   },
   componentDidMount: function(){
@@ -27,7 +26,16 @@ export default React.createClass({
     this.subscription = journal.subscribe({
       usernameRegistered: 'api/user/registered/{this.state.username}',
     }, state => {
-      this.setState(state);
+      if (state.usernameRegistered.registered && this.state.username !== (this.props.user && this.props.user.signin.username ? this.props.user.signin.username : '')){
+        this.setState({
+          usernameTaken: true
+        });
+      }else{
+        this.setState({
+          usernameTaken: false
+        });
+      }
+
     }, this);
     // have to pass in this since the subscription depends on it
   },
@@ -53,6 +61,17 @@ export default React.createClass({
     // the subscription depends on this.state.username
     // to see if the username is already registered
 
+    if (!username_regex.test(event.target.value)) {
+      this.setState({
+        usernameInvalid: true,
+        username: event.target.value
+      });
+    }else{
+      this.setState({
+        usernameInvalid: false,
+        username: event.target.value
+      });
+    }
   },
   handleCurrentPassword: function(event) {
     this.setState({
@@ -95,19 +114,16 @@ export default React.createClass({
     event.preventDefault();
 
     journal.report({
-      action: 'api/user/' + this.props.user._id,
+      action: 'api/user/' + this.props.user._id + '/signin-username',
       data: {
         username: this.state.username,
         password: this.state.password
       }
     })
-    .then(() => {
+    .then(token => {
       return journal.report({
         action: '#/user/login',
-        data: {
-          username: this.state.username,
-          password: this.state.password
-        }
+        data: token
       });
     })
     .catch(err => {
@@ -119,17 +135,16 @@ export default React.createClass({
   },
   handleOAuth: function(code) {
     journal.report({
-      action: 'api/user/' + this.props.user._id,
+      action: 'api/user/' + this.props.user._id + '/signin-google',
       data: {
-        googleCode: code
+        code: code
       }
     })
-    .then(() => {
+    .then(token => {
+      console.log(token);
       journal.report({
         action: '#/user/login',
-        data: {
-          googleCode: code
-        }
+        data: token
       });
     })
     .catch(err => {
@@ -187,9 +202,15 @@ export default React.createClass({
                 })}
                 value={this.state.username}
               />
-              <If condition={this.state.usernameRegistered.registered && this.state.username !== (this.props.user && this.props.user.signin.username ? this.props.user.signin.username : '')}>
+              <If condition={this.state.usernameTaken}>
                 <Bootstrap.Alert bsStyle="danger">
                   This username is already registered with another account.
+                </Bootstrap.Alert>
+              </If>
+              <If condition={this.state.usernameInvalid}>
+                <Bootstrap.Alert bsStyle="danger">
+                  The username must be between 3 and 20 characters, and composed
+                  only of lowercase letters, numbers, '.', '_', and '-'.
                 </Bootstrap.Alert>
               </If>
               <Bootstrap.Input
@@ -218,7 +239,7 @@ export default React.createClass({
                   id: 'set_password_button',
                   default: 'Set Sign-In'
                 })}
-                disabled={this.state.passwordConfirmStatus !== 'success'}
+                disabled={this.state.usernameInvalid || this.state.usernameTaken || this.state.passwordConfirmStatus !== 'success'}
               />
             </form>
           </Bootstrap.Col>

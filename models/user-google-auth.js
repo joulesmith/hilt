@@ -94,6 +94,8 @@ module.exports = function(api) {
                         return api.user.create()
                         .then(function(user){
                           user.signin = {
+                            'username' : '',
+                            'guest' : false,
                             'google': person.id
                           };
 
@@ -119,6 +121,62 @@ module.exports = function(api) {
                 });
               });
             }
+          }
+        }
+      },
+      action: {
+        'signin-google' : {
+          handler: function(req, res) {
+            var that = this;
+
+            return new Promise(function(resolve, reject) {
+
+              oauth2Client.getToken(req.body.code, function(err, tokens) {
+                if (err) {
+                  return reject(err);
+                }
+                // contains an access_token and optionally a refresh_token.
+                // save them permanently.
+                //
+                oauth2Client.setCredentials(tokens);
+
+                googleapis.plus('v1').people.get({
+                  userId: 'me',
+                  auth: oauth2Client
+                }, function(err, person) {
+
+                  if (err) {
+                    return reject(err);
+                  }
+
+                  api.user.collection.findOne({
+                    'signin.google': person.id
+                  }).exec()
+                  .then(function(user) {
+
+                    if (user && !req.user._id.equals(user._id)) {
+                      throw new api.user.Error('inuse',
+                        'The google account is already in use by another user.', [],
+                        400);
+                    }
+
+                    that.signin = {
+                      'username' : '',
+                      'google': person.id,
+                      'guest' : false
+                    };
+
+                    return that.generateTokenFromOauthToken(tokens.access_token);
+                  })
+                  .then(function(token) {
+                    resolve({
+                      token: token
+                    });
+                  })
+                  .catch(reject);
+                });
+              });
+            });
           }
         }
       },

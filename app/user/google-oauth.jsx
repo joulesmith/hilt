@@ -9,6 +9,7 @@ export default React.createClass({
     };
   },
   handleGoogleOAuth: function(event) {
+    var that = this;
     // attach a callback function to this window which can be used to send back
     // the google oauth code
     window.googleCallback = function(err, code) {
@@ -26,9 +27,9 @@ export default React.createClass({
         });
       }
 
-      if (this.props && this.props.onOAuth) {
+      if (that.props && that.props.onOAuth) {
         // custom callback to get code
-        this.props.onOAuth(code);
+        that.props.onOAuth(code);
       }else{
         // default action is to use the code to log in
         journal.report({

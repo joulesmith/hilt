@@ -12,9 +12,7 @@ var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 var zxcvbn = require('zxcvbn');
 
-var email_regex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[A-Z]{2}|com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|museum)\b/;
-
-var username_regex = /^[a-zA-Z0-9]{3,20}([._]?[a-zA-Z0-9]{3,20})*$/;
+var username_regex = /^[a-z0-9._-]{3,20}$/;
 
 
 module.exports = function(api) {
@@ -53,6 +51,10 @@ module.exports = function(api) {
             username: {
               type: String,
               default: ''
+            },
+            google: {
+              type: String,
+              default: ''
             }
           },
           // email to contact the user about things
@@ -71,6 +73,9 @@ module.exports = function(api) {
         index: null, // used for text searches
       },
       static: {
+        //
+        // Static Views
+        //
         view:{
           'registered' : {
             parameter: ':username(*)',
@@ -99,15 +104,24 @@ module.exports = function(api) {
             }
           }
         },
+        //
+        // Static Actions
+        //
         action: {
           // creation action
           root: {
             creatorAccess: ['root'],
             handler: function(req, res) {
 
-              if (!req.body.username || !username_regex.test(req.body.username)) {
+              if (!req.body.username) {
                 throw new api.user.Error('nousername',
                   'A username must be supplied to register a new user.', [],
+                  400);
+              }
+
+              if (!username_regex.test(req.body.username)) {
+                throw new api.user.Error('invalidusername',
+                  'A username must be between 3 and 20 characters, letters and numbers.', [],
                   400);
               }
 
@@ -288,6 +302,9 @@ module.exports = function(api) {
           }
         }
       },
+      //
+      // Views
+      //
       view: {
         secure: true,
         root: {
@@ -316,126 +333,89 @@ module.exports = function(api) {
           }
         }
       },
+      //
+      // Actions
+      //
       action: {
         secure: true,
         root: {
           handler: function(req) {
 
-            if (req.body.username && req.body.password) {
+          }
+        },
+        'signin-username' : {
+          handler: function(req, res) {
 
-              if (!req.body.username || !username_regex.test(req.body.username)) {
-                throw new api.user.Error('nousername',
-                  'A username must be supplied to register a new user.', [],
-                  400);
-              }
+            if (!req.body.username || !username_regex.test(req.body.username)) {
+              throw new api.user.Error('nousername',
+                'A username must be supplied.', [],
+                400);
+            }
 
-              if (!req.body.password || req.body.password === '') {
-                throw new api.user.Error('nopassword',
-                  'A password must be supplied to register a new user.', [],
-                  400);
-              }
+            if (!username_regex.test(req.body.username)) {
+              throw new api.user.Error('invalidusername',
+                'A username must be between 3 and 20 characters, letters and numbers.', [],
+                400);
+            }
 
-              var password_result = zxcvbn(req.body.password);
+            if (!req.body.password || req.body.password === '') {
+              throw new api.user.Error('nopassword',
+                'A password must be supplied.', [],
+                400);
+            }
 
-              if (password_result.score < 3) {
-                throw new api.user.Error('insecurepassword',
-                  'The password supplied scored [0]/4 for security. A minimum of 3/4 is required.', [password_result.score],
-                  400);
-              }
+            var password_result = zxcvbn(req.body.password);
 
-              var username = '' + req.body.username;
-              var password = '' + req.body.password;
+            if (password_result.score < 3) {
+              throw new api.user.Error('insecurepassword',
+                'The password supplied scored [0]/4 for security. A minimum of 3/4 is required.', [password_result.score],
+                400);
+            }
 
-              if (req.user.signin.username === username) {
-                return req.user.setPassword(password)
-                  .then(function(user) {
-                    if (!user) {
-                      throw new api.user.Error('internal',
-                        'An error has occured while setting the password.', [],
-                        500);
-                    }
+            var username = '' + req.body.username;
+            var password = '' + req.body.password;
+            var that = this;
 
-                    return user;
-                  })
-                  .then(function(user) {
-                    return {
-                      _id: user._id
-                    };
-                  });
-              } else {
+            if (this.signin.username === username) {
+              // only changing the password
+              return this.setPassword(password)
+              .then(function(user) {
+                return user.generateToken(password);
+              })
+              .then(function(token) {
+                return {
+                  token: token
+                };
+              });
+            } else {
+              // new username. need to make sure its not already used.
+              return api.user.collection.findOne({
+                "signin.username": username
+              })
+              .then(function(user) {
+                if (user) {
+                  throw new api.user.Error('inuse',
+                    'The username [0] is already in use by another user.', [username],
+                    400);
+                }
+              })
+              .then(function() {
 
-                return api.user.collection.findOne({
-                  "signin.username": username
-                })
-                .then(function(user) {
-                  if (user) {
-                    throw new api.user.Error('inuse',
-                      'The username [0] is already in use by another user.', [username],
-                      400);
-                  }
-                })
-                .then(function() {
+                that.signin = {
+                  username: username,
+                  guest: false,
+                  google: ''
+                };
 
-                  req.user.signin = {
-                    username: username
-                  };
-
-                  return req.user.setPassword(password);
-                })
-                .then(function(user) {
-                  return {
-                    _id: user._id
-                  };
-                });
-              }
-            }else if(req.body.googleCode) {
-
-              return new Promise(function(resolve, reject) {
-                oauth2Client.getToken(req.body.code, function(err, tokens) {
-                  if (err) {
-                    return reject(err);
-                  }
-                  // contains an access_token and optionally a refresh_token.
-                  // save them permanently.
-                  //
-                  oauth2Client.setCredentials(tokens);
-
-                  googleapis.plus('v1').people.get({
-                    userId: 'me',
-                    auth: oauth2Client
-                  }, function(err, person) {
-
-                    if (err) {
-                      return reject(err);
-                    }
-
-                    api.user.collection.findOne({
-                      'signin.google': person.id
-                    }).exec()
-                    .then(function(user) {
-
-                      if (user) {
-                        throw new api.user.Error('inuse',
-                          'The google account is already in use by another user.', [],
-                          400);
-                      }
-
-                      req.user.signin = {
-                        'google': person.id
-                      };
-
-                      return req.user.save();
-                    })
-                    .then(function(user) {
-                      resolve({
-                        _id: user._id
-                      });
-                    })
-                    .catch(function(error) {
-                      reject(error);
-                    });
-                  });
-                });
+                return that.setPassword(password);
+              })
+              .then(function(user) {
+                return user.generateToken(password);
+              })
+              .then(function(token) {
+                return {
+                  token: token
+                };
               });
             }
           }
@@ -464,72 +444,72 @@ module.exports = function(api) {
 
           // this salt is to make sure the password hash cannot be used to generate a secret without the password
           return bcrypt_genSalt(10)
-            .then(function(secretSalt) {
+          .then(function(secretSalt) {
 
-              user.secretSalt = secretSalt;
+            user.secretSalt = secretSalt;
 
-              // this hash is to make cracking the password from the secret harder, although
-              // the secret should neven be seen, but just in case. it's slow but only needed
-              // when creating a token, not verifying. This is so all tokens are the same (given the salt), and
-              // can only be generated if the user knows their password
-              return bcrypt_hash(password, secretSalt);
-            })
-            .then(function(secret) {
+            // this hash is to make cracking the password from the secret harder, although
+            // the secret should neven be seen, but just in case. it's slow but only needed
+            // when creating a token, not verifying. This is so all tokens are the same (given the salt), and
+            // can only be generated if the user knows their password
+            return bcrypt_hash(password, secretSalt);
+          })
+          .then(function(secret) {
 
-              // this is to ensure the token value in the database cannot be used to generate a secret
-              // a faster hash is used for verification only.
-              return crypto_pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256');
-            })
-            .then(function(tokenHash) {
-              user.tokenHash = tokenHash.toString('hex');
+            // this is to ensure the token value in the database cannot be used to generate a secret
+            // a faster hash is used for verification only.
+            return crypto_pbkdf2(secret, user.tokenSalt, 1000, 64, 'sha256');
+          })
+          .then(function(tokenHash) {
+            user.tokenHash = tokenHash.toString('hex');
 
-              return user.save();
-            });
+            return user.save();
+          });
         },
         verifyPassword: function(password) {
           var user = this;
 
           return (new Promise(function(resolve, reject) {
-              try {
+            try {
 
-                if (user.passwordHash === '') {
-                  throw new api.user.Error('nopassword',
-                    'The account cannot be authenticated with a password.', [],
-                    403);
-                }
-
-                resolve();
-              } catch (e) {
-                reject(e);
-              }
-            }))
-            .then(function() {
-              return bcrypt_compare(password, user.passwordHash);
-            })
-            .then(function(valid) {
-              if (valid) {
-                return user;
+              if (user.passwordHash === '') {
+                throw new api.user.Error('nopassword',
+                  'The account cannot be authenticated with a password.', [],
+                  403);
               }
 
-              return null;
-            });
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }))
+          .then(function() {
+            return bcrypt_compare(password, user.passwordHash);
+          })
+          .then(function(valid) {
+            if (valid) {
+              return user;
+            }
+
+            return null;
+          });
 
         },
         generateToken: function(password) {
           var user = this;
 
           return bcrypt_hash(password, user.secretSalt)
-            .then(function(secret) {
-              var token = {
-                _id: user._id,
-                secret: secret
-              };
+          .then(function(secret) {
+            var token = {
+              _id: user._id,
+              secret: secret
+            };
 
-              // this enocding is for use in header authorization.
-              token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
+            // this enocding is for use in header authorization.
+            token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
 
-              return token;
-            });
+            return token;
+          });
 
         },
         generateGuestToken: function() {
@@ -538,34 +518,34 @@ module.exports = function(api) {
           var secret = crypto.randomBytes(16).toString('hex');
 
           return crypto_pbkdf2(secret, guest.tokenSalt, 1000, 64, 'sha256')
-            .then(function(tokenHash) {
-              guest.tokenHash = tokenHash.toString('hex');
+          .then(function(tokenHash) {
+            guest.tokenHash = tokenHash.toString('hex');
 
-              return guest.save();
-            })
-            .then(function(guest) {
-              var token = {
-                _id: guest._id,
-                secret: secret
-              };
+            return guest.save();
+          })
+          .then(function(guest) {
+            var token = {
+              _id: guest._id,
+              secret: secret
+            };
 
-              // this enocding is for use in header authorization.
-              token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
+            // this enocding is for use in header authorization.
+            token.base64 = (new Buffer(JSON.stringify(token), 'utf8')).toString('base64');
 
-              return token;
-            });
+            return token;
+          });
         },
         verifyToken: function(token) {
           var user = this;
 
           return crypto_pbkdf2(token.secret, user.tokenSalt, 1000, 64, 'sha256')
-            .then(function(tokenHash) {
-              if (tokenHash.toString('hex') === user.tokenHash) {
-                return user;
-              }
+          .then(function(tokenHash) {
+            if (tokenHash.toString('hex') === user.tokenHash) {
+              return user;
+            }
 
-              return null;
-            });
+            return null;
+          });
         },
         accessGranted: function(model, actions, resource) {
           var user = this;
