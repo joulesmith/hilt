@@ -103,12 +103,48 @@ module.exports = function(config) {
         return apimodelfactory.api.admin.create({}, user);
       })
       .then(function(admin){
+        admin.settings = {};
+
+        for(var model in apimodelfactory.api) {
+          if (apimodelfactory.api[model].settings) {
+            admin.settings[model] = {};
+            for(var setting in apimodelfactory.api[model].settings) {
+              admin.settings[model][setting] = '';
+            }
+          }
+        }
+
+        admin.markModified('settings');
+
+        return admin.save();
+      })
+      .then(function(admin){
         console.log("A new admin user has been created, with a random temporary password.");
         console.log("This is the only time this message will be generated.");
         console.log("Username: admin");
         console.log("Password: " + tmpPassword);
-        console.log("Please log into the admin user to set a new password.");
+        console.log("Please log into the admin user to set a new password, and to configure the settings.");
       });
+    }else{
+      // there is already an admin object. Just make sure the settings field is up-to-date
+
+      for(var model in apimodelfactory.api) {
+        if (apimodelfactory.api[model].settings) {
+          if (!admin.settings[model]) {
+            admin.settings[model] = {};
+          }
+
+          for(var setting in apimodelfactory.api[model].settings) {
+            if (!admin.settings[model][setting]) {
+              admin.settings[model][setting] = '';
+            }
+          }
+        }
+      }
+
+      admin.markModified('settings');
+
+      admin.save();
     }
   });
 };

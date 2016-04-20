@@ -10,6 +10,12 @@ var email_regex = /\b[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?
 module.exports = function(api){
   return {
     email: {
+      settings: {
+        fromAddress: "From Email Address"
+      },
+      configure: function(settings){
+
+      },
       state: { // this is what will be stored in the database specific to each resource
         independent: { // what can be set directly
           address: String,

@@ -14,23 +14,42 @@ var googleapis = require('googleapis');
 
 module.exports = function(api) {
 
-  // TODO: have to set this from database values
-  var oauth2Client = new googleapis.auth.OAuth2(
+  /*var oauth2Client = new googleapis.auth.OAuth2(
     '227454360184-kk55m7mdg9blkgnkd7pmuhs3d20kh806.apps.googleusercontent.com',
     'NP53QGYunsiy33xfvF1IeUu5',
-    'http://localhost:3000/api/user/google-auth-callback');
-
-  var scopes = [
-    'https://www.googleapis.com/auth/plus.me'
-  ];
-
-  var oauthURL = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: scopes.join(" ") // space delimited string of scopes
-  });
+    'http://localhost:3000/api/user/google-auth-callback');*/
+  var oauth2Client;
+  var oauthURL;
 
   return {
     user: {
+      settings: {
+        clientId: "Client ID",
+        clientSecret: "Client Secret"
+      },
+      configure: function(settings){
+        // TODO: compute from site domain name + uri (not an independent setting)
+        var redirectUrl = 'http://localhost:3000/api/user/google-auth-callback';
+
+        if (!settings.clientId || !settings.clientSecret){
+          return console.log('Configuration for Google G+ authentication has not been set.');
+        }
+
+        oauth2Client = new googleapis.auth.OAuth2(
+          settings.clientId,
+          settings.clientSecret,
+          redirectUrl
+        );
+
+        var scopes = [
+          'https://www.googleapis.com/auth/plus.me'
+        ];
+
+        oauthURL = oauth2Client.generateAuthUrl({
+          access_type: 'offline',
+          scope: scopes.join(" ") // space delimited string of scopes
+        });
+      },
       static: {
         view:{
           'google-auth-url' : {

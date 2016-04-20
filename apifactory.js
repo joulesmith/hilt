@@ -14,8 +14,6 @@ var error = require('./error');
 var _ = require('lodash');
 var url = require('url');
 
-var Settings = mongoose.model('settings');
-
 var bodyParser = require('body-parser');
 
 // Returns true on the first occurence of a commone element between two
@@ -47,6 +45,33 @@ var combineApiModels = function(api1, api2) {
 
   var result = {};
   var param;
+
+  // combine settings
+  if (api1.settings || api2.settings) {
+    result.settings = {};
+
+    if (api1.settings) {
+      for(var setting in api1.settings) {
+        result.settings[setting] = api1.settings[setting];
+      }
+    }
+
+    if (api2.settings) {
+      for(var setting in api2.settings) {
+        result.settings[setting] = api2.settings[setting];
+      }
+    }
+  }
+
+  // combine configure functions
+  if (api1.configure && api2.configure) {
+    result.configure = function(settings) {
+      api1.configure(settings);
+      api2.configure(settings);
+    };
+  }else{
+    result.configure = api1.configure || api2.configure;
+  }
 
   // combine state
   if (api1.state || api2.state) {
@@ -519,25 +544,6 @@ var serveModels = function(server){
         settings: {}
       };
 
-      // load settings
-      Settings.find({
-        model: model
-      })
-      .exec()
-      .then(function(settings) {
-
-        if (apiModel.settings) {
-          // if there is a custom settings handler, use result of the function
-          apiHandle.settings = apiModel.settings(settings) || {};
-        } else {
-          apiHandle.settings = settings || {};
-        }
-
-      }).catch(function(error) {
-        // TODO: ?
-      });
-
-
       //
       // Make a pure json format string of Model
       //
@@ -546,7 +552,10 @@ var serveModels = function(server){
           independent: {},
           dependent: {}
         },
-        static: {},
+        static: {
+          view: {},
+          action: {}
+        },
         view: {},
         action: {},
         secure: secure
@@ -554,8 +563,14 @@ var serveModels = function(server){
 
       jsonApi[model] = jsonModel;
 
-      for (var prop in apiModel.static) {
-        jsonModel.static[prop] = {};
+      jsonModel.settings = apiModel.settings || {};
+
+      for (var prop in apiModel.static.view) {
+        jsonModel.static.view[prop] = {};
+      }
+
+      for (var prop in apiModel.static.action) {
+        jsonModel.static.action[prop] = {};
       }
 
       for (var prop in apiModel.view) {
@@ -1123,10 +1138,38 @@ var serveModels = function(server){
     })(model, api[model]);
   }
 
+  // now that all models are loaded, load any settings which are present in the database
+  if (api.admin) {
+    api.admin.collection.findOne().exec()
+    .then(function(admin){
+      for (var model in api) {
+        if (api[model].configure) {
+          if (admin && admin.settings[model]) {
+            api[model].configure(admin.settings[model]);
+          }else{
+            api[model].configure({});
+          }
+        }
+      }
+    })
+
+  }
 
   server.express.get('/api', function(req, res, next) {
     try {
       res.json(jsonApi);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  server.express.get('/api/:model(*)', function(req, res, next) {
+    try {
+      if (req.params.model) {
+        res.json(jsonApi[req.params.model]);
+      }else{
+        res.json(jsonApi);
+      }
     } catch (error) {
       next(error);
     }

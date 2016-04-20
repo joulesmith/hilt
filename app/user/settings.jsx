@@ -9,6 +9,7 @@ import SignIn from './edit-signin';
 import Email from './edit-email';
 import Phone from './edit-phone';
 import Address from './edit-address';
+import Admin from './admin';
 import SelectLocale from './select-locale';
 import If from '../if';
 import * as merge from '../merge.jsx';
@@ -30,7 +31,8 @@ export default React.createClass({
       user: 'api/user/{currentUser._id}',
       // get email details
       emails: 'api/user/{currentUser._id}/records/email',
-      phones: 'api/user/{currentUser._id}/records/phone'
+      phones: 'api/user/{currentUser._id}/records/phone',
+      admins: 'api/user/{currentUser._id}/records/admin'
     }, state => {
       this.setState(state);
     });
@@ -51,6 +53,9 @@ export default React.createClass({
   },
   handleEditPhone: function() {
     this.setState({ editPhone: !this.state.editPhone })
+  },
+  handleEditAdmin: function() {
+    this.setState({ editAdmin: !this.state.editAdmin })
   },
   register: function() {
     journal.report({
@@ -85,6 +90,36 @@ export default React.createClass({
       emails = <div></div>;
     }
 
+    var admin;
+    if (this.state.admins && this.state.admins.id.length){
+      var admins = [];
+
+      if (this.state.editAdmin) {
+        admins = this.state.admins.id.map(id => {
+          return (
+            <Admin id={id} key={id}/>
+          );
+        });
+      }else{
+        admin = <div />;
+      }
+
+      admin = (
+        <Bootstrap.Row>
+          <Bootstrap.Col xs={12} md={8} mdOffset={2}>
+            <Bootstrap.Button onClick={this.handleEditAdmin} bsStyle="link">
+              Edit Administrative Settings
+            </Bootstrap.Button>
+            <Bootstrap.Panel collapsible expanded={this.state.editAdmin}>
+              {admins}
+            </Bootstrap.Panel>
+          </Bootstrap.Col>
+        </Bootstrap.Row>
+      );
+    }else{
+      admin = <div />;
+    }
+
     return (
       <Bootstrap.Grid>
         <Bootstrap.Row>
@@ -92,7 +127,7 @@ export default React.createClass({
             <h4>
             {formatMessage({
               id: 'settings',
-              default: 'Settings'
+              default: 'User Settings'
             })}
             </h4>
           </Bootstrap.Col>
@@ -153,6 +188,7 @@ export default React.createClass({
             </Bootstrap.Panel>
           </Bootstrap.Col>
         </Bootstrap.Row>
+        {admin}
       </Bootstrap.Grid>
     );
   }
