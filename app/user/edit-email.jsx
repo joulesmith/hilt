@@ -4,60 +4,50 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import formatMessage from 'format-message';
 import * as journal from 'journal';
+import editor from '../editor';
+import Loading from '../loading';
+import If from '../if';
 
 var email_regex = /\b[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+(?:[a-zA-Z]+)\b/;
 
 export default React.createClass({
   getInitialState () {
     return {
-      addressTmp: '',
-      addressEdited: false,
-      signinTmp: false,
-      signinEdited: false,
       emailStatus: 'error',
-      edited: false,
       processing: false
     };
   },
-  componentDidMount: function(){
+  componentWillMount: function(){
+    this.editor = editor(
+      // structure and labels of editable variables
+      {
+        address: "Email Address",
+        signin: "Use for multi-step sign-in",
+        verified: ''
+      },
+      // callback for when there are edit events
+      newEmail => {
+        this.setState({
+          email: newEmail,
+          emailStatus: email_regex.test(newEmail.address.current) ? 'success' : 'error',
+        });
+      }
+    );
+
     this.subscription = journal.subscribe({
       email: 'api/email/{this.props.id}'
     }, state => {
 
       this.setState({
-        email: state.email,
-        addressTmp: state.email.address,
-        addressEdited: false,
-        signinTmp: state.email.signin,
-        signinEdited: false,
-        emailStatus: email_regex.test(state.email.address) ? 'success' : 'error',
+        email: this.editor.update(state.email),
+        emailStatus: 'success',
         processing: false
       });
+
     }, this);
   },
   componentWillUnmount: function(){
     this.subscription.unsubscribe();
-  },
-  handleEmail (event) {
-    if (email_regex.test(event.target.value)) {
-      this.setState({
-        addressTmp: event.target.value,
-        emailStatus: 'success',
-        addressEdited: event.target.value !== (this.state.email ? this.state.email.address : '')
-      });
-    }else{
-      this.setState({
-        addressTmp: event.target.value,
-        emailStatus: 'error',
-        addressEdited: event.target.value !== (this.state.email ? this.state.email.address : '')
-      });
-    }
-  },
-  handleSigninStepCheckbox (event) {
-    this.setState({
-      signinTmp: !this.state.signinTmp,
-      signinEdited: this.state.signinTmp === (this.state.email ? this.state.email.signin : false)
-    });
   },
   handleSetEmail (event) {
     var that = this;
@@ -70,15 +60,7 @@ export default React.createClass({
         // create
         journal.report({
           action: 'api/email/',
-          data: {
-            address: that.state.addressTmp,
-            signin: that.state.signinTmp
-          }
-        })
-        .then(email => {
-          return journal.report({
-            action: 'api/email/' + email.id + '/send-code'
-          });
+          data: that.editor.compile()
         })
         .catch(error => {
           return journal.report({
@@ -90,10 +72,7 @@ export default React.createClass({
         // update
         journal.report({
           action: 'api/email/' + that.props.id,
-          data: {
-            address: that.state.addressTmp,
-            signin: that.state.signinTmp
-          }
+          data: that.editor.compile()
         })
         .catch(error => {
           return journal.report({
@@ -103,7 +82,6 @@ export default React.createClass({
         });
       }
     });
-
   },
   handleSendCode() {
     journal.report({
@@ -113,31 +91,39 @@ export default React.createClass({
   },
   render () {
 
+    if (!this.state.email) {
+      return <Loading value="Email"/>;
+    }
+
     return (
       <form>
         <Bootstrap.Input
-          onChange={this.handleEmail}
-          value={this.state.addressTmp}
+          onChange={this.state.email.address.handler}
+          value={this.state.email.address.current}
           type="email"
-          label={formatMessage({
-            id: 'email_label',
-            default: 'Email',
-            description: 'Label for the input box for user email'
-          })}
+          label={this.state.email.address.label}
           bsStyle={this.state.emailStatus}
           hasFeedback
-          style={{backgroundColor : this.state.addressEdited ? '#FFE5C4' : '#ffffff'}}
+          style={{backgroundColor : this.state.email.address.edited ? '#FFE5C4' : '#ffffff'}}
         />
         <Bootstrap.ButtonInput
           onClick={this.handleSendCode}
           type="button"
-          value={"Send Verification Code"}
+          value={this.state.email.verified.current ? "Email Verified" : "Send Verification Code"}
+          disabled={this.state.email.verified.current}
         />
         <Bootstrap.Input
-          onClick={this.handleSigninStepCheckbox}
+          onClick={event => {
+            this.state.email.signin.handler({
+              target: {
+                value: !this.state.email.signin.current
+              }
+            })
+          }}
           type="checkbox"
-          label={<span style={{backgroundColor : this.state.signinEdited ? '#FFE5C4' : '#ffffff'}}>Use for multi-step Sign-In</span>}
-          checked={this.state.signinTmp}
+          label={<span style={{backgroundColor : this.state.email.signin.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.email.signin.label}</span>}
+          checked={this.state.email.signin.current}
+          onChange={event => {}}
         />
         <Bootstrap.Well>
           {formatMessage({
@@ -150,7 +136,7 @@ export default React.createClass({
           type="submit"
           value={this.state.processing ? "Processing..." : "Set Email"}
           disabled={this.state.processing || this.state.emailStatus !== 'success'}
-          bsStyle={this.state.signinEdited || this.state.addressEdited ? "warning" : "default"}
+          bsStyle={this.state.email.edited ? "warning" : "default"}
         />
       </form>
     );

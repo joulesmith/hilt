@@ -18,49 +18,61 @@
  * the editor state.
  * @return {Object} interface to the editor.
  */
-export default function(cb) {
+export default function(form, cb) {
 
-  var initialize = function(original, edited, previous) {
+  var initialize = function(form, original, edited, previous) {
     var currentCopy = {
       edited: false
     };
 
-    for(var prop in original) {
+    for(var prop in form) {
       (prop => {
         // create closure for prop
-        if (typeof original[prop] === 'object') {
+        if (typeof form[prop] === 'object') {
           // this is not a leaf
-          currentCopy[prop] = initialize(original[prop], newChildState => {
-            var newState = {
-              edited: false
-            };
+          currentCopy[prop] = initialize(
+            form[prop],
+            original ? original[prop] : null,
+            newChildState => {
+              var newState = {
+                edited: false
+              };
 
-            for(var prop2 in original) {
-              newState[prop2] = (prop === prop2) ? newChildState : currentCopy[prop2];
-              newState.edited = newState.edited || newState[prop2].edited;
-            }
+              for(var prop2 in form) {
+                // the new state only replaces the property it corresponds to
+                // all other properties are copied as they have not changed this time
+                newState[prop2] = (prop === prop2) ? newChildState : currentCopy[prop2];
 
-            currentCopy = newState;
+                // a non-leaf is edited if 1 or more of its branches are edited
+                newState.edited = newState.edited || newState[prop2].edited;
+              }
 
-            edited(currentCopy);
-          }, previous ? previous[prop] : null);
+              // replace the current object with the new state
+              currentCopy = newState;
+
+              // call the parent edited function with the new constructed state
+              edited(currentCopy);
+            },
+            previous ? previous[prop] : null
+          );
 
         }else{
           // this is a leaf
-          //
           var handler = function(event) {
             var newState = {
               edited: false
             };
 
-            for(var prop2 in original) {
+            for(var prop2 in form) {
               newState[prop2] = (prop !== prop2) ? currentCopy[prop2] : {
                 current: event.target.value,
                 original: currentCopy[prop].original,
                 edited: event.target.value !== currentCopy[prop].original,
+                label: form[prop2],
                 handler: handler
               };
 
+              // a non-leaf is edited if 1 or more of its branches are edited
               newState.edited = newState.edited || newState[prop2].edited;
             }
 
@@ -71,15 +83,17 @@ export default function(cb) {
           if (previous && previous[prop].current) {
             currentCopy[prop] = {
               current: previous[prop].current,
-              original: original[prop],
+              original: original ? original[prop] : null,
               edited: previous[prop].current !== original[prop],
+              label: form[prop],
               handler: handler
             };
           }else{
             currentCopy[prop] = {
-              current: original[prop],
-              original: original[prop],
+              current: original ? original[prop] : null,
+              original: original ? original[prop] : null,
               edited: false,
+              label: form[prop],
               handler: handler
             };
           }
@@ -94,16 +108,16 @@ export default function(cb) {
     return currentCopy;
   };
 
-  var compile = function(original, current) {
+  var compile = function(form, current) {
     var state = {};
 
-    for(var prop in original) {
-      if (typeof original[prop] === 'object') {
+    for(var prop in form) {
+      if (typeof form[prop] === 'object') {
         // not a leaf
-        state[prop] = compile(original[prop], current[prop]);
+        state[prop] = current ? compile(form[prop], current[prop]) : null;
       }else{
         // a leaf
-        state[prop] = current[prop].current;
+        state[prop] = current ? current[prop].current : null;
       }
     }
 
@@ -122,16 +136,21 @@ export default function(cb) {
     update: function(original){
       originalCopy = original;
 
-      currentCopy = initialize(original, newState => {
-        currentCopy = newState
-        cb(newState);
-      }, currentCopy);
+      currentCopy = initialize(
+        form,
+        original,
+        newState => {
+          currentCopy = newState
+          cb(newState);
+        },
+        currentCopy
+      );
 
       return currentCopy;
     },
     compile: function(){
 
-      return compile(originalCopy, currentCopy);
+      return compile(form, currentCopy);
     }
   };
 

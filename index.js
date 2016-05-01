@@ -18,6 +18,15 @@ module.exports = function(config) {
   server.express.set('views', path.join(__dirname, 'views'));
   server.express.set('view engine', 'ejs');
 
+  // simulate server response delay (ms)
+  if (config.artificialDelay) {
+    server.express.use(function(req, res, next){
+      setTimeout(function(){
+        next();
+      }, config.artificialDelay);
+    });
+  }
+
   // add express middleware for serving files
   server.express.use(compress());
   server.express.use(express.static(path.join(__dirname, 'dist')));
@@ -109,7 +118,7 @@ module.exports = function(config) {
           if (apimodelfactory.api[model].settings) {
             admin.settings[model] = {};
             for(var setting in apimodelfactory.api[model].settings) {
-              admin.settings[model][setting] = '';
+              admin.settings[model][setting] = apimodelfactory.api[model].settings[setting];
             }
           }
         }
@@ -136,7 +145,7 @@ module.exports = function(config) {
 
           for(var setting in apimodelfactory.api[model].settings) {
             if (!admin.settings[model][setting]) {
-              admin.settings[model][setting] = '';
+              admin.settings[model][setting] = apimodelfactory.api[model].settings[setting];
             }
           }
         }

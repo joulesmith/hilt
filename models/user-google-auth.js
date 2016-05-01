@@ -24,20 +24,20 @@ module.exports = function(api) {
   return {
     user: {
       settings: {
-        clientId: "Client ID",
-        clientSecret: "Client Secret"
+        clientId: null,
+        clientSecret: null
       },
-      configure: function(settings){
+      configure: function(){
         // TODO: compute from site domain name + uri (not an independent setting)
         var redirectUrl = 'http://localhost:3000/api/user/google-auth-callback';
 
-        if (!settings.clientId || !settings.clientSecret){
+        if (!api.user.settings.clientId || !api.user.settings.clientSecret){
           return console.log('Configuration for Google G+ authentication has not been set.');
         }
 
         oauth2Client = new googleapis.auth.OAuth2(
-          settings.clientId,
-          settings.clientSecret,
+          api.user.settings.clientId,
+          api.user.settings.clientSecret,
           redirectUrl
         );
 
@@ -103,7 +103,7 @@ module.exports = function(api) {
                     if (err) {
                       return reject(err);
                     }
-
+                    // TODO: save access tokens when there's a need to access their account information
                     api.user.collection.findOne({
                       'signin.google': person.id
                     }).exec()

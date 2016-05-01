@@ -981,8 +981,8 @@ var serveModels = function(server){
 
                       if (result) {
                         // assumes a promise is returned, if anything
-                        return result.then(function(result) {
-                          return element.editEvent().save().return(result || {});
+                        return Promise.all([result]).then(function(results) {
+                          return element.editEvent().save().return(results[0] || null);
                         });
                       }
                     }
@@ -990,7 +990,9 @@ var serveModels = function(server){
                     return element.editEvent().save();
                   })
                   .then(function(result) {
-                    res.json(result);
+                    if (result) {
+                      res.json(result);
+                    }
                   })
                   .catch(function(error) {
                     next(error);
@@ -1047,8 +1049,8 @@ var serveModels = function(server){
 
                       if (result) {
                         // assumes a promise is returned, if anything
-                        return result.then(function(result) {
-                          return element.editEvent().save().return(result || {});
+                        return Promise.all([result]).then(function(results) {
+                          return element.editEvent().save().return(results[0] || null);
                         });
                       }
                     }
@@ -1056,7 +1058,9 @@ var serveModels = function(server){
                     return element.editEvent().save();
                   })
                   .then(function(result) {
-                    res.json(result);
+                    if (result) {
+                      res.json(result);
+                    }
                   })
                   .catch(function(error) {
                     next(error);
@@ -1110,8 +1114,8 @@ var serveModels = function(server){
 
                       if (result) {
                         // assumes a promise is returned, if anything
-                        return result.then(function(result) {
-                          return element.editEvent().save().return(result || {});
+                        return Promise.all([result]).then(function(results) {
+                          return element.editEvent().save().return(results[0] || null);
                         });
                       }
                     }
@@ -1119,7 +1123,9 @@ var serveModels = function(server){
                     return element.editEvent().save();
                   })
                   .then(function(result) {
-                    res.json(result);
+                    if (result) {
+                      res.json(result);
+                    }
                   })
                   .catch(function(error) {
                     next(error);
@@ -1142,16 +1148,10 @@ var serveModels = function(server){
   if (api.admin) {
     api.admin.collection.findOne().exec()
     .then(function(admin){
-      for (var model in api) {
-        if (api[model].configure) {
-          if (admin && admin.settings[model]) {
-            api[model].configure(admin.settings[model]);
-          }else{
-            api[model].configure({});
-          }
-        }
+      if (admin) {
+        admin.configure();
       }
-    })
+    });
 
   }
 

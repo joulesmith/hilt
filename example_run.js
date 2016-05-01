@@ -1,6 +1,7 @@
 var path = require('path');
 
 require('./index.js')({
+  artificialDelay: 250,
   "name": "Hilt",
   "http": {
     "port": 3000

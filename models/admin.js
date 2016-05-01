@@ -34,16 +34,31 @@ module.exports = function(api){
           handler: function(req, res){
             if (req.params.model) {
               this.settings[req.params.model] = req.body.settings;
-              api[model].configure(req.body.settings);
             }else{
               this.settings = req.body.settings;
             }
+
+            this.configure();
 
             this.markModified('settings');
           }
         }
       },
       internal: {
+        configure: function() {
+
+          for (var model in api) {
+            if (this.settings[model]) {
+              api[model].settings = this.settings[model];
+            }
+          }
+
+          for (var model in api) {
+            if (api[model].configure) {
+              api[model].configure();
+            }
+          }
+        }
       }
     }
   };

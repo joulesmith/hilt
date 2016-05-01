@@ -9,7 +9,8 @@ import SignIn from './edit-signin';
 import Email from './edit-email';
 import Phone from './edit-phone';
 import Address from './edit-address';
-import Admin from './admin';
+import SigninRequired from '../signin-required.jsx';
+
 import SelectLocale from './select-locale';
 import If from '../if';
 import * as merge from '../merge.jsx';
@@ -31,8 +32,7 @@ export default React.createClass({
       user: 'api/user/{currentUser._id}',
       // get email details
       emails: 'api/user/{currentUser._id}/records/email',
-      phones: 'api/user/{currentUser._id}/records/phone',
-      admins: 'api/user/{currentUser._id}/records/admin'
+      phones: 'api/user/{currentUser._id}/records/phone'
     }, state => {
       this.setState(state);
     });
@@ -54,9 +54,6 @@ export default React.createClass({
   handleEditPhone: function() {
     this.setState({ editPhone: !this.state.editPhone })
   },
-  handleEditAdmin: function() {
-    this.setState({ editAdmin: !this.state.editAdmin })
-  },
   register: function() {
     journal.report({
       action: '#/modal/register',
@@ -64,16 +61,10 @@ export default React.createClass({
     });
   },
   render: function() {
-    var emails;
+    var emails, phones;
 
     if (!this.state.currentUser || !this.state.currentUser._id || this.state.currentUser.guest) {
-      return (
-        <Bootstrap.Row>
-          <Bootstrap.Col md={8} mdOffset={1}>
-            Please <a style={{cursor:'pointer'}} onClick={this.register}>register or sign-in</a> to access settings.
-          </Bootstrap.Col>
-        </Bootstrap.Row>
-      );
+      return <SigninRequired />;
     }
 
     if (this.state.editEmail){
@@ -90,34 +81,18 @@ export default React.createClass({
       emails = <div></div>;
     }
 
-    var admin;
-    if (this.state.admins && this.state.admins.id.length){
-      var admins = [];
-
-      if (this.state.editAdmin) {
-        admins = this.state.admins.id.map(id => {
+    if (this.state.editPhone){
+      if (this.state.phones && this.state.phones.id.length){
+        phones = this.state.phones.id.map(id => {
           return (
-            <Admin id={id} key={id}/>
+            <Phone id={id} key = {id}/>
           );
         });
       }else{
-        admin = <div />;
+        phones = <Phone />
       }
-
-      admin = (
-        <Bootstrap.Row>
-          <Bootstrap.Col xs={12} md={8} mdOffset={2}>
-            <Bootstrap.Button onClick={this.handleEditAdmin} bsStyle="link">
-              Edit Administrative Settings
-            </Bootstrap.Button>
-            <Bootstrap.Panel collapsible expanded={this.state.editAdmin}>
-              {admins}
-            </Bootstrap.Panel>
-          </Bootstrap.Col>
-        </Bootstrap.Row>
-      );
     }else{
-      admin = <div />;
+      phones = <div></div>;
     }
 
     return (
@@ -184,11 +159,10 @@ export default React.createClass({
             })}
             </Bootstrap.Button>
             <Bootstrap.Panel collapsible expanded={this.state.editPhone}>
-              <Phone phone={this.state.phone} />
+              {phones}
             </Bootstrap.Panel>
           </Bootstrap.Col>
         </Bootstrap.Row>
-        {admin}
       </Bootstrap.Grid>
     );
   }
