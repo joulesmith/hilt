@@ -59,15 +59,23 @@ export default function(form, cb) {
         }else{
           // this is a leaf
           var handler = function(event) {
+            var value;
+            // only use event.target.value if that is the pattern being used
+            if (event.target && event.target.value){
+              value = event.target.value;
+            }else{
+              value = event;
+            }
+
             var newState = {
               edited: false
             };
 
             for(var prop2 in form) {
               newState[prop2] = (prop !== prop2) ? currentCopy[prop2] : {
-                current: event.target.value,
+                current: value,
                 original: currentCopy[prop].original,
-                edited: event.target.value !== currentCopy[prop].original,
+                edited: value !== currentCopy[prop].original,
                 label: form[prop2],
                 handler: handler
               };
@@ -81,10 +89,11 @@ export default function(form, cb) {
           };
 
           if (previous && previous[prop].current) {
+            // TODO: remove 'previous' altogether, but leaving for now just in case it's needed later
             currentCopy[prop] = {
-              current: previous[prop].current,
+              current: original ? original[prop] : null,
               original: original ? original[prop] : null,
-              edited: previous[prop].current !== original[prop],
+              edited: false,
               label: form[prop],
               handler: handler
             };

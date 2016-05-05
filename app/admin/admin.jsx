@@ -6,6 +6,7 @@ import * as journal from 'journal';
 import editor from '../editor';
 
 import Gmail from './gmail';
+import PhoneNumber from '../phone-number';
 
 export default React.createClass({
   getInitialState () {
@@ -26,7 +27,7 @@ export default React.createClass({
         phone: {
           accountSid: 'Account SID',
           authToken: 'Auth Token',
-          number: 'Phone Number (10 digits, no spaces or dashes)'
+          number: 'Phone Number'
         }
       },
       // callback for when there are edit events
@@ -124,12 +125,10 @@ export default React.createClass({
           placeholder={this.state.settings.phone.authToken.original}
           style={{backgroundColor : this.state.settings.phone.authToken.edited ? '#FFE5C4' : '#ffffff'}}
         />
-        <Bootstrap.Input
+        <PhoneNumber
           onChange={this.state.settings.phone.number.handler}
           value={this.state.settings.phone.number.current}
-          type="text"
           label={this.state.settings.phone.number.label}
-          placeholder={this.state.settings.phone.number.original}
           style={{backgroundColor : this.state.settings.phone.number.edited ? '#FFE5C4' : '#ffffff'}}
         />
         <hr />

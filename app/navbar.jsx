@@ -5,7 +5,7 @@ import React from 'react';
 import Radium from 'radium';
 import * as Bootstrap from 'react-bootstrap';
 import {report, subscribe} from 'journal';
-
+import { hashHistory } from 'react-router';
 import formatMessage from 'format-message';
 
 export default React.createClass({
@@ -18,9 +18,10 @@ export default React.createClass({
   },
   componentWillMount: function(){
     this.subscription = subscribe({
-      user: '#/user/current'
+      user: '#/user/current',
+      admins: 'api/user/{user._id}/records/admin'
     }, state => {
-      this.setState(state)
+      this.setState(state);
     });
   },
   componentWillUnmount: function(){
@@ -38,6 +39,9 @@ export default React.createClass({
       action: '#/user/logout',
       data: {}
     });
+  },
+  admin() {
+    hashHistory.push('admin-settings');
   },
   render: function() {
 
@@ -134,8 +138,19 @@ export default React.createClass({
                     </Bootstrap.MenuItem>
                   );
 
+                  if (this.state.admins && this.state.admins.id.length > 0) {
+                    menuItems.push(
+                      <Bootstrap.MenuItem key="-2" onSelect={this.admin}>
+                      {formatMessage({
+                        id: 'admin_menu_button',
+                        default: 'Site Admin'
+                      })}
+                      </Bootstrap.MenuItem>
+                    );
+                  }
+
                   menuItems.push(
-                    <Bootstrap.MenuItem key="-2" onSelect={this.logout}>
+                    <Bootstrap.MenuItem key="-3" onSelect={this.logout}>
                     {formatMessage({
                       id: 'logout_menu_button',
                       default: 'Logout'

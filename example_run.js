@@ -1,7 +1,7 @@
 var path = require('path');
 
 require('./index.js')({
-  artificialDelay: 250,
+  artificialDelay: 500,
   "name": "Hilt",
   "http": {
     "port": 3000
@@ -24,6 +24,7 @@ require('./index.js')({
     './models/group',
     './models/admin',
     './models/email',
+    './models/phone',
     './models/file',
     './models/blotter'
   ]

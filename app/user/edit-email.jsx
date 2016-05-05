@@ -29,25 +29,71 @@ export default React.createClass({
       newEmail => {
         this.setState({
           email: newEmail,
-          emailStatus: email_regex.test(newEmail.address.current) ? 'success' : 'error',
+          emailStatus: newEmail.address.current !== '' && email_regex.test(newEmail.address.current) ? 'success' : 'error',
         });
       }
     );
 
-    this.subscription = journal.subscribe({
-      email: 'api/email/{this.props.id}'
-    }, state => {
+    if (this.props.id){
+      this.subscription = journal.subscribe({
+        email: 'api/email/{this.props.id}'
+      }, state => {
 
+        this.setState({
+          email: this.editor.update(state.email),
+          emailStatus: state.email.address !== '' && email_regex.test(state.email.address) ? 'success' : 'error',
+          processing: false
+        });
+
+      }, this);
+    }else{
       this.setState({
-        email: this.editor.update(state.email),
-        emailStatus: 'success',
+        email: this.editor.update({
+          address: "",
+          signin: false,
+          verified: false
+        }),
+        emailStatus: 'error',
         processing: false
       });
-
-    }, this);
+    }
   },
   componentWillUnmount: function(){
-    this.subscription.unsubscribe();
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+  },
+  componentWillReceiveProps(props) {
+    if (props.id !== this.props.id) {
+      if (this.subscription) {
+        this.subscription.unsubscribe();
+        this.subscription = null;
+      }
+
+      if (this.props.id){
+        this.subscription = journal.subscribe({
+          email: 'api/email/{this.props.id}'
+        }, state => {
+
+          this.setState({
+            email: this.editor.update(state.email),
+            emailStatus: state.email.address !== '' && email_regex.test(state.email.address) ? 'success' : 'error',
+            processing: false
+          });
+
+        }, this);
+      }else{
+        this.setState({
+          email: this.editor.update({
+            address: "",
+            signin: false,
+            verified: false
+          }),
+          emailStatus: 'error',
+          processing: false
+        });
+      }
+    }
   },
   handleSetEmail (event) {
     var that = this;
@@ -84,14 +130,53 @@ export default React.createClass({
     });
   },
   handleSendCode() {
-    journal.report({
-      action: 'api/email/' + this.props.id + '/send-code',
-      data: {}
+    var that = this;
+
+    this.setState({
+      processing: true
+    }, () => {
+      if (!that.props.id){
+        // create
+        journal.report({
+          action: 'api/email/',
+          data: that.editor.compile()
+        })
+        .then(email => {
+          return journal.report({
+            action: 'api/email/' + email._id + '/send-code',
+            data: {}
+          });
+        })
+        .catch(error => {
+          return journal.report({
+            action: '#/error',
+            data: error
+          });
+        });
+      }else {
+        // update
+        journal.report({
+          action: 'api/email/' + that.props.id,
+          data: that.editor.compile()
+        })
+        .then(email => {
+          return journal.report({
+            action: 'api/email/' + email._id + '/send-code',
+            data: {}
+          });
+        })
+        .catch(error => {
+          return journal.report({
+            action: '#/error',
+            data: error
+          });
+        });
+      }
     });
   },
   render () {
 
-    if (!this.state.email) {
+    if (this.props.id && !this.state.email) {
       return <Loading value="Email"/>;
     }
 
@@ -106,11 +191,14 @@ export default React.createClass({
           hasFeedback
           style={{backgroundColor : this.state.email.address.edited ? '#FFE5C4' : '#ffffff'}}
         />
+        <If condition={!this.state.email.verified.current || this.state.email.address.edited}>
+          <span>This email is un-verified. Send and click on the coded link to the email address.</span>
+        </If>
         <Bootstrap.ButtonInput
           onClick={this.handleSendCode}
           type="button"
-          value={this.state.email.verified.current ? "Email Verified" : "Send Verification Code"}
-          disabled={this.state.email.verified.current}
+          value={this.state.processing ? "Processing..." : this.state.email.verified.current && !this.state.email.address.edited ? "Email Verified" : "Send Verification Link"}
+          disabled={this.state.processing || this.state.email.verified.current && !this.state.email.address.edited || this.state.emailStatus !== 'success'}
         />
         <Bootstrap.Input
           onClick={event => {

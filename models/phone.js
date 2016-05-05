@@ -7,7 +7,7 @@ var crypto = require('crypto');
 var crypto_pbkdf2 = Promise.promisify(crypto.pbkdf2);
 
 
-var phone_regex = /\b[0-9]{7}\b/;
+var phone_regex = /\b[0-9]{10}\b/;
 
 module.exports = function(api){
   var client;
@@ -82,9 +82,9 @@ module.exports = function(api){
           secure: true,
           handler: function(req) {
 
-            if (!email_regex.test(this.address)){
-              throw new api.email.Error('invalidemail',
-                'The email address is not a valid format.', [],
+            if (!phone_regex.test(this.number)){
+              throw new api.phone.Error('invalidphone',
+                'The phone address is not a valid format.', [],
               400);
             }
 
@@ -151,11 +151,18 @@ module.exports = function(api){
               from: api.phone.settings.number,
               body: data.text
             }, function(error, message) {
+              if (error) {
+                reject(error);
+              }else{
+                resolve(message);
+              }
+
               if (!error) {
                 console.log('Success! The SID for this SMS message is:');
                 console.log(message.sid);
                 console.log('Message sent on:');
                 console.log(message.dateCreated);
+
               } else {
                 console.log('Oops! There was an error.');
               }
