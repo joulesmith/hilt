@@ -202,11 +202,7 @@ export default React.createClass({
         />
         <Bootstrap.Input
           onClick={event => {
-            this.state.email.signin.handler({
-              target: {
-                value: !this.state.email.signin.current
-              }
-            })
+            this.state.email.signin.handler(!this.state.email.signin.current)
           }}
           type="checkbox"
           label={<span style={{backgroundColor : this.state.email.signin.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.email.signin.label}</span>}

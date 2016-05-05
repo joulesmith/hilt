@@ -44,6 +44,7 @@ export default React.createClass({
         type="tel"
         label={this.props.label}
         bsStyle={this.props.bsStyle}
+        style={this.props.style}
         hasFeedback={this.props.hasFeedback}
       />
     )

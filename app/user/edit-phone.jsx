@@ -188,6 +188,7 @@ export default React.createClass({
           value={this.state.phone.number.current}
           label={this.state.phone.number.label}
           bsStyle={this.state.phoneStatus}
+          style={{backgroundColor : this.state.phone.number.edited ? '#FFE5C4' : '#ffffff'}}
           hasFeedback
         />
         <If condition={!this.state.phone.verified.current || this.state.phone.number.edited}>
@@ -201,14 +202,10 @@ export default React.createClass({
         />
         <Bootstrap.Input
           onClick={event => {
-            this.state.phone.signin.handler({
-              target: {
-                value: !this.state.phone.signin.current
-              }
-            })
+            this.state.phone.signin.handler(!this.state.phone.signin.current)
           }}
           type="checkbox"
-          label={this.state.phone.signin.label}
+          label={<span style={{backgroundColor : this.state.phone.signin.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.phone.signin.label}</span>}
           checked={this.state.phone.signin.current}
           onChange={event => {}}
         />
