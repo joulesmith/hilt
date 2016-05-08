@@ -6,7 +6,7 @@ import * as journal from 'journal';
 import editor from '../editor';
 
 import Gmail from './gmail';
-import PhoneNumber from '../phone-number';
+import PhoneNumber from '../format/phone-number';
 
 export default React.createClass({
   getInitialState () {
@@ -14,9 +14,9 @@ export default React.createClass({
     };
   },
   componentWillMount: function(){
-    this.settingsEditor = editor(
+    this.settingsEditor = editor({
       // structure and labels of editable variables
-      {
+      form: {
         user: {
           clientId: "Google Client ID",
           clientSecret: "Google Client Secret"
@@ -28,28 +28,31 @@ export default React.createClass({
           accountSid: 'Account SID',
           authToken: 'Auth Token',
           number: 'Phone Number'
+        },
+        payment: {
+          sandbox : "Use Sandbox Environment",
+          merchantId: 'Merchant ID',
+          publicKey: 'Public Key',
+          privateKey: 'Private Key'
         }
       },
       // callback for when there are edit events
-      newSettings => {
+      handler: newSettings => {
         this.setState({
           settings: newSettings
         });
       }
-    );
-
-    this.setState({
-      settings: this.settingsEditor.update()
     });
+
+    this.settingsEditor.update();
 
     this.subscription = journal.subscribe({
       admin: 'api/admin/{this.props.id}'
     }, state => {
       if (state.admin) {
-        var currentSettingsEditor = this.settingsEditor.update(state.admin.settings);
+        this.settingsEditor.update(state.admin.settings);
 
         this.setState({
-          settings: currentSettingsEditor,
           processing: false
         });
       }else{
@@ -130,6 +133,40 @@ export default React.createClass({
           value={this.state.settings.phone.number.current}
           label={this.state.settings.phone.number.label}
           style={{backgroundColor : this.state.settings.phone.number.edited ? '#FFE5C4' : '#ffffff'}}
+        />
+        <h4>Braintree API</h4>
+        <Bootstrap.Input
+          onChange={this.state.settings.payment.merchantId.handler}
+          value={this.state.settings.payment.merchantId.current}
+          type="text"
+          label={this.state.settings.payment.merchantId.label}
+          placeholder={this.state.settings.payment.merchantId.original}
+          style={{backgroundColor : this.state.settings.payment.merchantId.edited ? '#FFE5C4' : '#ffffff'}}
+        />
+        <Bootstrap.Input
+          onChange={this.state.settings.payment.publicKey.handler}
+          value={this.state.settings.payment.publicKey.current}
+          type="text"
+          label={this.state.settings.payment.publicKey.label}
+          placeholder={this.state.settings.payment.publicKey.original}
+          style={{backgroundColor : this.state.settings.payment.publicKey.edited ? '#FFE5C4' : '#ffffff'}}
+        />
+        <Bootstrap.Input
+          onChange={this.state.settings.payment.privateKey.handler}
+          value={this.state.settings.payment.privateKey.current}
+          type="password"
+          label={this.state.settings.payment.privateKey.label}
+          placeholder={this.state.settings.payment.privateKey.original}
+          style={{backgroundColor : this.state.settings.payment.privateKey.edited ? '#FFE5C4' : '#ffffff'}}
+        />
+        <Bootstrap.Input
+          onClick={event => {
+            this.state.settings.payment.sandbox.handler(!this.state.settings.payment.sandbox.current)
+          }}
+          type="checkbox"
+          label={<span style={{backgroundColor : this.state.settings.payment.sandbox.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.settings.payment.sandbox.label}</span>}
+          checked={this.state.settings.payment.sandbox.current}
+          onChange={event => {}}
         />
         <hr />
         <Bootstrap.ButtonInput

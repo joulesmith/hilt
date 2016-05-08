@@ -4,7 +4,7 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import If from '../if';
 import formatMessage from 'format-message';
-import PhoneNumber from '../phone-number';
+import PhoneNumber from '../format/phone-number';
 import * as journal from 'journal';
 import editor from '../editor';
 import Loading from '../loading';
@@ -39,22 +39,21 @@ export default React.createClass({
       this.subscription = journal.subscribe({
         phone: 'api/phone/{this.props.id}'
       }, state => {
+        this.editor.update(state.phone);
 
         this.setState({
-          phone: this.editor.update(state.phone),
-          phoneStatus: 'success',
           processing: false
         });
 
       }, this);
     }else{
+      this.editor.update({
+        number: "",
+        signin: false,
+        verified: false
+      });
+      
       this.setState({
-        phone: this.editor.update({
-          number: "",
-          signin: false,
-          verified: false
-        }),
-        phoneStatus: 'error',
         processing: false
       });
     }

@@ -11,9 +11,6 @@ module.exports = function(config) {
   var server = require('./server');
   server.configure(config);
 
-  // load schemas to mongoose
-  require('./models/settings');
-
   // view engine setup
   server.express.set('views', path.join(__dirname, 'views'));
   server.express.set('view engine', 'ejs');

@@ -145,28 +145,32 @@ module.exports = function(api){
           var phone = this;
 
           return new Promise(function(resolve, reject){
-            //https://www.twilio.com/blog/2013/03/introducing-the-twilio-module-for-node-js.html
-            client.sendSms({
-              to: phone.number,
-              from: api.phone.settings.number,
-              body: data.text
-            }, function(error, message) {
-              if (error) {
-                reject(error);
-              }else{
-                resolve(message);
-              }
+            try{
+              //https://www.twilio.com/blog/2013/03/introducing-the-twilio-module-for-node-js.html
+              client.sendSms({
+                to: phone.number,
+                from: api.phone.settings.number,
+                body: data.text
+              }, function(error, message) {
+                if (error) {
+                  reject(error);
+                }else{
+                  resolve(message);
+                }
 
-              if (!error) {
-                console.log('Success! The SID for this SMS message is:');
-                console.log(message.sid);
-                console.log('Message sent on:');
-                console.log(message.dateCreated);
+                if (!error) {
+                  console.log('Success! The SID for this SMS message is:');
+                  console.log(message.sid);
+                  console.log('Message sent on:');
+                  console.log(message.dateCreated);
 
-              } else {
-                console.log('Oops! There was an error.');
-              }
-            });
+                } else {
+                  console.log('Oops! There was an error.');
+                }
+              });
+            }catch(error){
+              reject(error);
+            }
           });
         }
       }

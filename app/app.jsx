@@ -24,6 +24,8 @@ import BlotterView from './blotter/blotter-view';
 import BlotterEdit from './blotter/blotter-edit';
 import BlotterSearch from './blotter/blotter-search';
 
+import PaymentCreate from './payment/payment-create';
+
 var Root = React.createClass({
   getInitialState: function(){
     return {
@@ -57,6 +59,7 @@ var Root = React.createClass({
             <Route path="/blotter/:id" component={BlotterView} />
             <Route path="/blotter/:id/edit" component={BlotterEdit} />
 
+            <Route path="/payment/:recipient" component={PaymentCreate} />
 
             <Route path="*" component={NoMatch}/>
           </Route>

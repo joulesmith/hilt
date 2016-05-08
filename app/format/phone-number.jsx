@@ -9,10 +9,7 @@ export default React.createClass({
     var number = event.target.value;
 
     // strip out formatting.
-    number = number.replace('(','');
-    number = number.replace(')','');
-    number = number.replace(' ','');
-    number = number.replace('-','');
+    number = number.replace(/[^0-9]/g,'');
 
     if (number.length > 10) {
       number = number.slice(0,10);

@@ -30,6 +30,7 @@
     "bluebird": "^3.0.5",
     "body-parser": "~1.12.0",
     "braintree": "^1.30.0",
+    "braintree-web": "^2.24.0",
     "classnames": "^2.2.1",
     "compression": "^1.6.1",
     "css-loader": "^0.23.1",

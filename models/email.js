@@ -106,17 +106,21 @@ module.exports = function(api){
             handler: function(req, res) {
 
               return new Promise(function(resolve, reject) {
-                oauth2Client.getToken(req.body.code, function(err, tokens) {
+                try{
+                  oauth2Client.getToken(req.body.code, function(err, tokens) {
 
-                  if (err) {
-                    return reject(err);
-                  }
+                    if (err) {
+                      return reject(err);
+                    }
 
-                  resolve({
-                    tokens: tokens
+                    resolve({
+                      tokens: tokens
+                    });
+
                   });
-
-                });
+                }catch(error){
+                  reject(error);
+                }
               });
             }
           }
@@ -208,33 +212,32 @@ module.exports = function(api){
           var email = this;
 
           return new Promise(function(resolve, reject){
-            //http://stackoverflow.com/questions/34546142/gmail-api-for-sending-mails-in-node-js
-            //
-            var str = ["Content-Type: text/plain; charset=\"UTF-8\"\n",
-              "MIME-Version: 1.0\n",
-              "Content-Transfer-Encoding: 7bit\n",
-              "to: ", email.address, "\n",
-              "from: ", 'test.test@gmail.com', "\n",
-              "subject: ", 'test', "\n\n",
-              data.text
-            ].join('');
+            try{
+              //http://stackoverflow.com/questions/34546142/gmail-api-for-sending-mails-in-node-js
+              //
+              var str = ["Content-Type: text/plain; charset=\"UTF-8\"\n",
+                "MIME-Version: 1.0\n",
+                "Content-Transfer-Encoding: 7bit\n",
+                "to: ", email.address, "\n",
+                "from: ", 'test.test@gmail.com', "\n",
+                "subject: ", 'test', "\n\n",
+                data.text
+              ].join('');
 
-            var encodedMail = new Buffer(str).toString("base64").replace(/\+/g, '-').replace(/\//g, '_');
+              var encodedMail = new Buffer(str).toString("base64").replace(/\+/g, '-').replace(/\//g, '_');
 
-            googleapis.gmail('v1').users.messages.send({
-              auth: oauth2Client,
-              userId: 'me',
-              resource: {
-                raw: encodedMail
-              }
-            }, function(err, res) {
-              if (err){
-                reject(err)
-              }else{
-                resolve(res);
-              }
-            });
-
+              googleapis.gmail('v1').users.messages.send({
+                auth: oauth2Client,
+                userId: 'me',
+                resource: {
+                  raw: encodedMail
+                }
+              }, function(err, res) {
+                err ? reject(err) : resolve(res);
+              });
+            }catch(error){
+              reject(error);
+            }
           });
         }
       }

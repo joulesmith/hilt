@@ -18,7 +18,7 @@
  * the editor state.
  * @return {Object} interface to the editor.
  */
-export default function(form, cb) {
+export default function(spec) {
 
   var initialize = function(form, original, edited, previous) {
     var currentCopy = {
@@ -28,7 +28,7 @@ export default function(form, cb) {
     for(var prop in form) {
       (prop => {
         // create closure for prop
-        if (typeof form[prop] === 'object') {
+        if (typeof form[prop] === 'object' && !(form[prop].label && form[prop].format && form[prop].parse && form[prop].validate)) {
           // this is not a leaf
           currentCopy[prop] = initialize(
             form[prop],
@@ -61,7 +61,7 @@ export default function(form, cb) {
           var handler = function(event) {
             var value;
             // only use event.target.value if that is the pattern being used
-            if (event.target && event.target.value){
+            if (event.target && typeof event.target.value !== 'undefined'){
               value = event.target.value;
             }else{
               value = event;
@@ -73,10 +73,10 @@ export default function(form, cb) {
 
             for(var prop2 in form) {
               newState[prop2] = (prop !== prop2) ? currentCopy[prop2] : {
-                current: value,
+                current: form[prop2].validate ? form[prop2].validate(value) : value,
                 original: currentCopy[prop].original,
                 edited: value !== currentCopy[prop].original,
-                label: form[prop2],
+                label: form[prop2].label ? form[prop2].label : form[prop2],
                 handler: handler
               };
 
@@ -91,18 +91,18 @@ export default function(form, cb) {
           if (previous && previous[prop].current) {
             // TODO: remove 'previous' altogether, but leaving for now just in case it's needed later
             currentCopy[prop] = {
-              current: original ? original[prop] : null,
-              original: original ? original[prop] : null,
+              current: original ? form[prop].format ? form[prop].format(original[prop]) : original[prop] : null,
+              original: original ? form[prop].format ? form[prop].format(original[prop]) : original[prop] : null,
               edited: false,
               label: form[prop],
               handler: handler
             };
           }else{
             currentCopy[prop] = {
-              current: original ? original[prop] : null,
-              original: original ? original[prop] : null,
+              current: original ? form[prop].format ? form[prop].format(original[prop]) : original[prop] : null,
+              original: original ? form[prop].format ? form[prop].format(original[prop]) : original[prop] : null,
               edited: false,
-              label: form[prop],
+              label: form[prop].label ? form[prop].label : form[prop],
               handler: handler
             };
           }
@@ -121,12 +121,12 @@ export default function(form, cb) {
     var state = {};
 
     for(var prop in form) {
-      if (typeof form[prop] === 'object') {
+      if (typeof form[prop] === 'object' && !(form[prop].label && form[prop].format && form[prop].parse && form[prop].validate)) {
         // not a leaf
         state[prop] = current ? compile(form[prop], current[prop]) : null;
       }else{
         // a leaf
-        state[prop] = current ? current[prop].current : null;
+        state[prop] = current ? form[prop].parse ? form[prop].parse(current[prop].current) : current[prop].current : null;
       }
     }
 
@@ -146,20 +146,20 @@ export default function(form, cb) {
       originalCopy = original;
 
       currentCopy = initialize(
-        form,
+        spec.form,
         original,
         newState => {
           currentCopy = newState
-          cb(newState);
+          spec.handler(newState);
         },
         currentCopy
       );
 
-      return currentCopy;
+      spec.handler(currentCopy);
     },
     compile: function(){
 
-      return compile(form, currentCopy);
+      return compile(spec.form, currentCopy);
     }
   };
 

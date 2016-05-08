@@ -26,6 +26,7 @@ require('./index.js')({
     './models/email',
     './models/phone',
     './models/file',
-    './models/blotter'
+    './models/blotter',
+    './models/payment'
   ]
 });

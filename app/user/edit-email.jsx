@@ -18,42 +18,41 @@ export default React.createClass({
     };
   },
   componentWillMount: function(){
-    this.editor = editor(
+    this.editor = editor({
       // structure and labels of editable variables
-      {
+      form: {
         address: "Email Address",
         signin: "Use for multi-step sign-in",
         verified: ''
       },
       // callback for when there are edit events
-      newEmail => {
+      handler: newEmail => {
         this.setState({
           email: newEmail,
           emailStatus: newEmail.address.current !== '' && email_regex.test(newEmail.address.current) ? 'success' : 'error',
         });
       }
-    );
+    });
 
     if (this.props.id){
       this.subscription = journal.subscribe({
         email: 'api/email/{this.props.id}'
       }, state => {
+        this.editor.update(state.email);
 
         this.setState({
-          email: this.editor.update(state.email),
-          emailStatus: state.email.address !== '' && email_regex.test(state.email.address) ? 'success' : 'error',
           processing: false
         });
 
       }, this);
     }else{
+      this.editor.update({
+        address: "",
+        signin: false,
+        verified: false
+      });
+
       this.setState({
-        email: this.editor.update({
-          address: "",
-          signin: false,
-          verified: false
-        }),
-        emailStatus: 'error',
         processing: false
       });
     }
