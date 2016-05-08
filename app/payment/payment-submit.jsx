@@ -113,9 +113,9 @@ export default React.createClass({
         this.subscription = journal.subscribe({
           payment: 'api/payment/' + payment._id
         }, state => {
-          console.log(state);
+
           this.editor.update(state.payment);
-          console.log(this.state);
+
           this.setState({
             processing: false
           });

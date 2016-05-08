@@ -141,7 +141,7 @@ export default React.createClass({
       }
     })
     .then(token => {
-      console.log(token);
+
       journal.report({
         action: '#/user/login',
         data: token

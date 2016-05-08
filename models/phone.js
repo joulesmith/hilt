@@ -158,15 +158,6 @@ module.exports = function(api){
                   resolve(message);
                 }
 
-                if (!error) {
-                  console.log('Success! The SID for this SMS message is:');
-                  console.log(message.sid);
-                  console.log('Message sent on:');
-                  console.log(message.dateCreated);
-
-                } else {
-                  console.log('Oops! There was an error.');
-                }
               });
             }catch(error){
               reject(error);

@@ -35,7 +35,7 @@ export default React.createClass({
   render() {
     //var searchButton = <Bootstrap.Button onClick={this.handleSearch}>Search</Bootstrap.Button>;
     // display a blotter search box
-    console.log(this.state);
+
     return (
       <div>
         <div style={{padding: '1em'}}>
