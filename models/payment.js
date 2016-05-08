@@ -86,6 +86,21 @@ module.exports = function(api){
                 'Payment has already been submitted.', [],
                 400);
             }
+            var that = this;
+
+            if (this.recipient) {
+              return api.user.collection.findById(this.recipient)
+              .exec()
+              .then(function(recipient){
+                if (recipient) {
+                  return that;
+                }
+
+                throw new api.payment.Error('recipient',
+                  'A valid recipient must be given.', [],
+                  400);
+              })
+            }
           }
         },
         submit: {
@@ -101,12 +116,35 @@ module.exports = function(api){
                     400);
                 }
 
+                if (!req.body.paymentMethodNonce) {
+                  throw new api.payment.Error('nonce',
+                    'Payment noonce is required.', [],
+                    400);
+                }
+
+                if (!payment.amount) {
+                  throw new api.payment.Error('amount',
+                    'Payment amount is required to submit payment.', [],
+                    400);
+                }
+
+                if (!payment.recipient) {
+                  throw new api.payment.Error('recipient',
+                    'Payment recipient is required to submit payment.', [],
+                    400);
+                }
+
                 gateway.transaction.sale({
                   amount: payment.amount,
                   paymentMethodNonce: req.body.paymentMethodNonce,
                 }, function(err, result) {
+
                   if (err) {
                     return reject(err);
+                  }
+
+                  if (!result.success) {
+                    return reject(result);
                   }
 
                   resolve(result);
@@ -116,7 +154,6 @@ module.exports = function(api){
               }
             }))
             .then(function(result) {
-
               payment.transaction_id = result.transaction.id;
 
               return payment.save();
@@ -133,7 +170,7 @@ module.exports = function(api){
                           500));
                     }
 
-                    return resolve();
+                    return resolve(payment);
                   });
                 } catch (error) {
                   reject(error);

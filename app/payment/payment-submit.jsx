@@ -34,7 +34,8 @@ export default React.createClass({
             return value;
           }
         },
-        recipient: "Recipient"
+        recipient: "Recipient",
+        transaction_id: 'Transaction ID'
       },
       // callback for when there are edit events
       handler: newPayment => {
@@ -46,7 +47,7 @@ export default React.createClass({
 
     if (this.props.id){
       this.subscription = journal.subscribe({
-        payment: 'api/payment/{this.props.id}'
+        payment: 'api/payment/' + this.props.id
       }, state => {
 
         this.editor.update(state.payment);
@@ -59,7 +60,8 @@ export default React.createClass({
     }else{
       this.editor.update({
         amount: 0,
-        recipient: this.props.recipient
+        recipient: this.props.recipient,
+        transaction_id: ''
       });
 
       this.setState({
@@ -105,7 +107,20 @@ export default React.createClass({
           data: {
             paymentMethodNonce: paymentMethod.nonce
           }
-        });
+        })
+      })
+      .then(payment => {
+        this.subscription = journal.subscribe({
+          payment: 'api/payment/' + payment._id
+        }, state => {
+          console.log(state);
+          this.editor.update(state.payment);
+          console.log(this.state);
+          this.setState({
+            processing: false
+          });
+
+        }, this);
       })
       .catch(error => {
         journal.report({
@@ -130,6 +145,12 @@ export default React.createClass({
 
   },
   render: function() {
+    if (this.state.payment.transaction_id.current !== '') {
+      return (
+        <div>You have made a payment of ${this.state.payment.amount.current}.</div>
+      );
+    }
+
     return (
       <form>
         <label>Payment Method</label>
@@ -146,7 +167,7 @@ export default React.createClass({
         />
         <Bootstrap.ButtonInput
           type="submit"
-          value={this.state.processing ? 'Processing...' : 'Submit Payment of $' + this.state.payment.amount.current}
+          value={this.state.payment.transaction_id.current ? 'Payment Submitted' : this.state.processing ? 'Processing...' : 'Submit Payment of $' + this.state.payment.amount.current}
           disabled={this.state.processing || !this.state.ready}
         />
       </form>
