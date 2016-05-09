@@ -17,7 +17,7 @@ import NoMatch from './no-match';
 import Home from './home';
 import RegisterBody from './user/register-body';
 import UserSettings from './user/settings';
-import AdminSettings from './admin/settings';
+import SiteSettings from './admin/settings';
 
 import BlotterCreate from './blotter/blotter-create';
 import BlotterView from './blotter/blotter-view';
@@ -50,8 +50,8 @@ var Root = React.createClass({
         <Navbar brand={brand} links={links}></Navbar>
         <Router history={hashHistory}>
           <Route path="/" component={Home}>
-            <Route path="/admin-settings" component={AdminSettings} />
-            <Route path="/settings" component={UserSettings} />
+            <Route path="/site-settings" component={SiteSettings} />
+            <Route path="/user-settings" component={UserSettings} />
             <Route path="/register" component={RegisterBody} />
 
             <Route path="/blotter" component={BlotterCreate} />

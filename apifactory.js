@@ -330,18 +330,37 @@ var serveModels = function(server){
       }
 
       Schema.methods.editEvent = function() {
-        // TODO: send update to socket io
-        var key = 'api/' + model + '/' + this._id;
-        var sub = subscriptions.get(key);
+        var modelSub = subscriptions.get(model);
 
-        if (sub){
-          sub.subscribers.forEach(function(subscription, key){
-            subscription();
-          });
+        if (modelSub){
+          var instanceSub = modelSub.instances.get('' + this._id);
+
+          if (instanceSub) {
+            instanceSub.subscribers.forEach(function(subscription, key){
+              subscription();
+            });
+          }
         }
 
         this.edited = Date.now();
         return this;
+      };
+
+      apiModel.editEvent = function() {
+
+        var modelSub = subscriptions.get(model);
+
+        if (modelSub){
+          modelSub.subscribers.forEach(function(subscription, key){
+            subscription();
+          });
+
+          modelSub.instances.forEach(function(instance){
+            instance.subscribers.forEach(function(subscription, key){
+              subscription();
+            });
+          });
+        }
       };
 
       Schema.methods.testAccess = function(action, user) {
@@ -1184,6 +1203,7 @@ var serveModels = function(server){
     try {
       user_ioAuth(socket);
 
+      var subs = {};
       socket.on('disconnect', function(){
         // remove listeners
         for(var uri in subs) {
@@ -1195,7 +1215,6 @@ var serveModels = function(server){
         }
       });
 
-      var subs = {};
       // listen for changes to a particular resource.
       socket.on('subscribe', function(data) {
 
@@ -1203,9 +1222,24 @@ var serveModels = function(server){
           var parts = data.uri.split('/');
           var model, _id, view;
 
+          model = parts[1];
+
+
+          var modelSub = subscriptions.get(model);
+
+          if (!modelSub) {
+            modelSub = {
+              subscribers: new Map(),
+              instances: new Map()
+            };
+
+            // create subscription
+            subscriptions.set(model, modelSub);
+          }
+
           if (/[a-z0-9]{24}/.test(parts[2])) {
             // there is an 12byte _id, so this is an instance
-            model = parts[1];
+
             _id = parts[2];
             view = parts[3] || 'root';
 
@@ -1220,27 +1254,28 @@ var serveModels = function(server){
                   403);
               }
 
-              var key = 'api/' + model + '/' + _id;
-              var sub = subscriptions.get(key);
+              var instanceSub = modelSub.instances.get(_id);
 
-              if (!sub) {
-                sub = {
+              if (!instanceSub) {
+                instanceSub = {
                   subscribers: new Map()
                 };
 
                 // create subscription
-                subscriptions.set(key, sub);
+                modelSub.instances.set(_id, instanceSub);
               }
 
               // the key is set to the socket id (not user, since the same user could have multiple connections)
               // the view is included because a socket could be subscribed to multiple views
               // of the same instance, and must have separate update events sent.
-              sub.subscribers.set(socket.id + '/' + data.uri, function(){
+              instanceSub.subscribers.set(socket.id + '/' + data.uri, function(){
                 // callback when there is a change with the instance subscribed to
                 socket.emit('update', {
                   uri: data.uri
                 });
               });
+
+
 
               subs[data.uri] = true;
 
@@ -1251,21 +1286,7 @@ var serveModels = function(server){
           }else {
 
             // this one will just be listening for updates to a whole collection
-            model = parts[1];
-            view = parts[2] || 'root';
-            var key = 'api/' + model;
-            var sub = subscriptions.get(key);
-
-            if (!sub) {
-              sub = {
-                subscribers: new Map()
-              };
-
-              // create subscription
-              subscriptions.set(key, sub);
-            }
-
-            sub.subscribers.set(socket.id + '/' + data.uri, function(){
+            modelSub.subscribers.set(socket.id + '/' + data.uri, function(){
               // callback when there is a change with the instance subscribed to
               socket.emit('update', {
                 uri: data.uri
@@ -1288,29 +1309,32 @@ var serveModels = function(server){
           var model, _id, view;
           var key, sub;
 
-          if (/[a-z0-9]{24}/.test(parts[2])) {
-            // there is an 12byte _id, so this is an instance
-            model = parts[1];
-            _id = parts[2];
-            view = parts[3] || 'root';
-            key = 'api/' + model + '/' + _id;
-          }else{
-            model = parts[1];
-            view = parts[2] || 'root';
-            key = 'api/' + model;
-          }
+          model = parts[1];
 
-          sub = subscriptions.get(key);
+          var modelSub = subscriptions.get(model);
 
-          if (!sub) {
-            return;
-          }
+          if (modelSub) {
 
-          sub.subscribers.delete(socket.id + '/' + data.uri);
+            if (/[a-z0-9]{24}/.test(parts[2])) {
+              // there is an 12byte _id, so this is an instance
+              _id = parts[2];
 
-          if (sub.subscribers.size === 0) {
-            // remove since noone is listening
-            subscriptions.delete(key);
+              var instanceSub = modelSub.instances.get(_id);
+
+              instanceSub.subscribers.delete(socket.id + '/' + data.uri);
+
+              if (instanceSub.subscribers.size === 0) {
+                // remove since noone is listening
+                modelSub.instances.delete(_id);
+              }
+            }else{
+              modelSub.subscribers.delete(socket.id + '/' + data.uri);
+            }
+
+            if (modelSub.subscribers.size === 0 && modelSub.instances.size === 0) {
+              subscriptions.delete(model);
+            }
+
           }
 
           subs[data.uri] = false;

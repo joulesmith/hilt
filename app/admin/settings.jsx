@@ -8,13 +8,14 @@ import Admin from './admin';
 import If from '../if';
 import * as merge from '../merge.jsx';
 import SigninRequired from '../signin-required.jsx';
+import Loading from '../loading';
+import EditGoogle from './google';
+import EditTwilio from './twilio';
+import EditBraintree from './braintree';
 
 export default React.createClass({
   getInitialState: function(){
     return {
-      editPassword: false,
-      editLocale: false,
-
     };
   },
   componentWillMount: function(){
@@ -29,14 +30,14 @@ export default React.createClass({
   componentWillUnmount: function(){
     this.subscription.unsubscribe();
   },
-  handleEditAdmin: function() {
-    this.setState({ editAdmin: !this.state.editAdmin })
+  handleEditGoogle: function() {
+    this.setState({ editGoogle: !this.state.editGoogle })
   },
-  register: function() {
-    journal.report({
-      action: '#/modal/register',
-      data: {show: true}
-    });
+  handleEditTwilio: function() {
+    this.setState({ editTwilio: !this.state.editTwilio })
+  },
+  handleEditBraintree: function() {
+    this.setState({ editBraintree: !this.state.editBraintree })
   },
   render: function() {
     var emails;
@@ -45,47 +46,77 @@ export default React.createClass({
       return <SigninRequired />;
     }
 
-    var admin;
-    if (this.state.admins && this.state.admins.id.length){
-      var admins = [];
-
-      if (this.state.editAdmin) {
-        admins = this.state.admins.id.map(id => {
-          return (
-            <Admin id={id} key={id}/>
-          );
-        });
-      }else{
-        admin = <div />;
-      }
-
-      admin = (
-        <Bootstrap.Row>
-          <Bootstrap.Col xs={12} md={8} mdOffset={2}>
-            <Bootstrap.Button onClick={this.handleEditAdmin} bsStyle="link">
-              Edit Administrative Settings
-            </Bootstrap.Button>
-            <Bootstrap.Panel collapsible expanded={this.state.editAdmin}>
-              {admins}
-            </Bootstrap.Panel>
-          </Bootstrap.Col>
-        </Bootstrap.Row>
-      );
-    }else{
-      admin = <div />;
+    if (!this.state.admins) {
+      return <Loading value="Admin"/>;
     }
 
+    var admins = this.state.admins.id.map(id => {
+      var google, twilio, braintree;
+
+      if (this.state.editGoogle) {
+        google = <EditGoogle id={id} />;
+      }else{
+        google = <div />;
+      }
+
+      if (this.state.editTwilio) {
+        twilio = <EditTwilio id={id} />;
+      }else{
+        twilio = <div />;
+      }
+
+      if (this.state.editBraintree) {
+        braintree = <EditBraintree id={id} />;
+      }else{
+        braintree = <div />;
+      }
+
+      return (
+        <Bootstrap.Grid key={id} >
+          <Bootstrap.Row>
+            <Bootstrap.Col xs={12} md={8} mdOffset={2}>
+              <h4>
+                Site Settings
+              </h4>
+            </Bootstrap.Col>
+          </Bootstrap.Row>
+          <Bootstrap.Row>
+            <Bootstrap.Col xs={12} md={8} mdOffset={2}>
+              <Bootstrap.Button onClick={this.handleEditGoogle} bsStyle="link">
+                Edit Google
+              </Bootstrap.Button>
+              <Bootstrap.Panel collapsible expanded={this.state.editGoogle}>
+                {google}
+              </Bootstrap.Panel>
+            </Bootstrap.Col>
+          </Bootstrap.Row>
+          <Bootstrap.Row>
+            <Bootstrap.Col xs={12} md={8} mdOffset={2}>
+              <Bootstrap.Button onClick={this.handleEditTwilio} bsStyle="link">
+                Edit Twilio
+              </Bootstrap.Button>
+              <Bootstrap.Panel collapsible expanded={this.state.editTwilio}>
+                {twilio}
+              </Bootstrap.Panel>
+            </Bootstrap.Col>
+          </Bootstrap.Row>
+          <Bootstrap.Row>
+            <Bootstrap.Col xs={12} md={8} mdOffset={2}>
+              <Bootstrap.Button onClick={this.handleEditBraintree} bsStyle="link">
+                Edit Braintree
+              </Bootstrap.Button>
+              <Bootstrap.Panel collapsible expanded={this.state.editBraintree}>
+                {braintree}
+              </Bootstrap.Panel>
+            </Bootstrap.Col>
+          </Bootstrap.Row>
+        </Bootstrap.Grid>
+      );
+    });
+
     return (
-      <Bootstrap.Grid>
-        <Bootstrap.Row>
-          <Bootstrap.Col xs={12} md={8} mdOffset={2}>
-            <h4>
-              Administrative Settings
-            </h4>
-          </Bootstrap.Col>
-        </Bootstrap.Row>
-        {admin}
-      </Bootstrap.Grid>
+      <div>{admins}</div>
     );
+
   }
 });

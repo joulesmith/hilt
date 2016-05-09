@@ -41,6 +41,8 @@ module.exports = function(api){
             this.configure();
 
             this.markModified('settings');
+
+            return this.settings;
           }
         }
       },
@@ -56,6 +58,7 @@ module.exports = function(api){
           for (var model in api) {
             if (api[model].configure) {
               api[model].configure();
+              api[model].editEvent();
             }
           }
         }

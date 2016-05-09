@@ -49,6 +49,20 @@ export default React.createClass({
       );
     }
 
+    if (this.props.label) {
+      return (
+        <div>
+          <label>{this.props.label}</label><br />
+          <OAuth
+            url={this.state.oauth.url}
+            onOAuth={this.handleOAuth}
+            src="./img/btn_google+_signin_small_transparent.png"
+            alt="gmail sign-in"
+          ></OAuth>
+        </div>
+      );
+    }
+
     return (
       <OAuth
         url={this.state.oauth.url}

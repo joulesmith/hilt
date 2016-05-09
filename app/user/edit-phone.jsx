@@ -19,21 +19,21 @@ export default React.createClass({
     };
   },
   componentWillMount: function(){
-    this.editor = editor(
+    this.editor = editor({
       // structure and labels of editable variables
-      {
+      form: {
         number: "Phone Number",
         signin: "Use for multi-step sign-in",
         verified: ''
       },
       // callback for when there are edit events
-      newPhone => {
+      handler: newPhone => {
         this.setState({
           phone: newPhone,
           phoneStatus: phone_regex.test(newPhone.number.current) ? 'success' : 'error',
         });
       }
-    );
+    });
 
     if (this.props.id){
       this.subscription = journal.subscribe({
@@ -52,7 +52,7 @@ export default React.createClass({
         signin: false,
         verified: false
       });
-      
+
       this.setState({
         processing: false
       });

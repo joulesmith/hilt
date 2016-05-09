@@ -40,9 +40,6 @@ export default React.createClass({
       data: {}
     });
   },
-  admin() {
-    hashHistory.push('admin-settings');
-  },
   render: function() {
 
     var links;
@@ -96,7 +93,7 @@ export default React.createClass({
           </Bootstrap.Nav>
           <Bootstrap.Nav pullRight>
             <Bootstrap.NavDropdown
-              title="Account"
+              title="Settings"
               id="basic-nav-dropdown"
             >
               {(() => {
@@ -130,20 +127,20 @@ export default React.createClass({
                   }
 
                   menuItems.push(
-                    <Bootstrap.MenuItem key="-1" href='#/settings'>
+                    <Bootstrap.MenuItem key="-1" onSelect={() => {hashHistory.push('user-settings');}}>
                     {formatMessage({
                       id: 'settings_menu_button',
-                      default: 'Settings'
+                      default: 'User'
                     })}
                     </Bootstrap.MenuItem>
                   );
 
                   if (this.state.admins && this.state.admins.id.length > 0) {
                     menuItems.push(
-                      <Bootstrap.MenuItem key="-2" onSelect={this.admin}>
+                      <Bootstrap.MenuItem key="-2" onSelect={() => {hashHistory.push('site-settings');}}>
                       {formatMessage({
                         id: 'admin_menu_button',
-                        default: 'Site Admin'
+                        default: 'Site'
                       })}
                       </Bootstrap.MenuItem>
                     );

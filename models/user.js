@@ -249,15 +249,17 @@ module.exports = function(api) {
 
                         promises.push(api[model].collection.findById(_id).exec()
                           .then(function(element) {
-                            return element.revokeUserAccess(actions, fromUser).return(element.grantUserAccess(actions, toUser));
+                            if (element) {
+                              return element.revokeUserAccess(actions, fromUser).return(element.grantUserAccess(actions, toUser));
+                            }
                           }));
                       });
                     }
 
                     return Promise.all(promises)
-                      .then(function() {
-                        return fromUser.remove();
-                      })
+                    .then(function() {
+                      return fromUser.remove();
+                    });
                   } else {
                     return fromUser.remove();
                   }
@@ -322,6 +324,7 @@ module.exports = function(api) {
           parameter: ':model(*)',
           handler: function(req){
             if (req.params.model) {
+              // return only the specific model
               if (this.accessRecords[req.params.model]) {
                 return this.accessRecords[req.params.model];
               }
@@ -329,6 +332,7 @@ module.exports = function(api) {
               return {id: [], actions: []};
             }
 
+            // return everything
             return  this.accessRecords;
           }
         }
