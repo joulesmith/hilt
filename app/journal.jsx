@@ -361,7 +361,7 @@ export function publish (resource, state) {
   }
 }
 
-socket.on('update', function(data){
+socket.on('api_update', function(data){
   var result = resourceTree.find(data.uri, false);
 
   if (result && result.node && result.node._subscribers) {
@@ -374,16 +374,13 @@ socket.on('update', function(data){
       }
     })
     .catch(function(error){
-
+      console.log(data);
     });
   }
 });
 
-socket.on('error', function(data){
-  report({
-    action: '#/error',
-    data: data
-  });
+socket.on('api_error', function(data){
+  console.log(data);
 });
 
 // helper function to tie a subscriber function to a resource

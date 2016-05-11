@@ -1204,56 +1204,56 @@ var serveModels = function(server){
       user_ioAuth(socket);
 
       var subs = {};
-      socket.on('disconnect', function(){
-        // remove listeners
-        for(var uri in subs) {
-          if (subs[uri]){
-            unsub({
-              uri: uri
-            });
-          }
-        }
-      });
 
       // listen for changes to a particular resource.
-      socket.on('subscribe', function(data) {
+      var sub = function(data) {
 
         try{
+          // parse uri to the resource that wants to be listened to
           var parts = data.uri.split('/');
           var model, _id, view;
 
           model = parts[1];
 
-
-          var modelSub = subscriptions.get(model);
-
-          if (!modelSub) {
-            modelSub = {
-              subscribers: new Map(),
-              instances: new Map()
-            };
-
-            // create subscription
-            subscriptions.set(model, modelSub);
+          // make sure the model can be handled
+          if (!api[model]) {
+            throw new Error('nomodel',
+              'The [0] model is not defined within the api.', [model],
+              404);
           }
 
           if (/[a-z0-9]{24}/.test(parts[2])) {
-            // there is an 12byte _id, so this is an instance
+            // there is a 12byte _id, so this is an instance
 
             _id = parts[2];
             view = parts[3] || 'root';
 
+            // find the data for this model instance
             api[model].collection.findById(_id)
             .exec()
             .then(function(element) {
               // first make sure they have permission to even see this instance view
-
+              // using the security settings
               if (!element.testAccess('view.' + view, socket.user)) {
                 throw new api[model].Error('noaccess',
                   'User does not have permission to [0] this [1].', ['view.' + view, model],
                   403);
               }
 
+              // get/create the subscription node for that model in question
+              var modelSub = subscriptions.get(model);
+
+              if (!modelSub) {
+                modelSub = {
+                  subscribers: new Map(),
+                  instances: new Map()
+                };
+
+                // create subscription
+                subscriptions.set(model, modelSub);
+              }
+
+              // get/create the subscription node for that instance in question
               var instanceSub = modelSub.instances.get(_id);
 
               if (!instanceSub) {
@@ -1270,41 +1270,53 @@ var serveModels = function(server){
               // of the same instance, and must have separate update events sent.
               instanceSub.subscribers.set(socket.id + '/' + data.uri, function(){
                 // callback when there is a change with the instance subscribed to
-                socket.emit('update', {
+                socket.emit('api_update', {
                   uri: data.uri
                 });
               });
 
 
-
+              // this is for cleanup on disconnect
               subs[data.uri] = true;
 
             })
             .catch(function(error) {
-              socket.emit('error', error);
+              socket.emit('api_error', error);
             });
           }else {
+
+            // get/create the subscription node for that model in question
+            var modelSub = subscriptions.get(model);
+
+            if (!modelSub) {
+              modelSub = {
+                subscribers: new Map(),
+                instances: new Map()
+              };
+
+              // create subscription
+              subscriptions.set(model, modelSub);
+            }
 
             // this one will just be listening for updates to a whole collection
             modelSub.subscribers.set(socket.id + '/' + data.uri, function(){
               // callback when there is a change with the instance subscribed to
-              socket.emit('update', {
+              socket.emit('api_update', {
                 uri: data.uri
               });
             });
 
+            // this is for cleanup on disconnect
             subs[data.uri] = true;
-
           }
         }catch(error){
-          socket.emit('error', error);
+          socket.emit('api_error', error);
         }
-      });
-
-
+      };
 
       var unsub = function(data) {
         try{
+
           var parts = data.uri.split('/');
           var model, _id, view;
           var key, sub;
@@ -1321,12 +1333,15 @@ var serveModels = function(server){
 
               var instanceSub = modelSub.instances.get(_id);
 
-              instanceSub.subscribers.delete(socket.id + '/' + data.uri);
+              if (instanceSub) {
+                instanceSub.subscribers.delete(socket.id + '/' + data.uri);
 
-              if (instanceSub.subscribers.size === 0) {
-                // remove since noone is listening
-                modelSub.instances.delete(_id);
+                if (instanceSub.subscribers.size === 0) {
+                  // remove since noone is listening
+                  modelSub.instances.delete(_id);
+                }
               }
+
             }else{
               modelSub.subscribers.delete(socket.id + '/' + data.uri);
             }
@@ -1337,21 +1352,37 @@ var serveModels = function(server){
 
           }
 
+          // no longer needs to be cleaned up
           subs[data.uri] = false;
 
         }catch(error){
-          socket.emit('error', error);
+          socket.emit('api_error', error);
         }
       };
 
+      var cleanup = function(){
+        // remove listeners
+        for(var uri in subs) {
+          if (subs[uri]){
+            unsub({
+              uri: uri
+            });
+          }
+        }
+      };
+
+      socket.on('subscribe', sub);
+
       socket.on('unsubscribe', unsub);
+
+      socket.on('disconnect', cleanup);
 
       socket.on('report', function(data) {
 
       });
 
     } catch (error) {
-      socket.emit('error', error);
+      socket.emit('api_error', error);
     }
 
   });
