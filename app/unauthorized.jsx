@@ -18,7 +18,7 @@ export default React.createClass({
         <Bootstrap.Col xs={8} xsOffset={1}>
           <div>
             <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span>&emsp;</span>
-            <span>Please <a style={{cursor:'pointer'}} onClick={this.register}>register or sign-in</a> to access {this.props.value}.</span>
+            <span>The account signed in does not have access to {this.props.value}.</span>
           </div>
         </Bootstrap.Col>
       </Bootstrap.Row>

@@ -8,6 +8,7 @@ import Admin from './admin';
 import If from '../if';
 import * as merge from '../merge.jsx';
 import SigninRequired from '../signin-required.jsx';
+import Unauthorized from '../unauthorized.jsx';
 import Loading from '../loading';
 import EditGoogle from './google';
 import EditTwilio from './twilio';
@@ -43,11 +44,16 @@ export default React.createClass({
     var emails;
 
     if (!this.state.currentUser || !this.state.currentUser._id || this.state.currentUser.guest) {
-      return <SigninRequired />;
+      return <SigninRequired value='Settings' />;
     }
 
     if (!this.state.admins) {
       return <Loading value="Admin"/>;
+    }
+
+
+    if (this.state.admins.id.length === 0) {
+      return <Unauthorized value="Site Settings" />
     }
 
     var admins = this.state.admins.id.map(id => {
