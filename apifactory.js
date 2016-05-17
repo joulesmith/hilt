@@ -257,9 +257,9 @@ var serveModels = function(server){
           default: false
         },
         // no longer can be accessed from public api
-        removed: {
-          type: Boolean,
-          default: false
+        deleted: {
+          type: Number,
+          default: 0
         },
         // store access permissions here
         security: {
@@ -330,20 +330,45 @@ var serveModels = function(server){
       }
 
       Schema.methods.editEvent = function() {
-        var modelSub = subscriptions.get(model);
 
-        if (modelSub){
-          var instanceSub = modelSub.instances.get('' + this._id);
-
-          if (instanceSub) {
-            instanceSub.subscribers.forEach(function(subscription, key){
-              subscription();
-            });
-          }
-        }
 
         this.edited = Date.now();
-        return this;
+        return this.save().then(function(instance){
+          var modelSub = subscriptions.get(model);
+
+          if (modelSub){
+            var instanceSub = modelSub.instances.get('' + instance._id);
+
+            if (instanceSub) {
+              instanceSub.subscribers.forEach(function(subscription, key){
+                subscription();
+              });
+            }
+          }
+
+          return instance;
+        });
+      };
+
+      Schema.methods.deleteEvent = function() {
+
+        this.deleted = Date.now();
+
+        return this.save().then(function(instance){
+          var modelSub = subscriptions.get(model);
+
+          if (modelSub){
+            var instanceSub = modelSub.instances.get('' + instance._id);
+
+            if (instanceSub) {
+              instanceSub.subscribers.forEach(function(subscription, key){
+                subscription();
+              });
+            }
+          }
+
+          return instance;
+        });
       };
 
       apiModel.editEvent = function() {
@@ -366,8 +391,8 @@ var serveModels = function(server){
       Schema.methods.testAccess = function(action, user) {
 
         if (this.deleted) {
-          throw new ModelError('removed',
-            'This [0] has been peranently removed.', [model],
+          throw new ModelError('deleted',
+            'This [0] has been permanently deleted.', [model],
             410);
         }
 
@@ -939,6 +964,7 @@ var serveModels = function(server){
 
       for (var prop in apiModel.action) {
         if (prop === 'secure') {
+          // this is not a route, just saying whether all action routes are secure or not
           continue;
         }
 
@@ -953,7 +979,7 @@ var serveModels = function(server){
           }
 
           if (secure['action']) {
-            // all action requests must be authenticated
+            // all of these action requests must be authenticated
             router.post(route,
               bodyParser.json(),
               bodyParser.urlencoded({
@@ -995,18 +1021,33 @@ var serveModels = function(server){
                       }
                     }
 
+                    if (prop === 'delete') {
+                      if (method.handler) {
+                        var result = method.handler.apply(element, [req, res]);
+
+                        if (result) {
+                          // assumes a promise is returned, if anything
+                          return Promise.all([result]).then(function(results) {
+                            return element.deleteEvent().return(results[0] || null);
+                          });
+                        }
+                      }
+
+                      return element.deleteEvent();
+                    }
+
                     if (method.handler) {
                       var result = method.handler.apply(element, [req, res]);
 
                       if (result) {
                         // assumes a promise is returned, if anything
                         return Promise.all([result]).then(function(results) {
-                          return element.editEvent().save().return(results[0] || null);
+                          return element.editEvent().return(results[0] || null);
                         });
                       }
                     }
 
-                    return element.editEvent().save();
+                    return element.editEvent();
                   })
                   .then(function(result) {
                     if (result) {
@@ -1063,18 +1104,33 @@ var serveModels = function(server){
                       }
                     }
 
+                    if (prop === 'delete') {
+                      if (method.handler) {
+                        var result = method.handler.apply(element, [req, res]);
+
+                        if (result) {
+                          // assumes a promise is returned, if anything
+                          return Promise.all([result]).then(function(results) {
+                            return element.deleteEvent().return(results[0] || null);
+                          });
+                        }
+                      }
+
+                      return element.deleteEvent();
+                    }
+
                     if (method.handler) {
                       var result = method.handler.apply(element, [req, res]);
 
                       if (result) {
                         // assumes a promise is returned, if anything
                         return Promise.all([result]).then(function(results) {
-                          return element.editEvent().save().return(results[0] || null);
+                          return element.editEvent().return(results[0] || null);
                         });
                       }
                     }
 
-                    return element.editEvent().save();
+                    return element.editEvent();
                   })
                   .then(function(result) {
                     if (result) {
@@ -1128,18 +1184,33 @@ var serveModels = function(server){
                       }
                     }
 
+                    if (prop === 'delete') {
+                      if (method.handler) {
+                        var result = method.handler.apply(element, [req, res]);
+
+                        if (result) {
+                          // assumes a promise is returned, if anything
+                          return Promise.all([result]).then(function(results) {
+                            return element.deleteEvent().return(results[0] || null);
+                          });
+                        }
+                      }
+
+                      return element.deleteEvent();
+                    }
+
                     if (method.handler) {
                       var result = method.handler.apply(element, [req, res]);
 
                       if (result) {
                         // assumes a promise is returned, if anything
                         return Promise.all([result]).then(function(results) {
-                          return element.editEvent().save().return(results[0] || null);
+                          return element.editEvent().return(results[0] || null);
                         });
                       }
                     }
 
-                    return element.editEvent().save();
+                    return element.editEvent();
                   })
                   .then(function(result) {
                     if (result) {

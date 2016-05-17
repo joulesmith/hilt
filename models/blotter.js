@@ -102,6 +102,9 @@ module.exports = function(api){
           handler: function(req) {
           }
         },
+        // POST: /api/model/id/delete (deletes use http POST instead of http DELETE)
+        // resource is not removed completely, but is just made unavailable.
+        delete: {},
         // POST: /api/model/id/cite
         cite: {
           secure: false,

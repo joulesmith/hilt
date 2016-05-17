@@ -47,6 +47,12 @@ export default React.createClass({
       });
     });
   },
+  handleDeleteBlotter(){
+    journal.report({
+      action: 'api/blotter/' + this.props.params.id + '/delete',
+      data: {}
+    })
+  },
   keygen() {
     var that = this;
 
@@ -119,6 +125,7 @@ export default React.createClass({
           <Bootstrap.Col md={11} mdOffset={1}>
             <Link to={'/blotter/' + this.state.localBlotter._id}>{this.state.localBlotter.name}</Link>
             <Bootstrap.Button onClick={this.handleSave} bsStyle={saveStyle}>Save</Bootstrap.Button>
+            <Bootstrap.Button onClick={this.handleDeleteBlotter} >Delete</Bootstrap.Button>
           </Bootstrap.Col>
         </Bootstrap.Row>
         <Bootstrap.Row>
