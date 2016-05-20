@@ -1,10 +1,11 @@
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import * as journal from '../journal';
-import { Router, Route, Link, browserHistory  } from 'react-router';
+import { Router, Route, Link, hashHistory  } from 'react-router';
 import Blot from './blot-edit';
 import * as merge from '../merge';
 import FileUpload from '../file-upload';
+import Confirm from '../confirm-modal';
 
 export default React.createClass({
   componentWillMount: function(){
@@ -52,6 +53,9 @@ export default React.createClass({
       action: 'api/blotter/' + this.props.params.id + '/delete',
       data: {}
     })
+    .then(() => {
+      hashHistory.push("/");
+    });
   },
   keygen() {
     var that = this;
@@ -125,7 +129,7 @@ export default React.createClass({
           <Bootstrap.Col md={11} mdOffset={1}>
             <Link to={'/blotter/' + this.state.localBlotter._id}>{this.state.localBlotter.name}</Link>
             <Bootstrap.Button onClick={this.handleSave} bsStyle={saveStyle}>Save</Bootstrap.Button>
-            <Bootstrap.Button onClick={this.handleDeleteBlotter} >Delete</Bootstrap.Button>
+            <Confirm request='Delete' onConfirm={this.handleDeleteBlotter} />
           </Bootstrap.Col>
         </Bootstrap.Row>
         <Bootstrap.Row>
