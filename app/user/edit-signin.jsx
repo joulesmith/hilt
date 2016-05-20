@@ -57,7 +57,8 @@ export default React.createClass({
 
     this.setState({
       username: event.target.value
-    }, this.subscription.thisChanged);
+    });
+
     // the subscription depends on this.state.username
     // to see if the username is already registered
 
@@ -72,6 +73,8 @@ export default React.createClass({
         username: event.target.value
       });
     }
+
+    this.subscription.thisChanged();
   },
   handleCurrentPassword: function(event) {
     this.setState({
@@ -126,6 +129,9 @@ export default React.createClass({
         data: token
       });
     })
+    .then(() => {
+      location.reload();
+    })
     .catch(err => {
       journal.report({
         action: '#/error',
@@ -134,6 +140,7 @@ export default React.createClass({
     });
   },
   handleOAuth: function(code) {
+
     journal.report({
       action: 'api/user/' + this.props.user._id + '/signin-google',
       data: {
@@ -146,6 +153,9 @@ export default React.createClass({
         action: '#/user/login',
         data: token
       });
+    })
+    .then(() => {
+      location.reload();
     })
     .catch(err => {
       journal.report({

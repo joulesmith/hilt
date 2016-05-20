@@ -67,7 +67,7 @@ module.exports = function(api){
 
           this.users.slice(index, 0, user_id);
 
-          return user.addGroup(this).return(this.save());
+          return user.addGroup(this).return(this.editEvent());
         },
         remove: function(user) {
           var user_id = '' + user._id;
@@ -75,7 +75,7 @@ module.exports = function(api){
 
           this.users.slice(index, 1);
 
-          return user.removeGroup(this).return(this.save());
+          return user.removeGroup(this).return(this.editEvent());
         },
         accessGranted: function(model, actions, resource) {
           var group = this;
@@ -104,7 +104,7 @@ module.exports = function(api){
 
           group.markModified('accessRecords');
 
-          return group.save();
+          return group.editEvent();
         },
         accessRevoked: function(model, actions, resource) {
           var group = this;
@@ -115,7 +115,9 @@ module.exports = function(api){
 
             if (recordIndex !== -1) {
 
-              group.accessRecords[model].actions[recordIndex] = _.without(group.accessRecords[model].actions[recordIndex], actions);
+              actions.forEach(function(action){
+                group.accessRecords[model].actions[recordIndex] = _.without(group.accessRecords[model].actions[recordIndex], action);
+              });
 
               if (group.accessRecords[model].actions[recordIndex].length === 0) {
                 // if no actions can be be performed, remove resource
@@ -132,7 +134,7 @@ module.exports = function(api){
 
           group.markModified('accessRecords');
 
-          return group.save();
+          return group.editEvent();
         }
       }
     }

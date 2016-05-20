@@ -64,7 +64,7 @@ export default React.createClass({
     var emails, phones;
 
     if (!this.state.currentUser || !this.state.currentUser._id || this.state.currentUser.guest) {
-      return <SigninRequired />;
+      return <SigninRequired value='user settings' />;
     }
 
     if (this.state.editEmail){

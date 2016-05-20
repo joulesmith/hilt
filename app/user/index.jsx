@@ -18,7 +18,7 @@ journal.report({
 /**
  * Checks whether or not there is a user currently logged in by checking window storage
  * for stored tokens. If not it will automatically request a guest user
- * @return {Boolean} true if there is a user logged in.
+ * @return {Promise} true if there is a user logged in.
  */
 export function isLoggedIn() {
 

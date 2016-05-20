@@ -331,8 +331,8 @@ var serveModels = function(server){
 
       Schema.methods.editEvent = function() {
 
-
         this.edited = Date.now();
+
         return this.save().then(function(instance){
           var modelSub = subscriptions.get(model);
 
@@ -354,21 +354,7 @@ var serveModels = function(server){
 
         this.deleted = Date.now();
 
-        return this.save().then(function(instance){
-          var modelSub = subscriptions.get(model);
-
-          if (modelSub){
-            var instanceSub = modelSub.instances.get('' + instance._id);
-
-            if (instanceSub) {
-              instanceSub.subscribers.forEach(function(subscription, key){
-                subscription();
-              });
-            }
-          }
-
-          return instance;
-        });
+        return this.revokeAllAccess();
       };
 
       apiModel.editEvent = function() {
@@ -467,7 +453,7 @@ var serveModels = function(server){
 
         element.markModified('security');
 
-        return user.accessGranted(model, actions, element).return(element.editEvent().save());
+        return user.accessGranted(model, actions, element).return(element.editEvent());
       };
 
       Schema.methods.revokeUserAccess = function(actions, user) {
@@ -486,7 +472,7 @@ var serveModels = function(server){
 
         element.markModified('security');
 
-        return user.accessRevoked(model, actions, element).return(element.editEvent().save());
+        return user.accessRevoked(model, actions, element).return(element.editEvent());
       };
 
       Schema.methods.grantGroupAccess = function(actions, group) {
@@ -514,7 +500,7 @@ var serveModels = function(server){
 
         element.markModified('security');
 
-        return group.accessGranted(model, actions, element).return(element.editEvent().save());
+        return group.accessGranted(model, actions, element).return(element.editEvent());
       };
 
       Schema.methods.revokeGroupAccess = function(actions, group) {
@@ -533,8 +519,39 @@ var serveModels = function(server){
 
         element.markModified('security');
 
-        return group.accessRevoked(model, actions, element).return(element.editEvent().save());
+        return group.accessRevoked(model, actions, element).return(element.editEvent());
 
+      };
+
+      Schema.methods.revokeAllAccess = function(){
+        var element = this;
+
+        var revokations = [];
+
+        for(var action in element.security) {
+          if (element.security[action].groups) {
+            element.security[action].groups.forEach(function(group){
+              revokations.push(api.group.collection.findById(group).exec().then(function(group){
+                return group.accessRevoked(model, [action], element);
+              }));
+            });
+          }
+
+          if (element.security[action].users) {
+            element.security[action].users.forEach(function(user){
+
+              revokations.push(api.user.collection.findById(user).exec().then(function(user){
+                return user.accessRevoked(model, [action], element);
+              }));
+            });
+          }
+        }
+
+        return Promise.all(revokations).then(function(){
+          element.markModified('security');
+
+          return element.editEvent();
+        });
       };
 
       var Model = mongoose.model(model, Schema);
@@ -723,7 +740,7 @@ var serveModels = function(server){
 
                         if (result) {
                           return Promise.all([result]).then(function(result) {
-                            return element.editEvent().save()
+                            return element.editEvent()
                             .then(function(){
                               res.json(result[0] || {_id: element._id});
                             });
@@ -732,10 +749,10 @@ var serveModels = function(server){
 
                         // if there is no result, assume handler handled response
                         // no additional response is given.
-                        return element.editEvent().save();
+                        return element.editEvent();
                       }
 
-                      return element.editEvent().save()
+                      return element.editEvent()
                       .then(function(element){
                         // default at least reaturn the id so it can be found immediatly
                         res.json({

@@ -19,6 +19,7 @@ import RegisterBody from './user/register-body';
 import UserSettings from './user/settings';
 import SiteSettings from './admin/settings';
 
+import AccessRecords from './user/access-records';
 import BlotterCreate from './blotter/blotter-create';
 import BlotterView from './blotter/blotter-view';
 import BlotterEdit from './blotter/blotter-edit';
@@ -53,6 +54,7 @@ var Root = React.createClass({
             <Route path="/site-settings" component={SiteSettings} />
             <Route path="/user-settings" component={UserSettings} />
             <Route path="/register" component={RegisterBody} />
+            <Route path="/records" component={AccessRecords} />
 
             <Route path="/blotter" component={BlotterCreate} />
             <Route path="/blotter/search" component={BlotterSearch} />

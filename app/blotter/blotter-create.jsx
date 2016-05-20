@@ -15,7 +15,9 @@ export default React.createClass({
       name: event.target.value,
     })
   },
-  handleCreate() {
+  handleCreate(event) {
+    event.preventDefault();
+
     this.setState({
       processing: true
     }, () => {
@@ -38,6 +40,7 @@ export default React.createClass({
         <Bootstrap.ButtonInput
           onClick={this.state.processing ? null : this.handleCreate}
           value={this.state.processing ? "Processing..." : "New Blotter"}
+          type="submit"
         >
         </Bootstrap.ButtonInput>
       </form>

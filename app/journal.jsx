@@ -13,6 +13,7 @@ import http from 'axios';
 import * as nodeUrl from 'url';
 import io from 'socket.io-client';
 
+// TODO: set url more generally
 var socket = io.connect('http://localhost:3000');
 var authorizations = {};
 
@@ -383,48 +384,6 @@ socket.on('api_error', function(data){
   console.log(data);
 });
 
-// helper function to tie a subscriber function to a resource
-var makeSubscription = (resource, subscriber, updated) => {
-  // form closure
-  // add the subscriber callback to the publication
-  let subscription = () => {
-    // calling means the resource is ready, notify any of the dependent resources
-    // as well in case they need a value to resolve their uri
-    resource.dependents.forEach(dependent => {
-      // TODO:  changes the resulting uri of the dependent.
-      dependent.resolveURI();
-    });
-
-    // each publication updates its part of the state
-    var macroState = {};
-    macroState[resource.localName] = resource.node._state; // copy?
-    subscriber(macroState);
-    updated ? updated(macroState) : '';
-  };
-
-
-  if (!resource.node._subscribers){
-    // if this is the first subscriber to this publication, then initialize
-    resource.node._subscribers = [];
-  }
-
-  resource.node._subscribers.push(subscription);
-
-  resource.unsub = () => {
-    var index = resource.node._subscribers.indexOf(subscription);
-    resource.node._subscribers.splice(index, 1);
-
-    // TODO: stop listening when no subscribers, if listening was started?
-    // and delete branches without subscribers
-  };
-
-  if (resource.node._state) {
-    // since this is not a change in the state, fire an initial response to
-    // the subscription (it won't otherwise)
-    subscription();
-  }
-};
-
 /**
  * Listens for the current state of resources, whether or not it exists. Any changes
  * to the state of the resource are given to the first parameter of the callback.
@@ -473,12 +432,12 @@ export function subscribe (resources, subscriber, _this) {
   // allows referencing each resource using its name
   var resourceKeyValues = {};
 
-  for(let prop in resources){
+  for(let localName in resources){
     // keeps track of all the information pertaining to the subscription status
     // of each resource.
-    resourceKeyValues[prop] = {
-      localName: prop, // short-name for the resoruce which become property value of state
-      uriTemplate: resources[prop], // original template string for the uri of the resource
+    resourceKeyValues[localName] = {
+      localName: localName, // short-name for the resoruce which become property value of state
+      uriTemplate: resources[localName], // original template string for the uri of the resource
       resolveURI: null, // function for computing the actual uri from the template and current state
       currentUri: '', // currently computed uri
       node: null, // node in the resource tree-cache to which this resource corresponds
@@ -495,60 +454,58 @@ export function subscribe (resources, subscriber, _this) {
 
   // this initial loop just figures out which resources depend on which other
   // resources.
-  for(let prop in resources){
-    let resource = resourceKeyValues[prop];
+  for(let localName in resources){
+    let resource = resourceKeyValues[localName];
 
     resourceList.push(resource);
-
-    let uritmpl = resources[prop];
 
     // regular expression for finding variables in a template string
     // of the form {abc.def.xyz}
     let re = /\{(.+?)\}/g;
     let match;
 
-    // starting out there are no deps
+    // starting out there are no dependencies
     let dependencies = {};
 
-    while(match = re.exec(uritmpl)) {
+    while(match = re.exec(resource.uriTemplate)) {
       // this is finding the template dependencies like {anotherResource.value} or {this.state.something}
       let props = match[1].split('.');
 
       // the dependency short name, like 'anotherResource' or 'this'
-      let dependency = props[0];
+      let dependencyName = props[0];
 
-      if (dependency === 'this') {
+      if (dependencyName === 'this') {
         // dependency is something in the 'this' object provided
-        if (!thisDependents[prop]) {
+        if (!thisDependents[localName]) {
           // record that this resource depends on 'this'
-          thisDependents[prop] = resource;
+          thisDependents[localName] = resource;
         }
 
         if (!resource.thisProperties[match[0]]){
           // save the properties that will be needed from 'this' in order to resolve
-          // the variable in the uri template
+          // the variable in the uri template e.g. {this.state.something} -> [state, something]
           resource.thisProperties[match[0]] = props.slice(1);
         }
       }else{
         // the dependency has to be one of the other resources being subscribed to
         // the first property of the match should be the shortname of the resource
         // needed
-        if (!resource.unresolvedDependencies[dependency]) {
+        if (!resource.unresolvedDependencies[dependencyName]) {
           // record that this dependency needs the be resolved before this resource can be
           // starting out nothing has been resolved, so everything starts in unresolved category
-          resource.unresolvedDependencies[dependency] = {
-            resource: resourceKeyValues[dependency],
+          resource.unresolvedDependencies[dependencyName] = {
+            resource: resourceKeyValues[dependencyName],
             properties: {} // the properties needed from the dependency once its resolved
           };
 
           // record that once the dependency is resolved, it should attempt to
           // resolve this resource too
-          resourceKeyValues[dependency].dependents.push(resource);
+          resourceKeyValues[dependencyName].dependents.push(resource);
         }
 
-        if (!resource.unresolvedDependencies[dependency].properties[match[0]]){
-          // record the properties needed from the dependency
-          resource.unresolvedDependencies[dependency].properties[match[0]] = props.slice(1);
+        if (!resource.unresolvedDependencies[dependencyName].properties[match[0]]){
+          // record the properties needed from the dependency e.g. {anotherResource.value} -> [value]
+          resource.unresolvedDependencies[dependencyName].properties[match[0]] = props.slice(1);
         }
       }
     }
@@ -563,7 +520,7 @@ export function subscribe (resources, subscriber, _this) {
   // find all the resources that do not have any dependencies
   // there must be at least one for the dependency tree to be resolvable
   resourceList.forEach(res => {
-    for(var unresolved in res.unresolvedDependencies) {
+    for(let unresolved in res.unresolvedDependencies) {
       resourcesWithDependencies.push(res);
       // this will return on the first occurence of a dependecy
       return;
@@ -577,6 +534,7 @@ export function subscribe (resources, subscriber, _this) {
   var sortedResources;
 
   if (resourcesWithDependencies.length === 0) {
+    // if there are no dependencies at all, any order is valid
     sortedResources = resourcesWithOnlyResolvedDependencies;
   }else{
 
@@ -586,7 +544,7 @@ export function subscribe (resources, subscriber, _this) {
     // to resolve the dependencies of their dependents. If there are any left unresolved
     // after we use these up, then there is no way to resolve them.
     while(resourcesWithOnlyResolvedDependencies.length > 0) {
-      var res = resourcesWithOnlyResolvedDependencies.pop();
+      let res = resourcesWithOnlyResolvedDependencies.pop();
 
       sortedResources.push(res);
 
@@ -595,7 +553,7 @@ export function subscribe (resources, subscriber, _this) {
         dependent.resolvedDependencies[res.localName] = dependent.unresolvedDependencies[res.localName];
         delete dependent.unresolvedDependencies[res.localName];
 
-        for(var unresolvedDependency in dependent.unresolvedDependencies){
+        for(let unresolvedDependency in dependent.unresolvedDependencies){
           // I want to return if there are still any unresolved dependencies
           return;
         }
@@ -620,24 +578,19 @@ export function subscribe (resources, subscriber, _this) {
 
   }
 
-  var update = function(state){
-    for(let dep in thisDependents) {
-      thisDependents[dep].resolveURI();
-    }
-  };
-
   // the resolveURI function can be defined now that the valid
   // loading order is known.
   sortedResources.forEach(resource => {
 
     resource.resolveURI = function() {
       // this will be a running solution of the actual uri
-      var uri = resource.uriTemplate;
+      var nextUri = resource.uriTemplate;
       // pull the data in from the dependencies
-      for(let dependency in resource.resolvedDependencies){
-        var dep = resource.resolvedDependencies[dependency];
+      for(let localName in resource.resolvedDependencies){
+        var dep = resource.resolvedDependencies[localName];
 
         if (dep.resource.node && dep.resource.node._state) {
+          // use current state to replace values within the uri template
           for(let match in dep.properties) {
             let value = dep.resource.node._state;
 
@@ -665,13 +618,13 @@ export function subscribe (resources, subscriber, _this) {
             }
 
             // substitute the value into the url template
-            uri = uri.replace(match, () => {
+            nextUri = nextUri.replace(match, () => {
               return value;
             });
 
           }
         }else{
-          // if any of the dependencies aren't ready, cannot make uri.
+          // if any of the dependencies do not have a current state, cannot make uri.
           return;
         }
       }
@@ -703,7 +656,7 @@ export function subscribe (resources, subscriber, _this) {
           //throw new Error("A value for " + match + " could not be found in " + JSON.stringify(_this));
         }
 
-        uri = uri.replace(match, () => {
+        nextUri = nextUri.replace(match, () => {
           return value;
         });
       }
@@ -712,7 +665,7 @@ export function subscribe (resources, subscriber, _this) {
       // all required dependency values have been replaced, so now can use it
       // to subscribe to the resource
 
-      if (uri === resource.currentUri) {
+      if (nextUri === resource.currentUri) {
         // already subscribed to it
         // perhaps a state change triggered a re-resolving of the uri, but it
         // ended up not change it, so there is no need to re-subscribe to anything
@@ -723,50 +676,94 @@ export function subscribe (resources, subscriber, _this) {
         // there is already a subscription for this resource, but not the correct uri, so unsubscribe first
         resource.unsub();
         resource.unsub = null;
-
-        // TODO: check if resource is with app's server
-        socket.emit('unsubscribe', {
-          uri : uri
-        });
       }
 
-      resource.currentUri = uri;
-      // the uri should be complete now, look up the resource in the resource tree-cache
-      let result = resourceTree.find(resource.currentUri, true);
-
-      // just reference the node. Changes to _state will be reflected in the reference
-      resource.node = result.node;
+      resource.currentUri = nextUri;
 
       // inserts update function into the resource tree and unsub reference on resource
-      makeSubscription(resource, subscriber, update);
+      ((resource, subscriber) => {
+        // form closure
+        // add the subscriber callback to the publication
+        let subscription = () => {
+          // calling means the resource is ready, notify any of the dependent resources
+          // as well in case they need a value to resolve their uri
+          resource.dependents.forEach(dependent => {
+            // TODO:  changes the resulting uri of the dependent.
+            dependent.resolveURI();
+          });
 
-      if (!result.local) {
-        // request a fresh copy of the data from the server, even though it may
-        // have already gotten a state from the cache
-        httpGet(resource.currentUri)
-        .then(state => {
-          result.node._state = state; // copy?
+          // each publication updates its part of the state
+          var macroState = {};
+          macroState[resource.localName] = resource.node._state; // copy?
+          subscriber(macroState);
 
-          // update everyone listening to this resource as well as this subscription,
-          // assuming its still subscribed by the time the server responds.
-          if (result.node._subscribers) {
-            result.node._subscribers.forEach(subscription => {
-              subscription();
+          // updating any state might also be altering 'this'.
+          for(let dep in thisDependents) {
+            thisDependents[dep].resolveURI();
+          }
+        };
+
+        // the uri should be complete now, look up the resource in the resource tree-cache
+        let result = resourceTree.find(resource.currentUri, true);
+        // just reference the node. Changes to _state will be reflected in the reference
+        resource.node = result.node;
+
+        if (!resource.node._subscribers){
+          // if this is the first subscriber to this publication, then initialize
+          resource.node._subscribers = [];
+        }
+
+        resource.node._subscribers.push(subscription);
+
+        if (!result.local) {
+          // request a fresh copy of the data from the server, even though it may
+          // have already gotten a state from the cache
+          httpGet(resource.currentUri)
+          .then(state => {
+            result.node._state = state; // copy?
+
+            // update everyone listening to this resource as well as this subscription,
+            // assuming its still subscribed by the time the server responds.
+            if (result.node._subscribers) {
+              result.node._subscribers.forEach(subscription => {
+                subscription();
+              });
+            }
+          })
+          .catch(error => {
+
+          });
+
+          // if the resource has a socket.io api, subscribe for update events
+          if (!result.parsedUrl.host) {
+            // TODO: specify socket.io server(s) in a configuration setting.
+            socket.emit('subscribe', {
+              uri : resource.currentUri
             });
           }
-        })
-        .catch(error => {
-
-        });
-
-        // if the resource has a socket.io api, subscribe for update events
-        if (!result.parsedUrl.host) {
-          // TODO: specify socket.io server(s) in a configuration setting.
-          socket.emit('subscribe', {
-            uri : uri
-          });
         }
-      }
+
+        resource.unsub = () => {
+          var index = resource.node._subscribers.indexOf(subscription);
+          resource.node._subscribers.splice(index, 1);
+
+          // TODO: delete branches without subscribers
+
+          if (!result.parsedUrl.host) {
+            socket.emit('unsubscribe', {
+              uri : resource.currentUri
+            });
+          }
+        };
+
+        if (resource.node._state) {
+          // since this is not a change in the state, fire an initial response to
+          // the subscription (it won't otherwise)
+          subscription();
+        }
+      })(resource, subscriber);
+
+
 
     };
   });
@@ -794,6 +791,7 @@ export function subscribe (resources, subscriber, _this) {
 }
 
 export function get (resources, subscriber, _this) {
+  // TODO: make this a little more efficient but with same functionality
   var fulfilled = {};
   var subscription = null;
 

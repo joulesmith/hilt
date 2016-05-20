@@ -323,6 +323,7 @@ module.exports = function(api) {
         'records':{
           parameter: ':model(*)',
           handler: function(req){
+
             if (req.params.model) {
               // return only the specific model
               if (this.accessRecords[req.params.model]) {
@@ -578,7 +579,7 @@ module.exports = function(api) {
 
           user.markModified('accessRecords');
 
-          return user.editEvent().save();
+          return user.editEvent();
         },
         accessRevoked: function(model, actions, resource) {
           var user = this;
@@ -589,7 +590,9 @@ module.exports = function(api) {
 
             if (recordIndex !== -1) {
 
-              user.accessRecords[model].actions[recordIndex] = _.without(user.accessRecords[model].actions[recordIndex], actions);
+              actions.forEach(function(action){
+                user.accessRecords[model].actions[recordIndex] = _.without(user.accessRecords[model].actions[recordIndex], action);
+              });
 
               if (user.accessRecords[model].actions[recordIndex].length === 0) {
                 // if no actions can be be performed, remove resource
@@ -606,7 +609,7 @@ module.exports = function(api) {
 
           user.markModified('accessRecords');
 
-          return user.editEvent().save();
+          return user.editEvent();
         },
         addGroup: function(group) {
           var user = this;
@@ -616,7 +619,7 @@ module.exports = function(api) {
 
           user.groups.slice(index, 0, group_id);
 
-          return user.editEvent().save();
+          return user.editEvent();
         },
         removeGroup: function(group) {
           var user = this;
@@ -626,7 +629,7 @@ module.exports = function(api) {
 
           user.groups.slice(index, 1);
 
-          return user.editEvent().save();
+          return user.editEvent();
         },
       }
     }
