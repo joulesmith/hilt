@@ -354,7 +354,7 @@ var serveModels = function(server){
 
         this.deleted = Date.now();
 
-        return this.revokeAllAccess();
+        return this.revokeAllUserAccess().return({_id: this._id, deleted: this.deleted});
       };
 
       apiModel.editEvent = function() {
@@ -374,7 +374,11 @@ var serveModels = function(server){
         }
       };
 
-      Schema.methods.testAccess = function(action, user) {
+      apiModel.testAccess = function(user, action) {
+        return user.testAccess(model, action);
+      }
+
+      Schema.methods.testUserAccess = function(user, action) {
 
         if (this.deleted) {
           throw new ModelError('deleted',
@@ -389,168 +393,30 @@ var serveModels = function(server){
             503);
         }
 
-        var security = this.security[action];
-
-
-        if (action !== 'root' && (!secure[action] || (security && security.unrestricted))) {
+        if (action !== 'root' && !secure[action]) {
           // if there is no security, let anyone through (root is always secure)
           return true;
         }
 
-        // there is security, so a user has to be logged in at least
-        if (!user) {
-          return false;
-        }
-
-        var user_id = '' + user._id;
-
-        if (security) {
-
-          // try finding the user directly
-          if (security.users && _.indexOf(security.users, user_id, true) !== -1) {
-
-            return true;
-          }
-
-          // see if the user belongs to a group that has access
-          if (user.groups && security.groups && hasCommonElement(user.groups, security.groups)) {
-            return true;
-          }
-        }
-
-        if (action === 'root') {
-          // if root is not authorized then out of luck
-          return false;
-        } else {
-          // as a last resort, any user able to be root can do also anything else
-          return this.testAccess('root', user);
-        }
-
+        return user && user.testAccess(model, action, this);
       };
 
-      Schema.methods.grantUserAccess = function(actions, user) {
-        var element = this;
-        var user_id = '' + user._id;
-
-        if (!element.security) {
-          element.security = {};
-        }
-
-        actions.forEach(function(action) {
-          var security = element.security[action] || (element.security[action] = {});
-
-          if (!security.users) {
-            security.users = [];
-          }
-
-          var index = _.sortedIndex(security.users, user_id);
-
-          if (security.users[index] !== user_id) {
-            security.users.splice(index, 0, user_id);
-          }
-
-        });
-
-        element.markModified('security');
-
-        return user.accessGranted(model, actions, element).return(element.editEvent());
-      };
-
-      Schema.methods.revokeUserAccess = function(actions, user) {
-        var element = this;
-        var user_id = '' + user._id;
-
-        actions.forEach(function(action) {
-          var security = element.security[action];
-
-          var index = _.indexOf(security.users, user_id, true);
-
-          if (index !== -1) {
-            security.users.splice(index, 1);
-          }
-        });
-
-        element.markModified('security');
-
-        return user.accessRevoked(model, actions, element).return(element.editEvent());
-      };
-
-      Schema.methods.grantGroupAccess = function(actions, group) {
-        var element = this;
-        var group_id = '' + group._id;
-
-        if (!element.security) {
-          element.security = {};
-        }
-
-        actions.forEach(function(action) {
-          var security = element.security[action] || (element.security[action] = {});
-
-          if (!security.groups) {
-            security.groups = [];
-          }
-
-          var index = _.sortedIndex(security.groups, group_id);
-
-          if (security.groups[index] !== group_id) {
-            security.groups.splice(index, 0, group_id);
-          }
-
-        });
-
-        element.markModified('security');
-
-        return group.accessGranted(model, actions, element).return(element.editEvent());
-      };
-
-      Schema.methods.revokeGroupAccess = function(actions, group) {
-        var element = this;
-        var group_id = '' + group._id;
-
-        actions.forEach(function(action) {
-          var security = element.security[action];
-
-          var index = _.indexOf(security.groups, group_id, true);
-
-          if (index !== -1) {
-            security.groups.splice(index, 1);
-          }
-        });
-
-        element.markModified('security');
-
-        return group.accessRevoked(model, actions, element).return(element.editEvent());
-
-      };
-
-      Schema.methods.revokeAllAccess = function(){
+      Schema.methods.revokeAllUserAccess = function(){
         var element = this;
 
-        var revokations = [];
+        var query = {};
+        query['accessRecords.' + model + '.id'] = '' + element._id;
 
-        for(var action in element.security) {
-          if (element.security[action].groups) {
-            element.security[action].groups.forEach(function(group){
-              revokations.push(api.group.collection.findById(group).exec().then(function(group){
-                return group.accessRevoked(model, [action], element);
-              }));
+        return api.user.collection.find(query).exec()
+        .then(function(users){
+
+          return Promise.all(users.map(function(user){
+            return user.accessRevoked({
+              model: model,
+              instance: element
             });
-          }
+          }));
 
-          if (element.security[action].users) {
-            element.security[action].users.forEach(function(user){
-
-              revokations.push(api.user.collection.findById(user).exec().then(function(user){
-                return user.accessRevoked(model, [action], element);
-              }));
-            });
-          }
-        }
-
-        return Promise.all(revokations).then(function(){
-          element.markModified('security');
-
-          return element.editEvent();
         });
       };
 
@@ -577,7 +443,11 @@ var serveModels = function(server){
             }
           }
 
-          return new_user.grantUserAccess(creatorAccess || ['root'], new_user);
+          return new_user.accessGranted({
+            model: model,
+            actions: creatorAccess || ['root'],
+            instance: new_user
+          });
         }
 
         if (!user) {
@@ -598,7 +468,12 @@ var serveModels = function(server){
           }
         }
 
-        return new_element.grantUserAccess(creatorAccess || ['root'], user);
+        return user.accessGranted({
+          model: model,
+          actions: creatorAccess || ['root'],
+          instance: new_element
+        })
+        .return(new_element.editEvent());
       };
 
       var apiHandle = {
@@ -843,7 +718,7 @@ var serveModels = function(server){
                     }
 
                     // authorize user at the view level for all views
-                    if (!element.testAccess('view', req.user)) {
+                    if (!element.testUserAccess(req.user, 'view')) {
                       throw new ModelError('noaccess',
                         'User does not have permission to [0] this [1].', ['view', model],
                         403);
@@ -894,7 +769,7 @@ var serveModels = function(server){
                         404);
                     }
 
-                    if (!element.testAccess('view.' + prop, req.user)) {
+                    if (!element.testUserAccess(req.user, 'view.' + prop)) {
                       // authorize user to this particular view
                       throw new ModelError('noaccess',
                         'User does not have permission to [0] this [1].', ['view.' + prop, model],
@@ -945,7 +820,7 @@ var serveModels = function(server){
                         404);
                     }
 
-                    if (!element.testAccess('view')) {
+                    if (!element.testUserAccess(undefined, 'view')) {
                       // even though there is no user, may be restricted to everyone for some reason
                       throw new ModelError('noaccess',
                         'User does not have permission to [0] this [1].', ['view', model],
@@ -1021,7 +896,7 @@ var serveModels = function(server){
                         404);
                     }
 
-                    if (!element.testAccess('action', req.user)) {
+                    if (!element.testUserAccess(req.user, 'action')) {
                       throw new ModelError('noaccess',
                         'User does not have permission to [0] this [1].', ['action', model],
                         403);
@@ -1104,7 +979,7 @@ var serveModels = function(server){
                         404);
                     }
 
-                    if (!element.testAccess('action.' + prop, req.user)) {
+                    if (!element.testUserAccess(req.user, 'action.' + prop)) {
                       throw new ModelError('noaccess',
                         'User does not have permission to [0] this [1].', ['action.' + prop, model],
                         403);
@@ -1185,7 +1060,7 @@ var serveModels = function(server){
                         404);
                     }
 
-                    if (!element.testAccess('action')) {
+                    if (!element.testUserAccess(undefined, 'action')) {
                       throw new ModelError('noaccess',
                         'User does not have permission to [0] this [1].', ['action', model],
                         403);
@@ -1322,7 +1197,7 @@ var serveModels = function(server){
             .then(function(element) {
               // first make sure they have permission to even see this instance view
               // using the security settings
-              if (!element.testAccess('view.' + view, socket.user)) {
+              if (!element.testUserAccess(socket.user, 'view.' + view)) {
                 throw new api[model].Error('noaccess',
                   'User does not have permission to [0] this [1].', ['view.' + view, model],
                   403);

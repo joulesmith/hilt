@@ -156,14 +156,26 @@ module.exports = function(api) {
                 .then(function() {
                   return api.user.create({
                     locale: locale
-                  })
-                  .then(function(newuser){
-                    newuser.signin = {
-                      username: username
-                    };
-
-                    return newuser.setPassword(password);
                   });
+                })
+                .then(function(newuser){
+                  newuser.signin = {
+                    username: username
+                  };
+
+                  return newuser.setPassword(password);
+                })
+                .then(function(user){
+
+                  return user.accessGranted([
+                    {model: 'user', actions: ['root']},
+                    {model: 'group', actions: ['root']},
+                    {model: 'email', actions: ['root']},
+                    {model: 'phone', actions: ['root']},
+                    {model: 'file', actions: ['root']},
+                    {model: 'payment', actions: ['root']},
+                    {model: 'blotter', actions: ['root']},
+                  ]);
                 })
                 .then(function(user) {
                   return {
@@ -241,27 +253,28 @@ module.exports = function(api) {
                   //
                   if (fromUser.accessRecords) {
 
-                    var promises = [];
+                    var accessChanges = [];
 
                     for (var model in fromUser.accessRecords) {
                       fromUser.accessRecords[model].id.forEach(function(_id, fromIndex) {
                         var actions = fromUser.accessRecords[model].actions[fromIndex];
-
-                        promises.push(api[model].collection.findById(_id).exec()
-                          .then(function(element) {
-                            if (element) {
-                              return element.revokeUserAccess(actions, fromUser).return(element.grantUserAccess(actions, toUser));
-                            }
-                          }));
+                        accessChanges.push({
+                          model: model,
+                          actions: actions,
+                          instance: {_id: _id}
+                        });
                       });
                     }
 
-                    return Promise.all(promises)
+                    return fromUser.accessRevoked(accessChanges)
+                    .then(function(){
+                      return toUser.accessGranted(accessChanges);
+                    })
                     .then(function() {
-                      return fromUser.remove();
+                      return fromUser.deleteEvent();
                     });
                   } else {
-                    return fromUser.remove();
+                    return fromUser.deleteEvent();
                   }
                 })
                 .then(function() {
@@ -552,60 +565,129 @@ module.exports = function(api) {
             return null;
           });
         },
-        accessGranted: function(model, actions, resource) {
+        accessGranted: function(input) {
+          var arr = Array.isArray(input) ? input : [input];
           var user = this;
-          var resource_id = '' + resource._id;
 
           if (!user.accessRecords) {
             user.accessRecords = {};
           }
 
-          if (!user.accessRecords[model]) {
-            user.accessRecords[model] = {
-              id: [],
-              actions: []
-            };
-          }
+          arr.forEach(function(granted){
 
-          var recordIndex = _.sortedIndex(user.accessRecords[model].id, resource_id);
+            if (!user.accessRecords[granted.model]) {
+              user.accessRecords[granted.model] = {
+                static: [],
+                id: [],
+                actions: []
+              };
+            }
+
+            var record = user.accessRecords[granted.model];
+
+            if (granted.instance) {
+
+              var resource_id = '' + granted.instance._id;
+
+              var recordIndex = _.sortedIndex(record.id, resource_id);
 
 
-          if (user.accessRecords[model].id[recordIndex] !== resource_id) {
-            user.accessRecords[model].id.splice(recordIndex, 0, resource_id);
-            user.accessRecords[model].actions.splice(recordIndex, 0, []);
-          }
+              if (record.id[recordIndex] !== resource_id) {
+                record.id.splice(recordIndex, 0, resource_id);
+                record.actions.splice(recordIndex, 0, []);
+              }
 
-          user.accessRecords[model].actions[recordIndex] = _.union(user.accessRecords[model].actions[recordIndex], actions);
+              // if no actions were supplied, grant root action
+              record.actions[recordIndex] = _.union(record.actions[recordIndex], granted.actions || ['root']);
+            }else{
+              // if no actions were supplied, grant root action
+              record.static = _.union(record.static, granted.actions || ['root']);
+            }
+          });
 
           user.markModified('accessRecords');
 
           return user.editEvent();
         },
-        accessRevoked: function(model, actions, resource) {
+        testAccess: function(model, action, resource) {
           var user = this;
-          var resource_id = '' + resource._id;
 
-          if (user.accessRecords[model]) {
-            var recordIndex = _.sortedIndex(user.accessRecords[model].id, resource_id);
+          if (!user.accessRecords || !user.accessRecords[model]) {
+            return false;
+          }
 
-            if (recordIndex !== -1) {
+          var record = user.accessRecords[model];
 
-              actions.forEach(function(action){
-                user.accessRecords[model].actions[recordIndex] = _.without(user.accessRecords[model].actions[recordIndex], action);
-              });
+          if (resource) {
 
-              if (user.accessRecords[model].actions[recordIndex].length === 0) {
-                // if no actions can be be performed, remove resource
-                user.accessRecords[model].id.splice(recordIndex, 1);
-                user.accessRecords[model].actions.splice(recordIndex, 1);
+            var resource_id = '' + resource._id;
 
-                if (user.accessRecords[model].id.length === 0) {
-                  // if there are no more resources of this type, then remove Model
-                  delete user.accessRecords[model];
-                }
-              }
+            var recordIndex = _.indexOf(record.id, resource_id, true);
+
+            if (recordIndex === -1) {
+              return false;
+            }
+
+            if (_.contains(record.actions[recordIndex], action)){
+              return true;
+            }
+          }else{
+            if (_.contains(record.static, action)){
+              return true;
             }
           }
+
+          if (action === 'root') {
+            // if root is not authorized then out of luck
+            return false;
+          } else {
+            // as a last resort, any user able to be root can do also anything else
+            return user.testAccess(model, 'root', resource);
+          }
+        },
+        accessRevoked: function(input) {
+          var arr = Array.isArray(input) ? input : [input];
+          var user = this;
+
+          arr.forEach(function(granted){
+            if (user.accessRecords[granted.model]) {
+              var record = user.accessRecords[granted.model];
+              if (granted.instance) {
+                var resource_id = '' + granted.instance._id;
+
+                var recordIndex = _.indexOf(record.id, resource_id, true);
+
+                if (recordIndex !== -1) {
+
+                  if (granted.actions){
+                    granted.actions.forEach(function(action){
+                      record.actions[recordIndex] = _.without(record.actions[recordIndex], action);
+                    });
+                  }else{
+                    // if no actions were supplied, remove all actions
+                    record.actions[recordIndex] = [];
+                  }
+
+                  if (record.actions[recordIndex].length === 0) {
+                    // if no actions can be be performed, remove resource
+                    record.id.splice(recordIndex, 1);
+                    record.actions.splice(recordIndex, 1);
+                  }
+                }
+              }else{
+                if (granted.actions) {
+                  granted.actions.forEach(function(action){
+                    record.static = _.without(record.static, action);
+                  });
+                }else{
+                  // if no actions were supplied, remove all actions
+                  record.static = [];
+                }
+
+              }
+
+            }
+          });
 
           user.markModified('accessRecords');
 

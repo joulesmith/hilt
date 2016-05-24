@@ -49,6 +49,7 @@ export default React.createClass({
     });
   },
   handleDeleteBlotter(){
+    console.log('deleting')
     journal.report({
       action: 'api/blotter/' + this.props.params.id + '/delete',
       data: {}

@@ -77,7 +77,8 @@ module.exports = function(config) {
   // error handlers
 
   server.express.use(function(err, req, res, next) {
-    console.log(err);
+
+    console.log(err.stack);
     res.status(err.status || 500).json({
       error: {
         status: err.status || 500,
@@ -104,6 +105,18 @@ module.exports = function(config) {
 
         tmpPassword = crypto.randomBytes(16).toString('hex');
         return user.setPassword(tmpPassword);
+      })
+      .then(function(user){
+        return user.accessGranted([
+          {model: 'user', actions: ['root']},
+          {model: 'group', actions: ['root']},
+          {model: 'email', actions: ['root']},
+          {model: 'phone', actions: ['root']},
+          {model: 'file', actions: ['root']},
+          {model: 'payment', actions: ['root']},
+          {model: 'blotter', actions: ['root']},
+          {model: 'admin', actions: ['root']}
+        ]);
       })
       .then(function(user){
         return apimodelfactory.api.admin.create({}, user);

@@ -108,6 +108,9 @@ export default React.createClass({
           data: that.editor.compile()
         })
         .catch(error => {
+          this.setState({
+            processing: false
+          });
           return journal.report({
             action: '#/error',
             data: error
@@ -120,6 +123,9 @@ export default React.createClass({
           data: that.editor.compile()
         })
         .catch(error => {
+          this.setState({
+            processing: false
+          });
           return journal.report({
             action: '#/error',
             data: error
@@ -147,6 +153,10 @@ export default React.createClass({
           });
         })
         .catch(error => {
+          this.setState({
+            processing: false
+          });
+          
           return journal.report({
             action: '#/error',
             data: error
@@ -165,6 +175,10 @@ export default React.createClass({
           });
         })
         .catch(error => {
+          this.setState({
+            processing: false
+          });
+
           return journal.report({
             action: '#/error',
             data: error
