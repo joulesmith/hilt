@@ -5,10 +5,12 @@ import * as journal from 'journal';
 import formatMessage from 'format-message';
 import {Modal, Button} from 'react-bootstrap';
 import RegisterBody from './register-body';
+import SigninBody from './signin-body';
 
 export default React.createClass({
   getInitialState: function(){
     return {
+      signin: true,
       register: {
         show: false
       }
@@ -52,7 +54,23 @@ export default React.createClass({
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <RegisterBody />
+          {(() => {
+            if (!this.state.signin) {
+              return (
+                <div>
+                  <div><p style={{cursor:'pointer'}} onClick={() => {this.setState({signin: true})}}>-> signin existing user?</p></div>
+                  <RegisterBody />
+                </div>
+              );
+            }
+
+            return (
+              <div>
+                <div><p style={{cursor:'pointer'}} onClick={() => {this.setState({signin: false})}}>-> register new user?</p></div>
+                <SigninBody />
+              </div>
+            );
+          })()}
         </Modal.Body>
         <Modal.Footer>
           <Button onClick={this.handleDismiss}>

@@ -42,32 +42,56 @@ module.exports = function(api){
           search: {
             handler: function(req, res) {
 
-              return api.blotter.collection.find({
-                    $text: {
-                      $search: '' + req.query.words
-                    }
-                  }, {
-                    _id: 1,
-                    name: 1,
+              if (req.query.words !== '') {
+                return api.blotter.collection.find({
+                      $text: {
+                        $search: '' + req.query.words
+                      }
+                    }, {
+                      _id: 1,
+                      name: 1,
+                      score: {
+                        $meta: "textScore"
+                      }
+                    } // don't return whole document since anyone can access this
+                  )
+                  .sort({
                     score: {
-                      $meta: "textScore"
+                      $meta: 'textScore'
                     }
-                  } // don't return whole document since anyone can access this
-                )
-                .sort({
-                  score: {
-                    $meta: 'textScore'
-                  }
-                })
-                .exec()
-                .then(function(blotter) {
-                  if (!blotter) {
-                    throw new api.blotter.Error('noresults',
-                      'No blotters found matching search words.', [],
-                      404);
-                  }
-                  return blotter;
-                });
+                  })
+                  .exec()
+                  .then(function(blotter) {
+                    if (!blotter) {
+                      throw new api.blotter.Error('noresults',
+                        'No blotters found matching search words.', [],
+                        404);
+                    }
+                    return blotter;
+                  });
+                }else{
+                  return api.blotter.collection.find({}, {
+                        _id: 1,
+                        name: 1,
+                        score: {
+                          $meta: "textScore"
+                        }
+                    })
+                    .sort({
+                      score: {
+                        $meta: 'textScore'
+                      }
+                    })
+                    .exec()
+                    .then(function(blotter) {
+                      if (!blotter) {
+                        throw new api.blotter.Error('noresults',
+                          'No blotters found matching search words.', [],
+                          404);
+                      }
+                      return blotter;
+                    });
+                }
             }
           }
         },

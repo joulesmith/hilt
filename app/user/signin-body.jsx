@@ -165,29 +165,17 @@ export default React.createClass({
           })}
           name="password"
         />
-        <PasswordTest password={this.state.password} onTest={this.handlePasswordTest}/>
-        <Input
-          disabled={!this.state.passwordScore || this.state.passwordScore < 3}
-          onChange={this.handlePasswordConfirm}
-          bsStyle={this.state.passwordConfirm.status}
-          type="password"
-          label={formatMessage({
-            id: 'confirm_password_label',
-            default: 'Confirm Password'
-          })}
-          hasFeedback
-        />
         <ButtonInput
-          onClick={this.state.processing ? null : this.handleRegister}
+          onClick={this.state.processing ? null : this.handleSignin}
           type="submit"
-          value={this.state.processing ? 'Processing...' : 'Register New Username'}
-          disabled={this.state.processing || this.state.passwordConfirm.status !== 'success'}
+          value={this.state.processing ? 'Processing...' : 'Sign-In With Existing Username'}
+          disabled={this.state.processing}
         />
         <div>
           <div>
             {formatMessage({
               id: 'signin_alternatives',
-              default: 'Or Register With:'
+              default: 'Or Sign-In With:'
             })}
           </div>
           <br />
