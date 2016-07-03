@@ -3,9 +3,10 @@ import * as Bootstrap from 'react-bootstrap';
 import * as journal from '../journal';
 import { Router, Route, Link, hashHistory  } from 'react-router';
 import Blot from './blot-edit';
-import * as merge from '../merge';
+import {merge, compare} from '../object-util';
 import FileUpload from '../file-upload';
 import Confirm from '../confirm-modal';
+import SigninRequired from '../signin-required.jsx';
 
 export default React.createClass({
   componentWillMount: function(){
@@ -17,7 +18,6 @@ export default React.createClass({
 
       this.setState({
         blotter: state.blotter,
-        blotterString: bs,
         localBlotter: JSON.parse(bs)
       });
     }, this);
@@ -27,29 +27,16 @@ export default React.createClass({
   },
   handleSave() {
 
-    // only the _id is stored from each file.
-    /*var files = this.state.localBlotter.files.map(file => {
-      return file._id;
-    });
-
-    journal.report({
-      action: 'api/blotter/' + this.props.params.id,
-      data: merge.shallow(this.state.localBlotter, {
-        files: files
-      })
-    })*/
     journal.report({
       action: 'api/blotter/' + this.props.params.id,
       data: this.state.localBlotter
     })
     .then(() => {
-      this.setState({
-        blotterString: JSON.stringify(this.state.localBlotter)
-      });
+
     });
   },
   handleDeleteBlotter(){
-    console.log('deleting')
+
     journal.report({
       action: 'api/blotter/' + this.props.params.id + '/delete',
       data: {}
@@ -65,7 +52,7 @@ export default React.createClass({
       var key = that.state.localBlotter.key;
 
       that.setState({
-        localBlotter: merge.shallow(that.state.localBlotter, {
+        localBlotter: merge(that.state.localBlotter, {
           key: key + 1
         })
       });
@@ -75,14 +62,14 @@ export default React.createClass({
   },
   handleChild(child) {
     this.setState({
-      localBlotter: merge.shallow(this.state.localBlotter, {
-        main : merge.shallow(this.state.localBlotter.main, child)
+      localBlotter: merge(this.state.localBlotter, {
+        main : merge(this.state.localBlotter.main, child)
       })
     });
   },
   handleDelete() {
     this.setState({
-      localBlotter: merge.shallow(this.state.localBlotter, {
+      localBlotter: merge(this.state.localBlotter, {
         main : {}
       })
     });
@@ -90,7 +77,7 @@ export default React.createClass({
   handleFileUpload(result){
     this.state.localBlotter.files.push(result);
     this.setState({
-      localBlotter: merge.shallow(this.state.localBlotter, {
+      localBlotter: merge(this.state.localBlotter, {
         files : this.state.localBlotter.files
       })
     });
@@ -105,7 +92,7 @@ export default React.createClass({
 
     this.state.localBlotter.files.splice(index,1);
     this.setState({
-      localBlotter: merge.shallow(this.state.localBlotter, {
+      localBlotter: merge(this.state.localBlotter, {
         files : this.state.localBlotter.files
       })
     });
@@ -118,9 +105,7 @@ export default React.createClass({
 
     var synced = false;
 
-    if (this.state.blotterString) {
-      synced = JSON.stringify(this.state.localBlotter) === this.state.blotterString;
-    }
+    synced = compare(this.state.localBlotter, this.state.blotter);
 
     var saveStyle = synced ? "default" : "warning";
 

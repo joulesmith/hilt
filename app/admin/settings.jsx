@@ -6,7 +6,7 @@ import * as journal from 'journal';
 import * as Bootstrap from 'react-bootstrap';
 import Admin from './admin';
 import If from '../if';
-import * as merge from '../merge.jsx';
+
 import SigninRequired from '../signin-required.jsx';
 import Unauthorized from '../unauthorized.jsx';
 import Loading from '../loading';

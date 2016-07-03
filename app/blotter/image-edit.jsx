@@ -1,7 +1,7 @@
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import Blot from './blot-edit';
-import * as merge from '../merge';
+import {merge, compare} from '../object-util';
 
 export default React.createClass({
   handleUrl(event){

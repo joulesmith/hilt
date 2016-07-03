@@ -13,7 +13,6 @@ import SigninRequired from '../signin-required.jsx';
 
 import SelectLocale from './select-locale';
 import If from '../if';
-import * as merge from '../merge.jsx';
 
 
 export default React.createClass({

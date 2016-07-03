@@ -1,7 +1,7 @@
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import Blot from './blot-edit';
-import * as merge from '../merge';
+import {merge, compare} from '../object-util';
 
 export default React.createClass({
   handleMoveLeft(event) {
@@ -22,7 +22,7 @@ export default React.createClass({
   handleChild(child) {
     if(this.props.onChange){
       this.props.onChange({
-        child: merge.shallow(this.props.value.child, child)
+        child: merge(this.props.value.child, child)
       });
     }
   },

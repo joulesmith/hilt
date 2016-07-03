@@ -24,7 +24,7 @@ wrapped in the journal module, which implements a subscription service.
 #### Example Model Definition: modelName.js
 
     var Promise = require('bluebird');
-  
+
     module.exports = function(api) {
       return {
         // This model will be referenced on both server and client by this name
@@ -91,7 +91,7 @@ wrapped in the journal module, which implements a subscription service.
                         'The user could not be found.', [],
                         404);
                     }
-  
+
                     // the action.boolean corresponds to POST: api/modelName/:id/boolean
                     return instance.grantUserAccess('action.boolean', user);
                   });
@@ -135,13 +135,13 @@ wrapped in the journal module, which implements a subscription service.
             similar: {
               // anyone can call this route since security is disabled
               security: false,
-  
+
               // whatever is returned from the handler is returned to the response
               // if nothing is returned, then it is assumed the response was already
               // handled by the handler
               handler: function(req, res) {
                 var instance = this;
-  
+
                 return api.modelName.collection.find({
                   tag: instance.tag
                 });
@@ -153,7 +153,7 @@ wrapped in the journal module, which implements a subscription service.
             root: {
               // optional security can be used to limit access to the 'update' list
               security: true,
-  
+
               // Optional custom route handler for update method
               // the instance must save changes within the handler if a handler is used
               // if a value (or promise) is returned, that value is returned to the response
@@ -167,7 +167,7 @@ wrapped in the journal module, which implements a subscription service.
                     [this.textData], // template values to insert at runtime
                     405); // send a status code
                 }
-  
+
                 return this.save();
               }
             },
@@ -197,16 +197,17 @@ wrapped in the journal module, which implements a subscription service.
     import * as Bootstrap from 'react-bootstrap';
     import * as journal from '../journal';
     import { Router, Route, Link, browserHistory  } from 'react-router';
-  
+
     export default React.createClass({
       componentWillMount: function(){
+        
         // subscribe to a search using a variable tag
         this.subscription = journal.subscribe({
           search: 'api/modelName/search/{this.state.tag}'
         }, state => {
           this.setState(state);
         }, this);
-  
+
       },
       componentWillUnmount: function(){
         // cancel subscription when component goes away
@@ -243,7 +244,7 @@ wrapped in the journal module, which implements a subscription service.
             </div>
           );
         }
-  
+
         return (
           <div>
             <Bootstrap.Row>

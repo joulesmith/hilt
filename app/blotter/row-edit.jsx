@@ -1,7 +1,7 @@
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import Blot from './blot-edit';
-import * as merge from '../merge';
+import {merge, compare} from '../object-util';
 
 export default React.createClass({
   handleAddColumn() {
@@ -86,7 +86,7 @@ export default React.createClass({
       }
     });
 
-    this.props.value.child[index] = merge.shallow(this.props.value.child[index], value);
+    this.props.value.child[index] = merge(this.props.value.child[index], value);
 
     if(this.props.onChange){
       this.props.onChange({
