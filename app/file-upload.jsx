@@ -30,7 +30,10 @@ export default React.createClass({
         data: form
       })
       .then(result => {
-        this.setState({loading: false});
+        this.setState({
+          file: null,
+          loading: false
+        });
 
         if (this.props.onUpload) {
           this.props.onUpload(result);
@@ -44,16 +47,36 @@ export default React.createClass({
       })
     }
   },
+  handleCancel() {
+    this.setState({
+      file: null,
+      loading: false
+    });
+  },
   render: function() {
+    if (this.state.file) {
+      return (
+        <div>
+          <Bootstrap.Button
+            bsStyle="warning"
+            disabled={this.state.loading}
+            onClick={this.handleUpload}>
+            {this.state.loading ? 'Uploading...' : 'Upload ' + this.state.file.name}
+          </Bootstrap.Button>
+          <Bootstrap.Button
+            bsStyle="default"
+            disabled={this.state.loading}
+            onClick={this.handleCancel}
+          >
+            Cancel
+          </Bootstrap.Button>
+        </div>
+      );
+    }
+
     return (
       <div>
         <input onChange={this.handleFile} type="file" />
-        <Bootstrap.Button
-          bsStyle="primary"
-          disabled={!this.state.file || this.state.loading}
-          onClick={this.handleUpload}>
-          {this.state.loading ? 'Uploading...' : 'Upload'}
-        </Bootstrap.Button>
       </div>
     );
   }
