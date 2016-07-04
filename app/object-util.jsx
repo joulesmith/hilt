@@ -18,16 +18,37 @@ export function merge(obj1, obj2){
 }
 
 export function compare(obj1, obj2){
-
-  if (typeof obj1 !== 'object') {
-    return obj1 === obj2;
-  }
-
-  for(var prop in obj1){
-    if (!obj2[prop]){
+  if (Array.isArray(obj1)){
+    if (obj1.length !== obj2.length){
       return false;
     }
 
-    return compare(obj1[prop], obj2[prop]);
+    var same = true;
+
+    obj1.forEach((element, index) => {
+      same = same && compare(element, obj2[index]);
+    });
+
+    return same;
   }
+
+  if (typeof obj1 === 'object') {
+
+    for(var prop in obj1){
+      if (typeof obj2[prop] === 'undefined' || !compare(obj1[prop], obj2[prop])){
+        return false;
+      }
+    }
+
+    for(var prop in obj2){
+      if (typeof obj1[prop] === 'undefined'){
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  return obj1 === obj2;
+
 }

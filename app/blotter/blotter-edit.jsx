@@ -6,7 +6,8 @@ import Blot from './blot-edit';
 import {merge, compare} from '../object-util';
 import FileUpload from '../file-upload';
 import Confirm from '../confirm-modal';
-import SigninRequired from '../signin-required.jsx';
+import SigninRequired from '../signin-required';
+import ReportButton from '../report-button'
 
 export default React.createClass({
   componentWillMount: function(){
@@ -24,16 +25,6 @@ export default React.createClass({
   },
   componentWillUnmount: function(){
     this.subscription.unsubscribe();
-  },
-  handleSave() {
-
-    journal.report({
-      action: 'api/blotter/' + this.props.params.id,
-      data: this.state.localBlotter
-    })
-    .then(() => {
-
-    });
   },
   handleDeleteBlotter(){
 
@@ -114,7 +105,15 @@ export default React.createClass({
         <Bootstrap.Row>
           <Bootstrap.Col md={11} mdOffset={1}>
             <Link to={'/blotter/' + this.state.localBlotter._id}>{this.state.localBlotter.name}</Link>
-            <Bootstrap.Button onClick={this.handleSave} bsStyle={saveStyle}>Save</Bootstrap.Button>
+            <ReportButton
+              name={'Save'}
+              reporting={'Saving...'}
+              bsStyle={saveStyle}
+              value={{
+                action: 'api/blotter/' + this.props.params.id,
+                data: this.state.localBlotter
+              }}
+            ></ReportButton>
             <Confirm request='Delete' onConfirm={this.handleDeleteBlotter} />
           </Bootstrap.Col>
         </Bootstrap.Row>
