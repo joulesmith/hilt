@@ -44,6 +44,7 @@ module.exports = function(api){
 
               if (req.query.words !== '') {
                 return api.blotter.collection.find({
+                      deleted: 0,
                       $text: {
                         $search: '' + req.query.words
                       }
@@ -70,7 +71,9 @@ module.exports = function(api){
                     return blotter;
                   });
                 }else{
-                  return api.blotter.collection.find({}, {
+                  return api.blotter.collection.find({
+                      deleted: 0
+                    }, {
                         _id: 1,
                         name: 1,
                         score: {

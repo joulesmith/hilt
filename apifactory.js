@@ -354,7 +354,12 @@ var serveModels = function(server){
 
         this.deleted = Date.now();
 
-        return this.revokeAllUserAccess().return({_id: this._id, deleted: this.deleted});
+        return this.save()
+        .then(function(instance){
+          return instance.revokeAllUserAccess()
+          .return({_id: instance._id, deleted: instance.deleted});
+        });
+
       };
 
       apiModel.editEvent = function() {

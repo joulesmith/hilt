@@ -21,8 +21,8 @@ export default React.createClass({
           processing: false
         });
 
-        if (this.props.onResolve){
-          this.props.onResolve(result);
+        if (this.props.resolve){
+          this.props.resolve(result);
         }
       })
       .catch(err => {
@@ -30,8 +30,8 @@ export default React.createClass({
           processing: false
         });
 
-        if (this.props.onReject){
-          this.props.onReject(err);
+        if (this.props.reject){
+          this.props.reject(err);
         }
 
       });
@@ -48,15 +48,14 @@ export default React.createClass({
     }
 
     return (
-      <Bootstrap.ButtonInput
+      <Bootstrap.Button
         onClick={this.handleReport}
         bsStyle={this.props.bsStyle}
         style={{
           display: 'inline'
         }}
-        value={value}
         disabled={this.state.processing}
-      ></Bootstrap.ButtonInput>
+      >{value}</Bootstrap.Button>
     );
   }
 });

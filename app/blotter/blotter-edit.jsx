@@ -5,7 +5,7 @@ import { Router, Route, Link, hashHistory  } from 'react-router';
 import Blot from './blot-edit';
 import {merge, compare} from '../object-util';
 import FileUpload from '../file-upload';
-import Confirm from '../confirm-modal';
+import ConfirmReport from '../confirm-report-modal';
 import SigninRequired from '../signin-required';
 import ReportButton from '../report-button'
 
@@ -25,16 +25,6 @@ export default React.createClass({
   },
   componentWillUnmount: function(){
     this.subscription.unsubscribe();
-  },
-  handleDeleteBlotter(){
-
-    journal.report({
-      action: 'api/blotter/' + this.props.params.id + '/delete',
-      data: {}
-    })
-    .then(() => {
-      hashHistory.push("/");
-    });
   },
   keygen() {
     var that = this;
@@ -113,8 +103,18 @@ export default React.createClass({
                 action: 'api/blotter/' + this.props.params.id,
                 data: this.state.localBlotter
               }}
-            ></ReportButton>
-            <Confirm request='Delete' onConfirm={this.handleDeleteBlotter} />
+            />
+            <ConfirmReport
+              request='Delete'
+              reporting={'Deleting...'}
+              value={{
+                action: 'api/blotter/' + this.props.params.id + '/delete',
+                data: {}
+              }}
+              resolve={() => {
+                hashHistory.push("/");
+              }}
+            />
           </Bootstrap.Col>
         </Bootstrap.Row>
         <Bootstrap.Row>
