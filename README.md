@@ -3,7 +3,7 @@
 
 A work-in-progress basis for a style of website framework.
 
-MongoDB
+MongoDB -> mongoose
 Express
 Socket.io
 
@@ -26,9 +26,25 @@ wrapped in the journal module, which implements a subscription service.
     var Promise = require('bluebird');
 
     module.exports = function(api) {
+      var modelVariable;
+
       return {
         // This model will be referenced on both server and client by this name
         modelName: {
+          // these will be stored in the database (in a separate collection) and reloaded upon startup
+          settings: {
+            someSetting: ''
+          },
+          // function called upon server start and upon (possible) setting changes
+          configure: function(){
+
+            if (!api.modelName.settings.someSetting) {
+              console.log("modelName has not been configured.");
+              return;
+            }
+
+            modelVariable = api.modelName.settings.someSetting + 'additional processing';
+          },
           // This adds to the database Schema the data to store using the same
           // syntax as mongoose Schemas
           state: {
@@ -153,7 +169,6 @@ wrapped in the journal module, which implements a subscription service.
             root: {
               // optional security can be used to limit access to the 'update' list
               security: true,
-
               // Optional custom route handler for update method
               // the instance must save changes within the handler if a handler is used
               // if a value (or promise) is returned, that value is returned to the response
@@ -172,12 +187,20 @@ wrapped in the journal module, which implements a subscription service.
               }
             },
             // -> POST /api/modelName/:_id/boolean?value=#
+            // sets the boolean value in the database by calling a helper function
             boolean: {
               security: true,
               handler: function(req, res) {
                 return this.setBoolean(req.query.value);
               }
-            }
+            },
+            // -> POST /api/modelName/:_id/delete
+            // 'delete' the data with _id
+            // One expecting a REST api would expect delete to be handled by the http DELETE operation, not POST.
+            // However, this api is not used as a REST api. It is used to log actions, where the
+            // actions are resources and defined by a url, not the http method used. POST is used for reporting all actions, therefore it
+            // is also used for deleting something whenever the delete action is reported.
+            delete: {}
           },
           internal: {
             // custom helper methods that can only be called on the server from an instance
@@ -200,7 +223,7 @@ wrapped in the journal module, which implements a subscription service.
 
     export default React.createClass({
       componentWillMount: function(){
-        
+
         // subscribe to a search using a variable tag
         this.subscription = journal.subscribe({
           search: 'api/modelName/search/{this.state.tag}'

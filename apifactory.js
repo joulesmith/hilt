@@ -65,9 +65,9 @@ var combineApiModels = function(api1, api2) {
 
   // combine configure functions
   if (api1.configure && api2.configure) {
-    result.configure = function(settings) {
-      api1.configure(settings);
-      api2.configure(settings);
+    result.configure = function() {
+      api1.configure();
+      api2.configure();
     };
   }else{
     result.configure = api1.configure || api2.configure;
