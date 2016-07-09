@@ -20,6 +20,11 @@ import UserSettings from './user/settings';
 import SiteSettings from './admin/settings';
 
 import AccessRecords from './user/access-records';
+
+import CrudCreate from './crud/create';
+import CrudRead from './crud/read';
+import CrudUpdate from './crud/update';
+
 import BlotterCreate from './blotter/blotter-create';
 import BlotterView from './blotter/blotter-view';
 import BlotterEdit from './blotter/blotter-edit';
@@ -55,6 +60,10 @@ var Root = React.createClass({
             <Route path="/user-settings" component={UserSettings} />
             <Route path="/register" component={RegisterBody} />
             <Route path="/records" component={AccessRecords} />
+
+            <Route path="/crud" component={CrudCreate} />
+            <Route path="/crud/:id" component={CrudRead} />
+            <Route path="/crud/:id/update" component={CrudUpdate} />
 
             <Route path="/blotter" component={BlotterCreate} />
             <Route path="/blotter/search" component={BlotterSearch} />

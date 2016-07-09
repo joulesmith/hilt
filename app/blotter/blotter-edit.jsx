@@ -96,18 +96,18 @@ export default React.createClass({
           <Bootstrap.Col md={11} mdOffset={1}>
             <Link to={'/blotter/' + this.state.localBlotter._id}>{this.state.localBlotter.name}</Link>
             <ReportButton
-              name={'Save'}
-              reporting={'Saving...'}
+              value={'Save'}
+              progressValue={'Saving...'}
               bsStyle={saveStyle}
-              value={{
+              report={{
                 action: 'api/blotter/' + this.props.params.id,
                 data: this.state.localBlotter
               }}
             />
             <ConfirmReport
-              request='Delete'
-              reporting={'Deleting...'}
-              value={{
+              value='Delete'
+              progressValue={'Deleting...'}
+              report={{
                 action: 'api/blotter/' + this.props.params.id + '/delete',
                 data: {}
               }}

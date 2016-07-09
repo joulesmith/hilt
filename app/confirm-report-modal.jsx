@@ -13,20 +13,21 @@ export default React.createClass({
       processing: false
     };
   },
-  handleRequest (event) {
+  handleShow (event) {
     this.setState({show: true});
   },
   handleReport(event) {
+    event.preventDefault();
     var that = this;
 
     this.setState({
       processing: true
     }, () => {
-      journal.report(this.props.value)
+      journal.report(this.props.report)
       .then(result => {
         that.setState({
           processing: false,
-          show: false
+          show:false
         });
 
         if (this.props.resolve){
@@ -36,7 +37,7 @@ export default React.createClass({
       .catch(err => {
         that.setState({
           processing: false,
-          show: false
+          show:false
         });
 
         if (this.props.reject){
@@ -47,32 +48,32 @@ export default React.createClass({
     });
 
   },
-  handleDismiss: function() {
+  handleHide: function() {
     this.setState({show: false});
   },
   render: function() {
     var value;
 
     if (this.state.processing) {
-      value = this.props.reporting ? this.props.reporting : 'Reporting...';
+      value = this.props.progressValue ? this.props.progressValue : 'Reporting...';
     }else{
-      value = this.props.request ? this.props.request : 'Report';
+      value = this.props.value ? this.props.value : 'Report';
     }
 
     return (
       <span>
         <Button
-          onClick={this.handleRequest}
+          onClick={this.handleShow}
         >
-          {this.props.request}
+          {value}
         </Button>
-        <Modal show={this.state.show} onHide={this.handleDismiss}>
+        <Modal show={this.state.show} onHide={this.handleHide}>
           <Modal.Header closeButton>
             <Modal.Title>Confirmation</Modal.Title>
           </Modal.Header>
           <Modal.Footer>
             <Button onClick={this.handleReport} disabled={this.state.processing}>{value}</Button>
-            <Button onClick={this.handleDismiss}>Cancel</Button>
+            <Button onClick={this.handleHide}>Cancel</Button>
           </Modal.Footer>
         </Modal>
       </span>

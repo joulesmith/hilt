@@ -26,7 +26,8 @@ require('./index.js')({
     './models/email',
     './models/phone',
     './models/file',
-    './models/blotter',
+    './models/crud', // basic CRUD example
+    './models/blotter', // slightly more complicated example
     './models/payment'
   ]
 });

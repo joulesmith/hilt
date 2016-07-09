@@ -5,7 +5,8 @@ import * as journal from './journal';
 export default React.createClass({
   getInitialState(){
     return {
-      processing: false
+      processing: false,
+      start: 0
     };
   },
   handleReport(event) {
@@ -13,12 +14,14 @@ export default React.createClass({
     var that = this;
 
     this.setState({
-      processing: true
+      processing: true,
+      start: Date.now()
     }, () => {
-      journal.report(this.props.value)
+      journal.report(this.props.report)
       .then(result => {
         that.setState({
-          processing: false
+          processing: false,
+          start: 0
         });
 
         if (this.props.resolve){
@@ -27,7 +30,8 @@ export default React.createClass({
       })
       .catch(err => {
         that.setState({
-          processing: false
+          processing: false,
+          start: 0
         });
 
         if (this.props.reject){
@@ -42,9 +46,18 @@ export default React.createClass({
     var value;
 
     if (this.state.processing) {
-      value = this.props.reporting ? this.props.reporting : 'Reporting...';
+      if (this.props.progressValue) {
+        if (typeof this.props.progressValue === 'function') {
+          value = this.props.progressValue(Date.now() - this.state.start);
+        }else{
+          value = this.props.progressValue;
+        }
+      }else{
+        value = 'Reporting...'
+      }
+
     }else{
-      value = this.props.name ? this.props.name : 'Report';
+      value = this.props.value ? this.props.value : 'Report';
     }
 
     return (
@@ -54,7 +67,7 @@ export default React.createClass({
         style={{
           display: 'inline'
         }}
-        disabled={this.state.processing}
+        disabled={this.state.processing || this.props.disabled}
       >{value}</Bootstrap.Button>
     );
   }

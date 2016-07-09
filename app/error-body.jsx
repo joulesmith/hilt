@@ -2,7 +2,11 @@
 
 import React from 'react';
 
-
+/**
+ * Example Usage:
+ * <ErrorBody error={this.state.error} />
+ *
+ */
 export default React.createClass({
   getInitialState: function(){
     return {
@@ -14,19 +18,31 @@ export default React.createClass({
   },
   render: function() {
     var error = this.props.error;
-    if (error.message) {
-      if (error.stack) {
-        if (this.state.showStack) {
+
+    if (error){
+      if (error.message) {
+        if (error.stack) {
+          if (this.state.showStack) {
+            return (
+              <div>
+                <h6>
+                    <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                    <span className="sr-only">Error:</span>
+                    <span> {error.message} </span>
+                    <span onClick={this.handleShowStack} style={{cursor:'pointer', textDecoration:'underline'}}>details</span>
+                </h6>
+                <pre>{error.stack}</pre>
+              </div>
+            );
+          }
+
           return (
-            <div>
-              <h6>
-                  <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-                  <span className="sr-only">Error:</span>
-                  <span> {error.message} </span>
-                  <span onClick={this.handleShowStack} style={{cursor:'pointer', textDecoration:'underline'}}>details</span>
-              </h6>
-              <pre>{error.stack}</pre>
-            </div>
+            <h6>
+                <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                <span className="sr-only">Error:</span>
+                <span> {error.message} </span>
+                <span onClick={this.handleShowStack} style={{cursor:'pointer', textDecoration:'underline'}}>details</span>
+            </h6>
           );
         }
 
@@ -35,26 +51,18 @@ export default React.createClass({
               <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
               <span className="sr-only">Error:</span>
               <span> {error.message} </span>
-              <span onClick={this.handleShowStack} style={{cursor:'pointer', textDecoration:'underline'}}>details</span>
           </h6>
         );
       }
 
       return (
         <h6>
-            <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-            <span className="sr-only">Error:</span>
-            <span> {error.message} </span>
+          <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+          <span className="sr-only">Unknown Error</span>
         </h6>
       );
     }
 
-    return (
-      <h6>
-        <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-        <span className="sr-only">Unknown Error</span>
-      </h6>
-    );
-
+    return (<div></div>);
   }
 });
