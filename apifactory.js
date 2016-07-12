@@ -478,7 +478,18 @@ var serveModels = function(server){
           actions: creatorAccess || ['root'],
           instance: new_element
         })
-        .return(new_element.editEvent());
+        .return(new_element.editEvent())
+        .then(function(instance){
+          var modelSub = subscriptions.get(model);
+
+          if (modelSub){
+            modelSub.subscribers.forEach(function(subscription, key){
+              subscription();
+            });
+          }
+
+          return instance;
+        });
       };
 
       var apiHandle = {
@@ -640,7 +651,9 @@ var serveModels = function(server){
                         });
                       });
                     })
-
+                    .then(function(){
+                      return apiModel.editEvent();
+                    })
                     .catch(function(error){
                       next(error);
                     });
