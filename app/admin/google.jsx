@@ -4,7 +4,7 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import * as journal from 'journal';
 import editor from '../editor';
-
+import ErrorBody from '../error-body';
 import Gmail from './gmail';
 
 export default React.createClass({
@@ -76,48 +76,51 @@ export default React.createClass({
     });
   },
   render () {
+    try{
+      if (!this.state.settings) {
+        return (
+          <div>Loading Google Settings</div>
+        );
+      }
 
-    if (!this.state.settings) {
       return (
-        <div>Loading Google Settings</div>
+        <form>
+          <Bootstrap.Input
+            onChange={this.state.settings.user.clientId.handler}
+            value={this.state.settings.user.clientId.current}
+            type="text"
+            label={this.state.settings.user.clientId.label}
+            placeholder={this.state.settings.user.clientId.original}
+            style={{backgroundColor : this.state.settings.user.clientId.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <Bootstrap.Input
+            onChange={this.state.settings.user.clientSecret.handler}
+            value={this.state.settings.user.clientSecret.current}
+            type="text"
+            label={this.state.settings.user.clientSecret.label}
+            placeholder={this.state.settings.user.clientSecret.original}
+            style={{backgroundColor : this.state.settings.user.clientSecret.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <Gmail
+            onChange={this.state.settings.email.gmail.handler}
+            value={this.state.settings.email.gmail.current}
+            type="text"
+            label={this.state.settings.email.gmail.label}
+            placeholder={this.state.settings.email.gmail.original}
+            style={{backgroundColor : this.state.settings.email.gmail.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <hr />
+          <Bootstrap.ButtonInput
+            onClick={this.state.processing ? null : this.handleSetConfiguration}
+            type="submit"
+            value={this.state.processing ? "Processing..." : "Set Configuration"}
+            disabled={this.state.processing}
+            bsStyle={this.state.settings.edited ? "warning" : "default"}
+          />
+        </form>
       );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    return (
-      <form>
-        <Bootstrap.Input
-          onChange={this.state.settings.user.clientId.handler}
-          value={this.state.settings.user.clientId.current}
-          type="text"
-          label={this.state.settings.user.clientId.label}
-          placeholder={this.state.settings.user.clientId.original}
-          style={{backgroundColor : this.state.settings.user.clientId.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <Bootstrap.Input
-          onChange={this.state.settings.user.clientSecret.handler}
-          value={this.state.settings.user.clientSecret.current}
-          type="text"
-          label={this.state.settings.user.clientSecret.label}
-          placeholder={this.state.settings.user.clientSecret.original}
-          style={{backgroundColor : this.state.settings.user.clientSecret.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <Gmail
-          onChange={this.state.settings.email.gmail.handler}
-          value={this.state.settings.email.gmail.current}
-          type="text"
-          label={this.state.settings.email.gmail.label}
-          placeholder={this.state.settings.email.gmail.original}
-          style={{backgroundColor : this.state.settings.email.gmail.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <hr />
-        <Bootstrap.ButtonInput
-          onClick={this.state.processing ? null : this.handleSetConfiguration}
-          type="submit"
-          value={this.state.processing ? "Processing..." : "Set Configuration"}
-          disabled={this.state.processing}
-          bsStyle={this.state.settings.edited ? "warning" : "default"}
-        />
-      </form>
-    );
   }
 });

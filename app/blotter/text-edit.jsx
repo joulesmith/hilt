@@ -2,6 +2,7 @@ import React from 'react';
 import MarkdownLatexEdit from './markdown-latex-edit';
 import MarkdownLatexView from './markdown-latex-view';
 import * as Bootstrap from 'react-bootstrap';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getInitialState(){
@@ -32,32 +33,35 @@ export default React.createClass({
     });
   },
   render() {
-    if (this.state.preview){
+    try{
+      if (this.state.preview){
+        return (
+          <div key={this.props.key}>
+            <Bootstrap.ButtonGroup label='Column'>
+              <Bootstrap.Button onClick={this.handleEdit} bsSize="xsmall"><span className="glyphicon glyphicon-edit" /></Bootstrap.Button>
+              <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
+            </Bootstrap.ButtonGroup>
+            <MarkdownLatexView
+              value={this.props.value.text}
+            />
+          </div>
+        );
+      }
+
       return (
         <div key={this.props.key}>
-          <Bootstrap.ButtonGroup label='Column'>
-            <Bootstrap.Button onClick={this.handleEdit} bsSize="xsmall"><span className="glyphicon glyphicon-edit" /></Bootstrap.Button>
-            <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
+          <Bootstrap.ButtonGroup>
+          <Bootstrap.Button onClick={this.handlePreview} bsSize="xsmall"><span className="glyphicon glyphicon-eye-open" /></Bootstrap.Button>
+          <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
           </Bootstrap.ButtonGroup>
-          <MarkdownLatexView
+          <MarkdownLatexEdit
             value={this.props.value.text}
+            onChange={this.handleText}
           />
         </div>
       );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    return (
-      <div key={this.props.key}>
-        <Bootstrap.ButtonGroup>
-        <Bootstrap.Button onClick={this.handlePreview} bsSize="xsmall"><span className="glyphicon glyphicon-eye-open" /></Bootstrap.Button>
-        <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
-        </Bootstrap.ButtonGroup>
-        <MarkdownLatexEdit
-          value={this.props.value.text}
-          onChange={this.handleText}
-        />
-      </div>
-    );
-
   }
 });

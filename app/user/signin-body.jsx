@@ -8,6 +8,7 @@ import * as journal from '../journal';
 import GoogleOAuth from './google-oauth';
 import PasswordTest from './password-test';
 import formatMessage from 'format-message';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getInitialState: function(){
@@ -145,43 +146,47 @@ export default React.createClass({
     });
   },
   render: function() {
-    return (
-      <form name="register">
-        <Input
-          onChange={this.handleUsername}
-          type="text"
-          label={formatMessage({
-            id: 'username_label',
-            default: 'Username'
-          })}
-          name="username"
-        />
-        <Input
-          onChange={this.handlePassword}
-          type="password"
-          label={formatMessage({
-            id: 'password_label',
-            default: 'Password'
-          })}
-          name="password"
-        />
-        <ButtonInput
-          onClick={this.state.processing ? null : this.handleSignin}
-          type="submit"
-          value={this.state.processing ? 'Processing...' : 'Sign-In With Existing Username'}
-          disabled={this.state.processing}
-        />
-        <div>
-          <div>
-            {formatMessage({
-              id: 'signin_alternatives',
-              default: 'Or Sign-In With:'
+    try{
+      return (
+        <form name="register">
+          <Input
+            onChange={this.handleUsername}
+            type="text"
+            label={formatMessage({
+              id: 'username_label',
+              default: 'Username'
             })}
+            name="username"
+          />
+          <Input
+            onChange={this.handlePassword}
+            type="password"
+            label={formatMessage({
+              id: 'password_label',
+              default: 'Password'
+            })}
+            name="password"
+          />
+          <ButtonInput
+            onClick={this.state.processing ? null : this.handleSignin}
+            type="submit"
+            value={this.state.processing ? 'Processing...' : 'Sign-In With Existing Username'}
+            disabled={this.state.processing}
+          />
+          <div>
+            <div>
+              {formatMessage({
+                id: 'signin_alternatives',
+                default: 'Or Sign-In With:'
+              })}
+            </div>
+            <br />
+            <GoogleOAuth />
           </div>
-          <br />
-          <GoogleOAuth />
-        </div>
-      </form>
-    );
+        </form>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

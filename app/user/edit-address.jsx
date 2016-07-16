@@ -2,11 +2,16 @@
 
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   render: () => {
-    return (
-      <div>Address</div>
-    );
+    try{
+      return (
+        <div>Address</div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

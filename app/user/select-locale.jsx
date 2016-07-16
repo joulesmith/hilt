@@ -4,6 +4,7 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import formatMessage from 'format-message';
 import * as journal from 'journal';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getInitialState: function() {
@@ -30,20 +31,24 @@ export default React.createClass({
 
   },
   render: function() {
-    return (
-      <div>
-        <Bootstrap.Input value={this.state.locale} onChange={this.handleLocale} type="select" label="Language">
-          <option value="en-US">English</option>
-          <option value="fr">French</option>
-        </Bootstrap.Input>
-        <Bootstrap.Button onClick={this.handleSetLocale} >
-        {formatMessage({
-          id: 'change_locale_button',
-          default: 'Set Language',
-          description: 'Changes the localization used in the app to what is selected.'
-        })}
-        </Bootstrap.Button>
-      </div>
-    );
+    try{
+      return (
+        <div>
+          <Bootstrap.Input value={this.state.locale} onChange={this.handleLocale} type="select" label="Language">
+            <option value="en-US">English</option>
+            <option value="fr">French</option>
+          </Bootstrap.Input>
+          <Bootstrap.Button onClick={this.handleSetLocale} >
+          {formatMessage({
+            id: 'change_locale_button',
+            default: 'Set Language',
+            description: 'Changes the localization used in the app to what is selected.'
+          })}
+          </Bootstrap.Button>
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

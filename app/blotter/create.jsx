@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import blot from './blot-edit';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getDefaultProps() {
@@ -34,13 +35,17 @@ export default React.createClass({
 
   }
   render() {
-    return (
-      <div>
-        <ButtonGroup>
-          <Button onClick={this.handleAddList}>Add List</Button>
-          <Button onClick={this.handleAddText}>Add Text</Button>
-        </ButtonGroup>
-      </div>
-    );
+    try{
+      return (
+        <div>
+          <ButtonGroup>
+            <Button onClick={this.handleAddList}>Add List</Button>
+            <Button onClick={this.handleAddText}>Add Text</Button>
+          </ButtonGroup>
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

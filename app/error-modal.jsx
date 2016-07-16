@@ -28,20 +28,22 @@ export default React.createClass({
     this.setState({show: false});
   },
   render: function() {
-
-    return (
-      <Modal show={this.state.show} onHide={this.handleDismiss}>
-        <Modal.Header closeButton>
-          <Modal.Title>Error</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <ErrorBody error={this.state.error} />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button onClick={this.handleDismiss}>Ok</Button>
-        </Modal.Footer>
-      </Modal>
-    );
-
+    try{
+      return (
+        <Modal show={this.state.show} onHide={this.handleDismiss}>
+          <Modal.Header closeButton>
+            <Modal.Title>Error</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <ErrorBody error={this.state.error} />
+          </Modal.Body>
+          <Modal.Footer>
+            <Button onClick={this.handleDismiss}>Ok</Button>
+          </Modal.Footer>
+        </Modal>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

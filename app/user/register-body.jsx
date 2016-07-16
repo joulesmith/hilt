@@ -8,6 +8,7 @@ import * as journal from '../journal';
 import GoogleOAuth from './google-oauth';
 import PasswordTest from './password-test';
 import formatMessage from 'format-message';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getInitialState: function(){
@@ -145,55 +146,59 @@ export default React.createClass({
     });
   },
   render: function() {
-    return (
-      <form name="register">
-        <Input
-          onChange={this.handleUsername}
-          type="text"
-          label={formatMessage({
-            id: 'username_label',
-            default: 'Username'
-          })}
-          name="username"
-        />
-        <Input
-          onChange={this.handlePassword}
-          type="password"
-          label={formatMessage({
-            id: 'password_label',
-            default: 'Password'
-          })}
-          name="password"
-        />
-        <PasswordTest password={this.state.password} onTest={this.handlePasswordTest}/>
-        <Input
-          disabled={!this.state.passwordScore || this.state.passwordScore < 3}
-          onChange={this.handlePasswordConfirm}
-          bsStyle={this.state.passwordConfirm.status}
-          type="password"
-          label={formatMessage({
-            id: 'confirm_password_label',
-            default: 'Confirm Password'
-          })}
-          hasFeedback
-        />
-        <ButtonInput
-          onClick={this.state.processing ? null : this.handleRegister}
-          type="submit"
-          value={this.state.processing ? 'Processing...' : 'Register New Username'}
-          disabled={this.state.processing || this.state.passwordConfirm.status !== 'success'}
-        />
-        <div>
-          <div>
-            {formatMessage({
-              id: 'signin_alternatives',
-              default: 'Or Register With:'
+    try{
+      return (
+        <form name="register">
+          <Input
+            onChange={this.handleUsername}
+            type="text"
+            label={formatMessage({
+              id: 'username_label',
+              default: 'Username'
             })}
+            name="username"
+          />
+          <Input
+            onChange={this.handlePassword}
+            type="password"
+            label={formatMessage({
+              id: 'password_label',
+              default: 'Password'
+            })}
+            name="password"
+          />
+          <PasswordTest password={this.state.password} onTest={this.handlePasswordTest}/>
+          <Input
+            disabled={!this.state.passwordScore || this.state.passwordScore < 3}
+            onChange={this.handlePasswordConfirm}
+            bsStyle={this.state.passwordConfirm.status}
+            type="password"
+            label={formatMessage({
+              id: 'confirm_password_label',
+              default: 'Confirm Password'
+            })}
+            hasFeedback
+          />
+          <ButtonInput
+            onClick={this.state.processing ? null : this.handleRegister}
+            type="submit"
+            value={this.state.processing ? 'Processing...' : 'Register New Username'}
+            disabled={this.state.processing || this.state.passwordConfirm.status !== 'success'}
+          />
+          <div>
+            <div>
+              {formatMessage({
+                id: 'signin_alternatives',
+                default: 'Or Register With:'
+              })}
+            </div>
+            <br />
+            <GoogleOAuth />
           </div>
-          <br />
-          <GoogleOAuth />
-        </div>
-      </form>
-    );
+        </form>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

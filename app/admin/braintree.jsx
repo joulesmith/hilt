@@ -4,7 +4,7 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import * as journal from 'journal';
 import editor from '../editor';
-
+import ErrorBody from '../error-body';
 import Gmail from './gmail';
 import PhoneNumber from '../format/phone-number';
 
@@ -77,57 +77,60 @@ export default React.createClass({
     });
   },
   render () {
+    try{
+      if (!this.state.settings) {
+        return (
+          <div>Loading Braintree Settings</div>
+        );
+      }
 
-    if (!this.state.settings) {
       return (
-        <div>Loading Braintree Settings</div>
+        <form>
+          <Bootstrap.Input
+            onChange={this.state.settings.payment.merchantId.handler}
+            value={this.state.settings.payment.merchantId.current}
+            type="text"
+            label={this.state.settings.payment.merchantId.label}
+            placeholder={this.state.settings.payment.merchantId.original}
+            style={{backgroundColor : this.state.settings.payment.merchantId.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <Bootstrap.Input
+            onChange={this.state.settings.payment.publicKey.handler}
+            value={this.state.settings.payment.publicKey.current}
+            type="text"
+            label={this.state.settings.payment.publicKey.label}
+            placeholder={this.state.settings.payment.publicKey.original}
+            style={{backgroundColor : this.state.settings.payment.publicKey.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <Bootstrap.Input
+            onChange={this.state.settings.payment.privateKey.handler}
+            value={this.state.settings.payment.privateKey.current}
+            type="password"
+            label={this.state.settings.payment.privateKey.label}
+            placeholder={this.state.settings.payment.privateKey.original}
+            style={{backgroundColor : this.state.settings.payment.privateKey.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <Bootstrap.Input
+            onClick={event => {
+              this.state.settings.payment.sandbox.handler(!this.state.settings.payment.sandbox.current)
+            }}
+            type="checkbox"
+            label={<span style={{backgroundColor : this.state.settings.payment.sandbox.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.settings.payment.sandbox.label}</span>}
+            checked={this.state.settings.payment.sandbox.current}
+            onChange={event => {}}
+          />
+          <hr />
+          <Bootstrap.ButtonInput
+            onClick={this.state.processing ? null : this.handleSetConfiguration}
+            type="submit"
+            value={this.state.processing ? "Processing..." : "Set Configuration"}
+            disabled={this.state.processing}
+            bsStyle={this.state.settings.edited ? "warning" : "default"}
+          />
+        </form>
       );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    return (
-      <form>
-        <Bootstrap.Input
-          onChange={this.state.settings.payment.merchantId.handler}
-          value={this.state.settings.payment.merchantId.current}
-          type="text"
-          label={this.state.settings.payment.merchantId.label}
-          placeholder={this.state.settings.payment.merchantId.original}
-          style={{backgroundColor : this.state.settings.payment.merchantId.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <Bootstrap.Input
-          onChange={this.state.settings.payment.publicKey.handler}
-          value={this.state.settings.payment.publicKey.current}
-          type="text"
-          label={this.state.settings.payment.publicKey.label}
-          placeholder={this.state.settings.payment.publicKey.original}
-          style={{backgroundColor : this.state.settings.payment.publicKey.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <Bootstrap.Input
-          onChange={this.state.settings.payment.privateKey.handler}
-          value={this.state.settings.payment.privateKey.current}
-          type="password"
-          label={this.state.settings.payment.privateKey.label}
-          placeholder={this.state.settings.payment.privateKey.original}
-          style={{backgroundColor : this.state.settings.payment.privateKey.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <Bootstrap.Input
-          onClick={event => {
-            this.state.settings.payment.sandbox.handler(!this.state.settings.payment.sandbox.current)
-          }}
-          type="checkbox"
-          label={<span style={{backgroundColor : this.state.settings.payment.sandbox.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.settings.payment.sandbox.label}</span>}
-          checked={this.state.settings.payment.sandbox.current}
-          onChange={event => {}}
-        />
-        <hr />
-        <Bootstrap.ButtonInput
-          onClick={this.state.processing ? null : this.handleSetConfiguration}
-          type="submit"
-          value={this.state.processing ? "Processing..." : "Set Configuration"}
-          disabled={this.state.processing}
-          bsStyle={this.state.settings.edited ? "warning" : "default"}
-        />
-      </form>
-    );
   }
 });

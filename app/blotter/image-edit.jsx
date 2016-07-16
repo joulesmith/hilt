@@ -2,6 +2,7 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import Blot from './blot-edit';
 import {merge, compare} from '../object-util';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   handleUrl(event){
@@ -24,23 +25,27 @@ export default React.createClass({
     }
   },
   render() {
-    return (
-      <div>
-        <Bootstrap.Input
-          type='text'
-          value={this.props.value.url}
-          onChange={this.handleUrl}
-          label='Image URL'
-        />
-        <Bootstrap.Input
-          type='text'
-          value={this.props.value.description}
-          onChange={this.handleDescription}
-          label='Image Description'
-        />
-        <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
-        <Bootstrap.Image src={this.props.value.url} alt={this.props.value.description} responsive/>
-      </div>
-    );
+    try{
+      return (
+        <div>
+          <Bootstrap.Input
+            type='text'
+            value={this.props.value.url}
+            onChange={this.handleUrl}
+            label='Image URL'
+          />
+          <Bootstrap.Input
+            type='text'
+            value={this.props.value.description}
+            onChange={this.handleDescription}
+            label='Image Description'
+          />
+          <Bootstrap.Button onClick={this.handleDelete} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
+          <Bootstrap.Image src={this.props.value.url} alt={this.props.value.description} responsive/>
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

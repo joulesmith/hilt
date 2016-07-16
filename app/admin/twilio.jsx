@@ -4,7 +4,7 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import * as journal from 'journal';
 import editor from '../editor';
-
+import ErrorBody from '../error-body';
 import Gmail from './gmail';
 import PhoneNumber from '../format/phone-number';
 
@@ -77,46 +77,49 @@ export default React.createClass({
     });
   },
   render () {
+    try{
+      if (!this.state.settings) {
+        return (
+          <div>Loading Twilio Settings</div>
+        );
+      }
 
-    if (!this.state.settings) {
       return (
-        <div>Loading Twilio Settings</div>
+        <form>
+          <Bootstrap.Input
+            onChange={this.state.settings.phone.accountSid.handler}
+            value={this.state.settings.phone.accountSid.current}
+            type="text"
+            label={this.state.settings.phone.accountSid.label}
+            placeholder={this.state.settings.phone.accountSid.original}
+            style={{backgroundColor : this.state.settings.phone.accountSid.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <Bootstrap.Input
+            onChange={this.state.settings.phone.authToken.handler}
+            value={this.state.settings.phone.authToken.current}
+            type="text"
+            label={this.state.settings.phone.authToken.label}
+            placeholder={this.state.settings.phone.authToken.original}
+            style={{backgroundColor : this.state.settings.phone.authToken.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <PhoneNumber
+            onChange={this.state.settings.phone.number.handler}
+            value={this.state.settings.phone.number.current}
+            label={this.state.settings.phone.number.label}
+            style={{backgroundColor : this.state.settings.phone.number.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <hr />
+          <Bootstrap.ButtonInput
+            onClick={this.state.processing ? null : this.handleSetConfiguration}
+            type="submit"
+            value={this.state.processing ? "Processing..." : "Set Configuration"}
+            disabled={this.state.processing}
+            bsStyle={this.state.settings.edited ? "warning" : "default"}
+          />
+        </form>
       );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    return (
-      <form>
-        <Bootstrap.Input
-          onChange={this.state.settings.phone.accountSid.handler}
-          value={this.state.settings.phone.accountSid.current}
-          type="text"
-          label={this.state.settings.phone.accountSid.label}
-          placeholder={this.state.settings.phone.accountSid.original}
-          style={{backgroundColor : this.state.settings.phone.accountSid.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <Bootstrap.Input
-          onChange={this.state.settings.phone.authToken.handler}
-          value={this.state.settings.phone.authToken.current}
-          type="text"
-          label={this.state.settings.phone.authToken.label}
-          placeholder={this.state.settings.phone.authToken.original}
-          style={{backgroundColor : this.state.settings.phone.authToken.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <PhoneNumber
-          onChange={this.state.settings.phone.number.handler}
-          value={this.state.settings.phone.number.current}
-          label={this.state.settings.phone.number.label}
-          style={{backgroundColor : this.state.settings.phone.number.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <hr />
-        <Bootstrap.ButtonInput
-          onClick={this.state.processing ? null : this.handleSetConfiguration}
-          type="submit"
-          value={this.state.processing ? "Processing..." : "Set Configuration"}
-          disabled={this.state.processing}
-          bsStyle={this.state.settings.edited ? "warning" : "default"}
-        />
-      </form>
-    );
   }
 });

@@ -2,6 +2,7 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import * as journal from '../journal';
 import { Router, Route, Link, browserHistory  } from 'react-router';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getInitialState: function(){
@@ -35,29 +36,32 @@ export default React.createClass({
   render() {
     //var searchButton = <Bootstrap.Button onClick={this.handleSearch}>Search</Bootstrap.Button>;
     // display a blotter search box
-
-    return (
-      <div>
-        <div style={{padding: '1em'}}>
-          <Bootstrap.Row>
-            <Bootstrap.Col md={2}>
-              <Bootstrap.Input
-                type="text"
-                value={this.state.words}
-                onChange={this.handleWords}
-                //buttonAfter={searchButton}
-              />
-            </Bootstrap.Col>
-          </Bootstrap.Row>
+    try{
+      return (
+        <div>
+          <div style={{padding: '1em'}}>
+            <Bootstrap.Row>
+              <Bootstrap.Col md={2}>
+                <Bootstrap.Input
+                  type="text"
+                  value={this.state.words}
+                  onChange={this.handleWords}
+                  //buttonAfter={searchButton}
+                />
+              </Bootstrap.Col>
+            </Bootstrap.Row>
+          </div>
+          {this.state.search.map(blotter => {
+            return (
+              <div key={blotter._id} style={{padding: '1em'}}>
+                <Link to={'/blotter/' + blotter._id}>{blotter.name}</Link>
+              </div>
+            );
+          })}
         </div>
-        {this.state.search.map(blotter => {
-          return (
-            <div key={blotter._id} style={{padding: '1em'}}>
-              <Link to={'/blotter/' + blotter._id}>{blotter.name}</Link>
-            </div>
-          );
-        })}
-      </div>
-    );
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

@@ -7,6 +7,7 @@ import * as journal from 'journal';
 import editor from '../editor';
 import Loading from '../loading';
 import If from '../if';
+import ErrorBody from '../error-body';
 
 var email_regex = /\b[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+(?:[a-zA-Z]+)\b/;
 
@@ -156,7 +157,7 @@ export default React.createClass({
           this.setState({
             processing: false
           });
-          
+
           return journal.report({
             action: '#/error',
             data: error
@@ -188,54 +189,57 @@ export default React.createClass({
     });
   },
   render () {
+    try{
+      if (this.props.id && !this.state.email) {
+        return <Loading value="Email"/>;
+      }
 
-    if (this.props.id && !this.state.email) {
-      return <Loading value="Email"/>;
+      return (
+        <form>
+          <Bootstrap.Input
+            onChange={this.state.email.address.handler}
+            value={this.state.email.address.current}
+            type="email"
+            label={this.state.email.address.label}
+            bsStyle={this.state.emailStatus}
+            hasFeedback
+            style={{backgroundColor : this.state.email.address.edited ? '#FFE5C4' : '#ffffff'}}
+          />
+          <If condition={!this.state.email.verified.current || this.state.email.address.edited}>
+            <span>This email is un-verified. Send and click on the coded link to the email address.</span>
+          </If>
+          <Bootstrap.ButtonInput
+            onClick={this.handleSendCode}
+            type="button"
+            value={this.state.processing ? "Processing..." : this.state.email.verified.current && !this.state.email.address.edited ? "Email Verified" : "Send Verification Link"}
+            disabled={this.state.processing || this.state.email.verified.current && !this.state.email.address.edited || this.state.emailStatus !== 'success'}
+          />
+          <Bootstrap.Input
+            onClick={event => {
+              this.state.email.signin.handler(!this.state.email.signin.current)
+            }}
+            type="checkbox"
+            label={<span style={{backgroundColor : this.state.email.signin.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.email.signin.label}</span>}
+            checked={this.state.email.signin.current}
+            onChange={event => {}}
+          />
+          <Bootstrap.Well>
+            {formatMessage({
+              id: 'email_multistep_info',
+              default: 'Using email for a multi-step sign-in will send an email with a verification link upon every future sign-in attempt. This may help keep this account more secure, or at least as secure as your email account.',
+            })}
+          </Bootstrap.Well>
+          <Bootstrap.ButtonInput
+            onClick={this.state.processing ? null : this.handleSetEmail}
+            type="submit"
+            value={this.state.processing ? "Processing..." : "Set Email"}
+            disabled={this.state.processing || this.state.emailStatus !== 'success'}
+            bsStyle={this.state.email.edited ? "warning" : "default"}
+          />
+        </form>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    return (
-      <form>
-        <Bootstrap.Input
-          onChange={this.state.email.address.handler}
-          value={this.state.email.address.current}
-          type="email"
-          label={this.state.email.address.label}
-          bsStyle={this.state.emailStatus}
-          hasFeedback
-          style={{backgroundColor : this.state.email.address.edited ? '#FFE5C4' : '#ffffff'}}
-        />
-        <If condition={!this.state.email.verified.current || this.state.email.address.edited}>
-          <span>This email is un-verified. Send and click on the coded link to the email address.</span>
-        </If>
-        <Bootstrap.ButtonInput
-          onClick={this.handleSendCode}
-          type="button"
-          value={this.state.processing ? "Processing..." : this.state.email.verified.current && !this.state.email.address.edited ? "Email Verified" : "Send Verification Link"}
-          disabled={this.state.processing || this.state.email.verified.current && !this.state.email.address.edited || this.state.emailStatus !== 'success'}
-        />
-        <Bootstrap.Input
-          onClick={event => {
-            this.state.email.signin.handler(!this.state.email.signin.current)
-          }}
-          type="checkbox"
-          label={<span style={{backgroundColor : this.state.email.signin.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.email.signin.label}</span>}
-          checked={this.state.email.signin.current}
-          onChange={event => {}}
-        />
-        <Bootstrap.Well>
-          {formatMessage({
-            id: 'email_multistep_info',
-            default: 'Using email for a multi-step sign-in will send an email with a verification link upon every future sign-in attempt. This may help keep this account more secure, or at least as secure as your email account.',
-          })}
-        </Bootstrap.Well>
-        <Bootstrap.ButtonInput
-          onClick={this.state.processing ? null : this.handleSetEmail}
-          type="submit"
-          value={this.state.processing ? "Processing..." : "Set Email"}
-          disabled={this.state.processing || this.state.emailStatus !== 'success'}
-          bsStyle={this.state.email.edited ? "warning" : "default"}
-        />
-      </form>
-    );
   }
 });

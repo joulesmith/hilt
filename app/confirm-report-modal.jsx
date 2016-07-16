@@ -52,32 +52,35 @@ export default React.createClass({
     this.setState({show: false});
   },
   render: function() {
-    var value;
+    try{
+      var value;
 
-    if (this.state.processing) {
-      value = this.props.progressValue ? this.props.progressValue : 'Reporting...';
-    }else{
-      value = this.props.value ? this.props.value : 'Report';
+      if (this.state.processing) {
+        value = this.props.progressValue ? this.props.progressValue : 'Reporting...';
+      }else{
+        value = this.props.value ? this.props.value : 'Report';
+      }
+
+      return (
+        <span>
+          <Button
+            onClick={this.handleShow}
+          >
+            {value}
+          </Button>
+          <Modal show={this.state.show} onHide={this.handleHide}>
+            <Modal.Header closeButton>
+              <Modal.Title>Confirmation</Modal.Title>
+            </Modal.Header>
+            <Modal.Footer>
+              <Button onClick={this.handleReport} disabled={this.state.processing}>{value}</Button>
+              <Button onClick={this.handleHide}>Cancel</Button>
+            </Modal.Footer>
+          </Modal>
+        </span>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    return (
-      <span>
-        <Button
-          onClick={this.handleShow}
-        >
-          {value}
-        </Button>
-        <Modal show={this.state.show} onHide={this.handleHide}>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirmation</Modal.Title>
-          </Modal.Header>
-          <Modal.Footer>
-            <Button onClick={this.handleReport} disabled={this.state.processing}>{value}</Button>
-            <Button onClick={this.handleHide}>Cancel</Button>
-          </Modal.Footer>
-        </Modal>
-      </span>
-    );
-
   }
 });

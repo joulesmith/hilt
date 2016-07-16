@@ -3,7 +3,7 @@ import * as Bootstrap from 'react-bootstrap';
 import * as journal from '../journal';
 import { Router, Route, Link, browserHistory  } from 'react-router';
 import Blot from './blot-view';
-
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getInitialState: function(){
@@ -27,12 +27,15 @@ export default React.createClass({
     this.subscription.unsubscribe();
   },
   render() {
-
-    return (
-      <div>
-        <Link to={'/blotter/' + this.state.blotter._id}>{this.state.blotter.name}</Link> (<Link to={'/blotter/' + this.state.blotter._id + '/edit'}>edit</Link>)
-        <Blot value={this.state.blotter.main} />
-      </div>
-    );
+    try{
+      return (
+        <div>
+          <Link to={'/blotter/' + this.state.blotter._id}>{this.state.blotter.name}</Link> (<Link to={'/blotter/' + this.state.blotter._id + '/edit'}>edit</Link>)
+          <Blot value={this.state.blotter.main} />
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import * as journal from '../journal';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getInitialState: function(){
@@ -56,10 +57,14 @@ export default React.createClass({
     });
   },
   render: function() {
-    return (
-      <span onClick={this.handleGoogleOAuth} className="btn btn-default">
-          <img src="./img/btn_google+_signin_small_transparent.png" alt="google plus sing-in" style={{display: 'inline-block'}}></img>
-      </span>
-    );
+    try{
+      return (
+        <span onClick={this.handleGoogleOAuth} className="btn btn-default">
+            <img src="./img/btn_google+_signin_small_transparent.png" alt="google plus sing-in" style={{display: 'inline-block'}}></img>
+        </span>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

@@ -1,6 +1,7 @@
 "use strict";
 
 import React from 'react';
+import ErrorBody from 'error-body';
 
 export default React.createClass({
   getInitialState: function(){
@@ -40,10 +41,14 @@ export default React.createClass({
     childWindow.focus();
   },
   render: function() {
-    return (
-      <span onClick={this.handleOAuth} className="btn btn-default">
-          <img src={this.props.src || ''} alt={this.props.alt || 'oauth'} style={{display: 'inline-block'}}></img>
-      </span>
-    );
+    try{
+      return (
+        <span onClick={this.handleOAuth} className="btn btn-default">
+            <img src={this.props.src || ''} alt={this.props.alt || 'oauth'} style={{display: 'inline-block'}}></img>
+        </span>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

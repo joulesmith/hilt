@@ -2,6 +2,7 @@
 
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
+import ErrorBody from 'error-body';
 
 export default React.createClass({
   getInitialState(){
@@ -21,8 +22,12 @@ export default React.createClass({
     clearInterval(this.ellipsesInterval);
   },
   render () {
-    return (
-      <div>Loading {this.props.value ? this.props.value + this.state.ellipses : this.state.ellipses}</div>
-    );
+    try{
+      return (
+        <div>Loading {this.props.value ? this.props.value + this.state.ellipses : this.state.ellipses}</div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

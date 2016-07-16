@@ -5,6 +5,7 @@ import * as Bootstrap from 'react-bootstrap';
 import * as journal from 'journal';
 import OAuth from 'oauth';
 import Loading from '../loading';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getInitialState () {
@@ -42,34 +43,37 @@ export default React.createClass({
     }
   },
   render () {
+    try{
+      if (!this.state.oauth) {
+        return (
+          <Loading value="Google OAuth"/>
+        );
+      }
 
-    if (!this.state.oauth) {
+      if (this.props.label) {
+        return (
+          <div>
+            <label>{this.props.label}</label><br />
+            <OAuth
+              url={this.state.oauth.url}
+              onOAuth={this.handleOAuth}
+              src="./img/btn_google+_signin_small_transparent.png"
+              alt="gmail sign-in"
+            ></OAuth>
+          </div>
+        );
+      }
+
       return (
-        <Loading value="Google OAuth"/>
+        <OAuth
+          url={this.state.oauth.url}
+          onOAuth={this.handleOAuth}
+          src="./img/btn_google+_signin_small_transparent.png"
+          alt="gmail sign-in"
+        ></OAuth>
       );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    if (this.props.label) {
-      return (
-        <div>
-          <label>{this.props.label}</label><br />
-          <OAuth
-            url={this.state.oauth.url}
-            onOAuth={this.handleOAuth}
-            src="./img/btn_google+_signin_small_transparent.png"
-            alt="gmail sign-in"
-          ></OAuth>
-        </div>
-      );
-    }
-
-    return (
-      <OAuth
-        url={this.state.oauth.url}
-        onOAuth={this.handleOAuth}
-        src="./img/btn_google+_signin_small_transparent.png"
-        alt="gmail sign-in"
-      ></OAuth>
-    );
   }
 });

@@ -2,6 +2,7 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import Blot from './blot-edit';
 import {merge, compare} from '../object-util';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   handleAddRow() {
@@ -103,32 +104,36 @@ export default React.createClass({
     }
   },
   render() {
-    return (
-      <div key={this.props.value.key}>
-        <Bootstrap.ButtonGroup>
-          <Bootstrap.Button onClick={this.handleAddRow} bsSize="xsmall">Add Row</Bootstrap.Button>
-          <Bootstrap.Button onClick={this.handleDeleteList} bsSize="xsmall">Delete List</Bootstrap.Button>
-        </Bootstrap.ButtonGroup>
-        {this.props.value.child.map((row, index) => {
-          return <Blot
-            key={row.key}
-            value={row}
-            keygen={this.props.keygen}
-            onMoveUp={() => {
-              this.handleMoveUp(row.key);
-            }}
-            onMoveDown={() => {
-              this.handleMoveDown(row.key);
-            }}
-            onChange={value => {
-              this.handleChangeRow(row.key, value);
-            }}
-            onDelete={() => {
-              this.handleDeleteRow(row.key);
-            }}
-          />;
-        })}
-      </div>
-    );
+    try{
+      return (
+        <div key={this.props.value.key}>
+          <Bootstrap.ButtonGroup>
+            <Bootstrap.Button onClick={this.handleAddRow} bsSize="xsmall">Add Row</Bootstrap.Button>
+            <Bootstrap.Button onClick={this.handleDeleteList} bsSize="xsmall">Delete List</Bootstrap.Button>
+          </Bootstrap.ButtonGroup>
+          {this.props.value.child.map((row, index) => {
+            return <Blot
+              key={row.key}
+              value={row}
+              keygen={this.props.keygen}
+              onMoveUp={() => {
+                this.handleMoveUp(row.key);
+              }}
+              onMoveDown={() => {
+                this.handleMoveDown(row.key);
+              }}
+              onChange={value => {
+                this.handleChangeRow(row.key, value);
+              }}
+              onDelete={() => {
+                this.handleDeleteRow(row.key);
+              }}
+            />;
+          })}
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

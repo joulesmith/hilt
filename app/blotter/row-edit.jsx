@@ -2,6 +2,7 @@ import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import Blot from './blot-edit';
 import {merge, compare} from '../object-util';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   handleAddColumn() {
@@ -116,46 +117,50 @@ export default React.createClass({
     }
   },
   render() {
-    return (
-      <div key={this.props.value.key} style={{width:'100%'}}>
-        <table style={{width:'100%'}}>
-          <tbody>
-          <tr>
-            <td style={{width:'50px'}}>
-              <Bootstrap.ButtonGroup vertical>
-                <Bootstrap.Button onClick={this.handleMoveUp} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-up" /></Bootstrap.Button>
-                <Bootstrap.Button onClick={this.handleMoveDown} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-down" /></Bootstrap.Button>
-                <Bootstrap.Button onClick={this.handleAddColumn} bsSize="xsmall"><span className="glyphicon glyphicon-plus" /></Bootstrap.Button>
-                <Bootstrap.Button onClick={this.handleDeleteRow} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
-              </Bootstrap.ButtonGroup>
-            </td>
-            <td style={{minHeight: '200px', border: '4px outset'}}>
-              <Bootstrap.Row>
-                {this.props.value.child.map(column => {
-                  return <Blot
-                    key={column.key}
-                    value={column}
-                    keygen={this.props.keygen}
-                    onMoveLeft={() => {
-                      this.handleMoveLeft(column.key);
-                    }}
-                    onMoveRight={() => {
-                      this.handleMoveRight(column.key);
-                    }}
-                    onChange={value => {
-                      this.handleChangeColumn(column.key, value);
-                    }}
-                    onDelete={() => {
-                      this.handleDeleteColumn(column.key);
-                    }}
-                  />;
-                })}
-              </Bootstrap.Row>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-    );
+    try{
+      return (
+        <div key={this.props.value.key} style={{width:'100%'}}>
+          <table style={{width:'100%'}}>
+            <tbody>
+            <tr>
+              <td style={{width:'50px'}}>
+                <Bootstrap.ButtonGroup vertical>
+                  <Bootstrap.Button onClick={this.handleMoveUp} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-up" /></Bootstrap.Button>
+                  <Bootstrap.Button onClick={this.handleMoveDown} bsSize="xsmall"><span className="glyphicon glyphicon-arrow-down" /></Bootstrap.Button>
+                  <Bootstrap.Button onClick={this.handleAddColumn} bsSize="xsmall"><span className="glyphicon glyphicon-plus" /></Bootstrap.Button>
+                  <Bootstrap.Button onClick={this.handleDeleteRow} bsSize="xsmall"><span className="glyphicon glyphicon-remove" /></Bootstrap.Button>
+                </Bootstrap.ButtonGroup>
+              </td>
+              <td style={{minHeight: '200px', border: '4px outset'}}>
+                <Bootstrap.Row>
+                  {this.props.value.child.map(column => {
+                    return <Blot
+                      key={column.key}
+                      value={column}
+                      keygen={this.props.keygen}
+                      onMoveLeft={() => {
+                        this.handleMoveLeft(column.key);
+                      }}
+                      onMoveRight={() => {
+                        this.handleMoveRight(column.key);
+                      }}
+                      onChange={value => {
+                        this.handleChangeColumn(column.key, value);
+                      }}
+                      onDelete={() => {
+                        this.handleDeleteColumn(column.key);
+                      }}
+                    />;
+                  })}
+                </Bootstrap.Row>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

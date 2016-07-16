@@ -565,6 +565,9 @@ module.exports = function(api) {
             return null;
           });
         },
+        /**
+         * user.accessGranted([{model: 'modelName', instance: {_id:'dm73msg2ab2'}, actions:['root']}]);
+         */
         accessGranted: function(input) {
           var arr = Array.isArray(input) ? input : [input];
           var user = this;

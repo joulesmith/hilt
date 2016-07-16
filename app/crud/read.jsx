@@ -1,5 +1,6 @@
 import React from 'react';
 import * as journal from '../journal';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   componentWillMount: function(){
@@ -14,15 +15,18 @@ export default React.createClass({
     this.subscription.unsubscribe();
   },
   render() {
+    try{
+      if (!this.state || !this.state.crud){
+        return (<div></div>);
+      }
 
-    if (!this.state || !this.state.crud){
-      return (<div></div>);
+      return (
+        <pre>
+          {JSON.stringify(this.state.crud.data || {})}
+        </pre>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    return (
-      <pre>
-        {JSON.stringify(this.state.crud.data || {})}
-      </pre>
-    );
   }
 });

@@ -3,7 +3,7 @@
 import React from 'react';
 import * as Bootstrap from 'react-bootstrap';
 import * as journal from './journal';
-
+import ErrorBody from 'error-body';
 
 export default React.createClass({
   getInitialState: function(){
@@ -54,30 +54,34 @@ export default React.createClass({
     });
   },
   render: function() {
-    if (this.state.file) {
+    try{
+      if (this.state.file) {
+        return (
+          <div>
+            <Bootstrap.Button
+              bsStyle="warning"
+              disabled={this.state.loading}
+              onClick={this.handleUpload}>
+              {this.state.loading ? 'Uploading...' : 'Upload ' + this.state.file.name}
+            </Bootstrap.Button>
+            <Bootstrap.Button
+              bsStyle="default"
+              disabled={this.state.loading}
+              onClick={this.handleCancel}
+            >
+              Cancel
+            </Bootstrap.Button>
+          </div>
+        );
+      }
+
       return (
         <div>
-          <Bootstrap.Button
-            bsStyle="warning"
-            disabled={this.state.loading}
-            onClick={this.handleUpload}>
-            {this.state.loading ? 'Uploading...' : 'Upload ' + this.state.file.name}
-          </Bootstrap.Button>
-          <Bootstrap.Button
-            bsStyle="default"
-            disabled={this.state.loading}
-            onClick={this.handleCancel}
-          >
-            Cancel
-          </Bootstrap.Button>
+          <input onChange={this.handleFile} type="file" />
         </div>
       );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    return (
-      <div>
-        <input onChange={this.handleFile} type="file" />
-      </div>
-    );
   }
 });

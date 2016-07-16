@@ -34,27 +34,30 @@ console.log(obj);
 
   },
   render() {
-
-    return (
-      <div>
-        <Bootstrap.Input type='textarea' value={this.state.text} onChange={this.handleData} />
-        <ReportButton
-          disabled={!!this.state.error}
-          value={'Create'}
-          progressValue={'Creating...'}
-          bsStyle={'default'}
-          report={{
-            action: 'api/crud/',
-            data: {
-              data: this.state.data
-            }
-          }}
-          resolve={crud => {
-            hashHistory.push("/crud/" + crud._id + "/update");
-          }}
-        />
-        <ErrorBody error={this.state.error} />
-      </div>
-    );
+    try{
+      return (
+        <div>
+          <Bootstrap.Input type='textarea' value={this.state.text} onChange={this.handleData} />
+          <ReportButton
+            disabled={!!this.state.error}
+            value={'Create'}
+            progressValue={'Creating...'}
+            bsStyle={'default'}
+            report={{
+              action: 'api/crud/',
+              data: {
+                data: this.state.data
+              }
+            }}
+            resolve={crud => {
+              hashHistory.push("/crud/" + crud._id + "/update");
+            }}
+          />
+          <ErrorBody error={this.state.error} />
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

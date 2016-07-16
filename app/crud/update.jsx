@@ -55,40 +55,43 @@ export default React.createClass({
 
   },
   render() {
+    try{
+      if (!this.state || !this.state.data){
+        return (<div></div>);
+      }
 
-    if (!this.state || !this.state.data){
-      return (<div></div>);
+      return (
+        <div>
+          <Bootstrap.Input type='textarea' value={this.state.text} onChange={this.handleData} />
+          <ReportButton
+            disabled={!!this.state.error}
+            value='Save'
+            progressValue='Saving...'
+            bsStyle='default'
+            report={{
+              action: 'api/crud/' + this.props.params.id,
+              data: {
+                data: this.state.data
+              }
+            }}
+          />
+          <ConfirmReport
+            value={'Delete'}
+            progressValue={'Deleting...'}
+            bsStyle={'default'}
+            report={{
+              action: 'api/crud/' + this.props.params.id + '/delete',
+              data: {}
+            }}
+            resolve={() => {
+              hashHistory.push("/crud/");
+            }}
+          />
+          <ErrorBody error={this.state.error} />
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
     }
-
-    return (
-      <div>
-        <Bootstrap.Input type='textarea' value={this.state.text} onChange={this.handleData} />
-        <ReportButton
-          disabled={!!this.state.error}
-          value='Save'
-          progressValue='Saving...'
-          bsStyle='default'
-          report={{
-            action: 'api/crud/' + this.props.params.id,
-            data: {
-              data: this.state.data
-            }
-          }}
-        />
-        <ConfirmReport
-          value={'Delete'}
-          progressValue={'Deleting...'}
-          bsStyle={'default'}
-          report={{
-            action: 'api/crud/' + this.props.params.id + '/delete',
-            data: {}
-          }}
-          resolve={() => {
-            hashHistory.push("/crud/");
-          }}
-        />
-        <ErrorBody error={this.state.error} />
-      </div>
-    );
   }
 });

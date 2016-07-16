@@ -8,6 +8,7 @@ import formatMessage from 'format-message';
 import GoogleOAuth from './google-oauth';
 import If from '../if.jsx';
 import * as journal from 'journal';
+import ErrorBody from '../error-body';
 
 var username_regex = /^[a-z0-9._-]{3,20}$/;
 
@@ -165,111 +166,114 @@ export default React.createClass({
     });
   },
   render: function() {
-
-    return (
-      <div>
-        <If condition={!!this.props.user}>
+    try{
+      return (
+        <div>
+          <If condition={!!this.props.user}>
+            <Bootstrap.Row>
+              <Bootstrap.Col xsOffset={0} xs={11}>
+                <b>
+                  <If condition={this.props.user && this.props.user.signin.username}>
+                    {formatMessage({
+                      id: 'current_username',
+                      default: 'Currently signed in with username {username}'
+                    }, {
+                      username: this.props.user ? this.props.user.signin.username : ''
+                    })}
+                  </If>
+                  <If condition={this.props.user && this.props.user.signin.google}>
+                    {formatMessage({
+                      id: 'current_google',
+                      default: 'Currently signed using G+ Google'
+                    })}
+                  </If>
+                </b>
+              </Bootstrap.Col>
+            </Bootstrap.Row>
+          </If>
+          <br />
           <Bootstrap.Row>
             <Bootstrap.Col xsOffset={0} xs={11}>
-              <b>
-                <If condition={this.props.user && this.props.user.signin.username}>
-                  {formatMessage({
-                    id: 'current_username',
-                    default: 'Currently signed in with username {username}'
-                  }, {
-                    username: this.props.user ? this.props.user.signin.username : ''
-                  })}
-                </If>
-                <If condition={this.props.user && this.props.user.signin.google}>
-                  {formatMessage({
-                    id: 'current_google',
-                    default: 'Currently signed using G+ Google'
-                  })}
-                </If>
-              </b>
+            {formatMessage({
+              id: 'username_signin_label',
+              default: 'Use a username and password to Sign-In'
+            })}
             </Bootstrap.Col>
           </Bootstrap.Row>
-        </If>
-        <br />
-        <Bootstrap.Row>
-          <Bootstrap.Col xsOffset={0} xs={11}>
-          {formatMessage({
-            id: 'username_signin_label',
-            default: 'Use a username and password to Sign-In'
-          })}
-          </Bootstrap.Col>
-        </Bootstrap.Row>
-        <br />
-        <Bootstrap.Row>
-          <Bootstrap.Col xsOffset={1} xs={11}>
-            <form onSubmit={this.handleSubmit}>
-              <Bootstrap.Input
-                onChange={this.handleUsername}
-                type="text"
-                label={formatMessage({
-                  id: 'username_label',
-                  default: 'Username'
-                })}
-                value={this.state.username}
-              />
-              <If condition={this.state.usernameTaken}>
-                <Bootstrap.Alert bsStyle="danger">
-                  This username is already registered with another account.
-                </Bootstrap.Alert>
-              </If>
-              <If condition={this.state.usernameInvalid}>
-                <Bootstrap.Alert bsStyle="danger">
-                  The username must be between 3 and 20 characters, and composed
-                  only of lowercase letters, numbers, '.', '_', and '-'.
-                </Bootstrap.Alert>
-              </If>
-              <Bootstrap.Input
-                onChange={this.handlePassword}
-                type="password"
-                label={formatMessage({
-                  id: 'password_label',
-                  default: 'Password'
-                })}
-              />
-              <PasswordTest password={this.state.password} onTest={this.handlePasswordTest} />
-              <Bootstrap.Input
-                disabled={!this.state.passwordScore || this.state.passwordScore < 3}
-                onChange={this.handlePasswordConfirm}
-                bsStyle={this.state.passwordConfirmStatus}
-                type="password"
-                label={formatMessage({
-                  id: 'confirm_password_label',
-                  default: 'Confirm Password'
-                })}
-                hasFeedback
-              />
-              <Bootstrap.ButtonInput
-                type="submit"
-                value={formatMessage({
-                  id: 'set_password_button',
-                  default: 'Set Sign-In'
-                })}
-                disabled={this.state.usernameInvalid || this.state.usernameTaken || this.state.passwordConfirmStatus !== 'success'}
-              />
-            </form>
-          </Bootstrap.Col>
-        </Bootstrap.Row>
-        <br />
-        <Bootstrap.Row>
-          <Bootstrap.Col xsOffset={0} xs={11}>
-          {formatMessage({
-            id: 'alternative_signin_label',
-            default: 'Use a 3rd party to Sign-In'
-          })}
-          </Bootstrap.Col>
-        </Bootstrap.Row>
-        <br />
-        <Bootstrap.Row>
-          <Bootstrap.Col xsOffset={1} xs={11}>
-            <GoogleOAuth onOAuth={this.handleOAuth} />
-          </Bootstrap.Col>
-        </Bootstrap.Row>
-      </div>
-    );
+          <br />
+          <Bootstrap.Row>
+            <Bootstrap.Col xsOffset={1} xs={11}>
+              <form onSubmit={this.handleSubmit}>
+                <Bootstrap.Input
+                  onChange={this.handleUsername}
+                  type="text"
+                  label={formatMessage({
+                    id: 'username_label',
+                    default: 'Username'
+                  })}
+                  value={this.state.username}
+                />
+                <If condition={this.state.usernameTaken}>
+                  <Bootstrap.Alert bsStyle="danger">
+                    This username is already registered with another account.
+                  </Bootstrap.Alert>
+                </If>
+                <If condition={this.state.usernameInvalid}>
+                  <Bootstrap.Alert bsStyle="danger">
+                    The username must be between 3 and 20 characters, and composed
+                    only of lowercase letters, numbers, '.', '_', and '-'.
+                  </Bootstrap.Alert>
+                </If>
+                <Bootstrap.Input
+                  onChange={this.handlePassword}
+                  type="password"
+                  label={formatMessage({
+                    id: 'password_label',
+                    default: 'Password'
+                  })}
+                />
+                <PasswordTest password={this.state.password} onTest={this.handlePasswordTest} />
+                <Bootstrap.Input
+                  disabled={!this.state.passwordScore || this.state.passwordScore < 3}
+                  onChange={this.handlePasswordConfirm}
+                  bsStyle={this.state.passwordConfirmStatus}
+                  type="password"
+                  label={formatMessage({
+                    id: 'confirm_password_label',
+                    default: 'Confirm Password'
+                  })}
+                  hasFeedback
+                />
+                <Bootstrap.ButtonInput
+                  type="submit"
+                  value={formatMessage({
+                    id: 'set_password_button',
+                    default: 'Set Sign-In'
+                  })}
+                  disabled={this.state.usernameInvalid || this.state.usernameTaken || this.state.passwordConfirmStatus !== 'success'}
+                />
+              </form>
+            </Bootstrap.Col>
+          </Bootstrap.Row>
+          <br />
+          <Bootstrap.Row>
+            <Bootstrap.Col xsOffset={0} xs={11}>
+            {formatMessage({
+              id: 'alternative_signin_label',
+              default: 'Use a 3rd party to Sign-In'
+            })}
+            </Bootstrap.Col>
+          </Bootstrap.Row>
+          <br />
+          <Bootstrap.Row>
+            <Bootstrap.Col xsOffset={1} xs={11}>
+              <GoogleOAuth onOAuth={this.handleOAuth} />
+            </Bootstrap.Col>
+          </Bootstrap.Row>
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

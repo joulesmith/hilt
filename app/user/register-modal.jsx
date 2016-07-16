@@ -6,6 +6,7 @@ import formatMessage from 'format-message';
 import {Modal, Button} from 'react-bootstrap';
 import RegisterBody from './register-body';
 import SigninBody from './signin-body';
+import ErrorBody from '../error-body';
 
 export default React.createClass({
   getInitialState: function(){
@@ -41,48 +42,50 @@ export default React.createClass({
     });
   },
   render: function() {
+    try{
+      return (
+        <Modal show={this.state.register.show} onHide={this.handleDismiss}>
+          <Modal.Header closeButton>
+            <Modal.Title>
+            {formatMessage({
+              id: 'signin_modal_title',
+              default: 'Register/Sign-In',
+              description: 'Title of register/signing modal (popup)'
+            })}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {(() => {
+              if (!this.state.signin) {
+                return (
+                  <div>
+                    <div><p style={{cursor:'pointer'}} onClick={() => {this.setState({signin: true})}}>-> signin existing user?</p></div>
+                    <RegisterBody />
+                  </div>
+                );
+              }
 
-    return (
-      <Modal show={this.state.register.show} onHide={this.handleDismiss}>
-        <Modal.Header closeButton>
-          <Modal.Title>
-          {formatMessage({
-            id: 'signin_modal_title',
-            default: 'Register/Sign-In',
-            description: 'Title of register/signing modal (popup)'
-          })}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {(() => {
-            if (!this.state.signin) {
               return (
                 <div>
-                  <div><p style={{cursor:'pointer'}} onClick={() => {this.setState({signin: true})}}>-> signin existing user?</p></div>
-                  <RegisterBody />
+                  <div><p style={{cursor:'pointer'}} onClick={() => {this.setState({signin: false})}}>-> register new user?</p></div>
+                  <SigninBody />
                 </div>
               );
-            }
-
-            return (
-              <div>
-                <div><p style={{cursor:'pointer'}} onClick={() => {this.setState({signin: false})}}>-> register new user?</p></div>
-                <SigninBody />
-              </div>
-            );
-          })()}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button onClick={this.handleDismiss}>
-          {formatMessage({
-            id: 'signin_modal_cancel',
-            default: 'Cancel',
-            description: 'Close signin modal without signing in.'
-          })}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    );
-
+            })()}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button onClick={this.handleDismiss}>
+            {formatMessage({
+              id: 'signin_modal_cancel',
+              default: 'Cancel',
+              description: 'Close signin modal without signing in.'
+            })}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

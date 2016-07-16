@@ -8,6 +8,7 @@ import PhoneNumber from '../format/phone-number';
 import * as journal from 'journal';
 import editor from '../editor';
 import Loading from '../loading';
+import ErrorBody from '../error-body';
 
 var phone_regex = /\b[0-9]{10}\b/;
 
@@ -176,52 +177,56 @@ export default React.createClass({
     });
   },
   render () {
-    if (this.props.id && !this.state.phone) {
-      return <Loading value="Phone"/>;
-    }
+    try{
+      if (this.props.id && !this.state.phone) {
+        return <Loading value="Phone"/>;
+      }
 
-    return (
-      <div>
-        <PhoneNumber
-          onChange={this.state.phone.number.handler}
-          value={this.state.phone.number.current}
-          label={this.state.phone.number.label}
-          bsStyle={this.state.phoneStatus}
-          style={{backgroundColor : this.state.phone.number.edited ? '#FFE5C4' : '#ffffff'}}
-          hasFeedback
-        />
-        <If condition={!this.state.phone.verified.current || this.state.phone.number.edited}>
-          <span>This phone number is un-verified.</span>
-        </If>
-        <Bootstrap.ButtonInput
-          onClick={this.handleSendCode}
-          type="button"
-          value={this.state.processing ? "Processing..." : this.state.phone.verified.current && !this.state.phone.address.edited ? "Phone Verified" : "Send Verification Link"}
-          disabled={this.state.processing || this.state.phone.verified.current && !this.state.phone.number.edited || this.state.phoneStatus !== 'success'}
-        />
-        <Bootstrap.Input
-          onClick={event => {
-            this.state.phone.signin.handler(!this.state.phone.signin.current)
-          }}
-          type="checkbox"
-          label={<span style={{backgroundColor : this.state.phone.signin.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.phone.signin.label}</span>}
-          checked={this.state.phone.signin.current}
-          onChange={event => {}}
-        />
-        <Bootstrap.Well>
-          {formatMessage({
-            id: 'phone_multistep_info',
-            default: 'Using a phone for a multi-step sign-in will send a sms text message with a verification code upon every future sign-in attempt. This may help keep this account more secure, or at least as secure as your phone.',
-          })}
-        </Bootstrap.Well>
-        <Bootstrap.ButtonInput
-          onClick={this.state.processing ? null : this.handleSetPhone}
-          type="submit"
-          value={this.state.processing ? "Processing..." : "Set Phone"}
-          disabled={this.state.processing || this.state.phoneStatus !== 'success'}
-          bsStyle={this.state.phone.edited ? "warning" : "default"}
-        />
-      </div>
-    );
+      return (
+        <div>
+          <PhoneNumber
+            onChange={this.state.phone.number.handler}
+            value={this.state.phone.number.current}
+            label={this.state.phone.number.label}
+            bsStyle={this.state.phoneStatus}
+            style={{backgroundColor : this.state.phone.number.edited ? '#FFE5C4' : '#ffffff'}}
+            hasFeedback
+          />
+          <If condition={!this.state.phone.verified.current || this.state.phone.number.edited}>
+            <span>This phone number is un-verified.</span>
+          </If>
+          <Bootstrap.ButtonInput
+            onClick={this.handleSendCode}
+            type="button"
+            value={this.state.processing ? "Processing..." : this.state.phone.verified.current && !this.state.phone.address.edited ? "Phone Verified" : "Send Verification Link"}
+            disabled={this.state.processing || this.state.phone.verified.current && !this.state.phone.number.edited || this.state.phoneStatus !== 'success'}
+          />
+          <Bootstrap.Input
+            onClick={event => {
+              this.state.phone.signin.handler(!this.state.phone.signin.current)
+            }}
+            type="checkbox"
+            label={<span style={{backgroundColor : this.state.phone.signin.edited ? '#FFE5C4' : '#ffffff'}}>{this.state.phone.signin.label}</span>}
+            checked={this.state.phone.signin.current}
+            onChange={event => {}}
+          />
+          <Bootstrap.Well>
+            {formatMessage({
+              id: 'phone_multistep_info',
+              default: 'Using a phone for a multi-step sign-in will send a sms text message with a verification code upon every future sign-in attempt. This may help keep this account more secure, or at least as secure as your phone.',
+            })}
+          </Bootstrap.Well>
+          <Bootstrap.ButtonInput
+            onClick={this.state.processing ? null : this.handleSetPhone}
+            type="submit"
+            value={this.state.processing ? "Processing..." : "Set Phone"}
+            disabled={this.state.processing || this.state.phoneStatus !== 'success'}
+            bsStyle={this.state.phone.edited ? "warning" : "default"}
+          />
+        </div>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });

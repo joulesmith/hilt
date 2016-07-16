@@ -22,25 +22,27 @@ export default React.createClass({
     this.setState({show: false});
   },
   render: function() {
-
-    return (
-      <span>
-        <Button
-          onClick={this.handleRequest}
-        >
-          {this.props.request}
-        </Button>
-        <Modal show={this.state.show} onHide={this.handleDismiss}>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirmation</Modal.Title>
-          </Modal.Header>
-          <Modal.Footer>
-            <Button onClick={this.handleConfirm}>{this.props.request}</Button>
-            <Button onClick={this.handleDismiss}>Cancel</Button>
-          </Modal.Footer>
-        </Modal>
-      </span>
-    );
-
+    try{
+      return (
+        <span>
+          <Button
+            onClick={this.handleRequest}
+          >
+            {this.props.request}
+          </Button>
+          <Modal show={this.state.show} onHide={this.handleDismiss}>
+            <Modal.Header closeButton>
+              <Modal.Title>Confirmation</Modal.Title>
+            </Modal.Header>
+            <Modal.Footer>
+              <Button onClick={this.handleConfirm}>{this.props.request}</Button>
+              <Button onClick={this.handleDismiss}>Cancel</Button>
+            </Modal.Footer>
+          </Modal>
+        </span>
+      );
+    }catch(error){
+      return <ErrorBody error={error}/>;
+    }
   }
 });
