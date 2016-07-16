@@ -5,6 +5,7 @@ import {subscribe, publish} from 'journal';
 import {Modal, Button} from 'react-bootstrap';
 import ErrorBody from 'error-body';
 import * as journal from './journal';
+import ErrorBody from 'error-body';
 
 export default React.createClass({
   getInitialState: function(){
@@ -58,16 +59,14 @@ export default React.createClass({
       if (this.state.processing) {
         value = this.props.progressValue ? this.props.progressValue : 'Reporting...';
       }else{
-        value = this.props.value ? this.props.value : 'Report';
+        value = this.props.children + '' || this.props.value || 'Report';
       }
 
       return (
-        <span>
-          <Button
-            onClick={this.handleShow}
-          >
-            {value}
-          </Button>
+        <Button
+          onClick={this.handleShow}
+        >
+          {value}
           <Modal show={this.state.show} onHide={this.handleHide}>
             <Modal.Header closeButton>
               <Modal.Title>Confirmation</Modal.Title>
@@ -77,7 +76,7 @@ export default React.createClass({
               <Button onClick={this.handleHide}>Cancel</Button>
             </Modal.Footer>
           </Modal>
-        </span>
+        </Button>
       );
     }catch(error){
       return <ErrorBody error={error}/>;

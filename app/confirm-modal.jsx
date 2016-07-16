@@ -24,12 +24,10 @@ export default React.createClass({
   render: function() {
     try{
       return (
-        <span>
-          <Button
-            onClick={this.handleRequest}
-          >
-            {this.props.request}
-          </Button>
+        <Button
+          onClick={this.handleRequest}
+        >
+          {this.props.request}
           <Modal show={this.state.show} onHide={this.handleDismiss}>
             <Modal.Header closeButton>
               <Modal.Title>Confirmation</Modal.Title>
@@ -39,7 +37,7 @@ export default React.createClass({
               <Button onClick={this.handleDismiss}>Cancel</Button>
             </Modal.Footer>
           </Modal>
-        </span>
+        </Button>
       );
     }catch(error){
       return <ErrorBody error={error}/>;
