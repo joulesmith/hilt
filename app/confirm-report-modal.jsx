@@ -5,7 +5,6 @@ import {subscribe, publish} from 'journal';
 import {Modal, Button} from 'react-bootstrap';
 import ErrorBody from 'error-body';
 import * as journal from './journal';
-import ErrorBody from 'error-body';
 
 export default React.createClass({
   getInitialState: function(){
