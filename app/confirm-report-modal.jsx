@@ -58,7 +58,11 @@ export default React.createClass({
       if (this.state.processing) {
         value = this.props.progressValue ? this.props.progressValue : 'Reporting...';
       }else{
-        value = this.props.children + '' || this.props.value || 'Report';
+        if (this.props.children){
+          value = this.props.children;
+        }else{
+          value = this.props.value || 'Report';
+        }
       }
 
       return (

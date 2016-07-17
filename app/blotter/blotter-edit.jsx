@@ -9,6 +9,7 @@ import ConfirmReport from '../confirm-report-modal';
 import SigninRequired from '../signin-required';
 import ReportButton from '../report-button'
 import ErrorBody from '../error-body';
+import * as progress from '../progress';
 
 export default React.createClass({
   componentWillMount: function(){
@@ -98,7 +99,7 @@ export default React.createClass({
               <Link to={'/blotter/' + this.state.localBlotter._id}>{this.state.localBlotter.name}</Link>
               <ReportButton
                 value={'Save'}
-                progressValue={'Saving...'}
+                progressValue={progress.ellipses('Saving')}
                 bsStyle={saveStyle}
                 report={{
                   action: 'api/blotter/' + this.props.params.id,

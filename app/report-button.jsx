@@ -7,7 +7,8 @@ export default React.createClass({
   getInitialState(){
     return {
       processing: false,
-      start: 0
+      start: 0,
+      current: 0
     };
   },
   handleReport(event) {
@@ -16,13 +17,29 @@ export default React.createClass({
 
     this.setState({
       processing: true,
-      start: Date.now()
+      start: Date.now(),
+      current: Date.now()
     }, () => {
+      var timer = null;
+      if (typeof this.props.progressValue === 'function') {
+
+        timer = setInterval(() =>{
+          this.setState({
+            current: Date.now()
+          });
+        }, 250);
+      }
+
       journal.report(this.props.report)
       .then(result => {
+        if (timer){
+          clearInterval(timer);
+        }
+
         that.setState({
           processing: false,
-          start: 0
+          start: 0,
+          current: 0
         });
 
         if (this.props.resolve){
@@ -30,9 +47,14 @@ export default React.createClass({
         }
       })
       .catch(err => {
+        if (timer){
+          clearInterval(timer);
+        }
+
         that.setState({
           processing: false,
-          start: 0
+          start: 0,
+          current: 0
         });
 
         if (this.props.reject){
@@ -50,7 +72,7 @@ export default React.createClass({
       if (this.state.processing) {
         if (this.props.progressValue) {
           if (typeof this.props.progressValue === 'function') {
-            value = this.props.progressValue(Date.now() - this.state.start);
+            value = this.props.progressValue(this.state.start, this.state.current);
           }else{
             value = this.props.progressValue;
           }
